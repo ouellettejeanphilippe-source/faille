@@ -10,12 +10,23 @@
 <body>
   <main>
     <header><h1>Faille</h1><p class="sous">Pige un pro, bâtis ton cinq, joue le split.</p></header>
-    <section>
+    <section id="bati">
       <h2>Ton alignement</h2>
       <ol id="alignement" class="alignement"></ol>
       <button id="roulette" class="principal">Tourner la roulette</button>
-      <button id="recommencer" class="principal" hidden>Recommencer</button>
+      <button id="jouer" class="principal" hidden>Jouer le split</button>
+      <button id="recommencer" hidden>Recommencer</button>
       <p id="etat" class="etat"></p>
+    </section>
+    <section id="split" hidden>
+      <h2 id="split-titre"></h2>
+      <p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties).</p>
+      <div id="split-jour"></div>
+      <button id="journee" class="principal">Journée suivante</button>
+      <button id="jusqua">Jusqu'aux séries</button>
+      <button id="ronde" class="principal" hidden>Ronde suivante</button>
+      <button id="nouveau" class="principal" hidden>Un nouveau cinq</button>
+      <div id="split-classement"></div>
     </section>
     <section id="vestiaire" class="couche" hidden>
       <button class="retour" data-retour>‹ Retour</button>
@@ -24,6 +35,7 @@
       <ul id="vestiaire-liste" class="liste-joueurs defile"></ul>
     </section>
     <section id="carte" class="couche" hidden></section>
+    <section id="feuille" class="couche" hidden></section>
   </main>
   <footer>
     <p id="source"></p>

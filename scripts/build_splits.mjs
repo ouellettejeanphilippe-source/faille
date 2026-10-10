@@ -108,6 +108,8 @@ const roleDe = l => ROLES[String(l.role || l.roleJeu || '').toLowerCase()] || nu
 /* Une stat qui peut manquer : [somme, parties où elle est mesurée, minutes de ces parties]. */
 const MESURABLES = ['or', 'cs', 'deg', 'vision'];
 const OBJECTIFS = ['tours', 'dragons', 'barons', 'herauts', 'larves', 'inhib'];
+/* Ce que garde la ligne d'une partie (`matchs`), un nombre par côté. */
+const PAR_PARTIE = ['k', 'or', 'tours', 'dragons', 'barons', 'herauts', 'inhib'];
 
 async function construire(split, ctx) {
   // Un split peut couvrir plusieurs pages (la saison et ses séries) : chacune est un préfixe.
@@ -117,6 +119,7 @@ async function construire(split, ctx) {
     tours1: 'Team1Towers', tours2: 'Team2Towers', dragons1: 'Team1Dragons', dragons2: 'Team2Dragons',
     barons1: 'Team1Barons', barons2: 'Team2Barons', herauts1: 'Team1RiftHeralds', herauts2: 'Team2RiftHeralds',
     larves1: 'Team1VoidGrubs', larves2: 'Team2VoidGrubs', inhib1: 'Team1Inhibitors', inhib2: 'Team2Inhibitors',
+    k1: 'Team1Kills', k2: 'Team2Kills', or1: 'Team1Gold', or2: 'Team2Gold',
   }, ou);
   const lignes = await cargo('ScoreboardPlayers', {
     n: 'Link', eq: 'Team', role: 'Role', roleJeu: 'IngameRole', champion: 'Champion', k: 'Kills', m: 'Deaths', a: 'Assists',
@@ -190,8 +193,12 @@ async function construire(split, ctx) {
   const logos = await logosDe([...equipes.keys()]);
 
   const r1 = x => Math.round(x * 10) / 10;
+  // Une ligne par partie, le côté bleu (Team1 chez Leaguepedia) d'abord : les repères du moteur s'y mesurent (MOTEUR.md).
+  const chiffre = x => (Number.isFinite(x) ? x : null);
+  const matchs = parties.map(p => [p.eq1, p.eq2, chiffre(r1(nb(p.duree) ?? NaN)), p.gagnant === p.eq1 ? 1 : p.gagnant === p.eq2 ? 2 : null,
+    ...PAR_PARTIE.flatMap(o => [chiffre(nb(p[`${o}1`])), chiffre(nb(p[`${o}2`]))])]);
   return {
-    ...split, source: SOURCE, ddragon: ctx.classes.version, parties: parties.length,
+    ...split, source: SOURCE, ddragon: ctx.classes.version, parties: parties.length, matchs,
     equipes: [...equipes.values()].sort((a, b) => b.v - a.v || a.d - b.d).map(e => ({
       nom: e.nom, v: e.v, d: e.d, obj: e.obj, logo: cheminImage(logos.get(e.nom)),
       joueurs: [...e.joueurs.values()].sort((a, b) => b.pj - a.pj).map(j => ({

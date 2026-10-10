@@ -3,12 +3,12 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.2.0';  // 0.2.0 : les images, la carte d'un joueur
+const VERSION = 'faille-0.3.0';  // 0.3.0 : le moteur, le split et ses séries
 
 const FICHIERS = [
   './', 'index.html', 'style.css',
   // Le graphe de modules au complet — scripts/check_coquille.mjs le vérifie.
-  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js', 'js/fiche.js', 'js/images.js',
+  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js', 'js/fiche.js', 'js/images.js', 'js/sim.js', 'js/split.js',
   'data/index.json', 'data/champions.json',
 ];
 
