@@ -1,0 +1,6 @@
+[
+  { "id": "lck-2019-printemps", "nom": "LCK 2019 · Printemps", "ligue": "LCK", "annee": 2019, "page": "LCK/2019 Season/Spring Season" },
+  { "id": "lck-2019-ete", "nom": "LCK 2019 · Été", "ligue": "LCK", "annee": 2019, "page": "LCK/2019 Season/Summer Season" },
+  { "id": "lec-2019-printemps", "nom": "LEC 2019 · Printemps", "ligue": "LEC", "annee": 2019, "page": "LEC/2019 Season/Spring Season" },
+  { "id": "lec-2019-ete", "nom": "LEC 2019 · Été", "ligue": "LEC", "annee": 2019, "page": "LEC/2019 Season/Summer Season" }
+]
