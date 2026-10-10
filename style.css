@@ -1,91 +1,304 @@
-/* Une seule feuille, dans l'ordre des écrans, mobile d'abord (390 px). Le noir est le décor. */
+/* =====================================================================
+   Faille — la feuille de style, sur le système de Cap 82-0
+   =====================================================================
+   Le système de design est celui de Cap 82-0 (son docs/refonte-ui.md) :
+   sept tailles (--t-1 à --t-7), trois rayons (--r-0, --r-1, --r-2), les
+   couleurs en jetons dans :root et nulle part ailleurs (sauf les habillages
+   d'époque de la carte), la couleur qui dit quelque chose (vert = rapporte,
+   rouge = coûte, or = se gagne, la Faille = toi), la condensée pour tout ce
+   qui est titre, chiffre, bouton, étiquette, une action principale par
+   écran, collée en bas, rien sous 12 px. Mobile d'abord (390 px).
+
+   0. jetons, police, remise à zéro
+   1. la coquille : tableau indicateur, retour, écran, couches, barre d'action
+   2. les briques : boutons, badges, photos, coûts
+   3. le cinq : l'alignement
+   4. le vestiaire : le bandeau, les rangées
+   5. la carte d'un joueur (ses quatre époques)
+   6. le split : la journée, le classement, la feuille d'une série
+   7. la boutique et le repêchage
+   ===================================================================== */
+
+/* ---- Barlow Condensed (fonts/, OFL 1.1) : les chiffres, les titres, les boutons ---- */
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/BarlowCondensed-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/BarlowCondensed-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/BarlowCondensed-800-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/BarlowCondensed-800-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* ---- Les jetons ---- */
 :root {
-  --fond: #0b0b0d;
-  --carte: #17171c;
-  --trait: #2a2a31;
-  --texte: #ecebe8;
-  --pale: #9a99a1;
-  --accent: #c8aa6e;
+  /* L'identité : le bleu-vert de la Faille, comme la couleur du club dans Cap 82-0. Les fonds en portent un soupçon. */
+  --club-vif: #3fb6c9;
+  --noir: color-mix(in srgb, var(--club-vif) 3%, #050507);
+  --fond-1: color-mix(in srgb, var(--club-vif) 6%, #0e1015);
+  --fond-2: color-mix(in srgb, var(--club-vif) 8%, #161920);
+  --fond-3: color-mix(in srgb, var(--club-vif) 10%, #1f232c);
+  --filet: color-mix(in srgb, var(--club-vif) 16%, #272b35);
+  --club-sourd: color-mix(in srgb, var(--club-vif) 14%, transparent);
+  /* L'encre : trois niveaux. */
+  --encre: #f2f4f7;
+  --encre-2: #a9b0bb;
+  --encre-3: #737b87;
+  /* Le sens. */
+  --bon: #46c98b;
+  --mauvais: #e5707a;
+  --or: #d7b171;
+  --bleu: #8ab4f0;
+  --sur-bon: #07170f;
+  /* Les paliers d'un badge : quatre métaux qu'on ne confond pas. */
+  --bronze: #b5693a;
+  --argent: #c4cbd4;
+  --or-palier: #ffd23a;
+  --platine: #9fe3ea;
+  /* Les raretés d'une carte de plan de jeu. */
+  --peu-commune: #5fb760;
+  --rare: #4f8fe0;
+  --legendaire: #e5a52a;
+  /* Les sept tailles. */
+  --t-1: 12px; --t-2: 13px; --t-3: 15px; --t-4: 18px; --t-5: 24px; --t-6: 34px; --t-7: 54px;
+  /* Les trois rayons. */
+  --r-0: 0; --r-1: 4px; --r-2: 12px;
+  /* Les espacements. */
+  --esp-1: 4px; --esp-2: 8px; --esp-3: 12px; --esp-4: 16px; --esp-5: 24px;
+  /* Le relief, comme la patinoire éclairée de Cap 82-0 : la lumière de la Faille tombe d'en haut sur le noir. */
+  --ambiance: radial-gradient(120% 70% at 50% -18%, color-mix(in srgb, var(--club-vif) 22%, transparent), transparent 62%), radial-gradient(60% 40% at 100% 105%, color-mix(in srgb, var(--club-vif) 10%, transparent), transparent 70%);
+  --panneau: linear-gradient(180deg, color-mix(in srgb, var(--fond-2) 92%, var(--club-vif)), var(--fond-1) 70%);
+  --relief: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 10px 28px -14px rgba(0, 0, 0, 0.95);
+  --chiffre: linear-gradient(180deg, #ffffff 20%, color-mix(in srgb, var(--club-vif) 55%, var(--encre)) 100%);
+  --lueur-club: 0 0 0 1px color-mix(in srgb, var(--club-vif) 55%, transparent), 0 6px 18px -8px color-mix(in srgb, var(--club-vif) 70%, transparent);
+  --lueur-bon: 0 10px 28px -10px color-mix(in srgb, var(--bon) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --ombre: 0 18px 48px rgba(0, 0, 0, 0.55);
+  /* Le mouvement. */
+  --t-vite: 0.12s;
+  --t-lent: 0.24s;
+  --e-sortie: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --e-ressort: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Les polices. */
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --corps: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* La coquille. */
+  --tete-h: 56px;
+  --large: 960px;
+  --safe-bas: env(safe-area-inset-bottom, 0px);
 }
+/* Au téléphone, tout descend d'un cran à la source. */
+@media (max-width: 679.98px) {
+  :root { --t-2: 12.5px; --t-3: 14px; --t-4: 16px; --t-5: 20px; --t-6: 26px; --t-7: 38px; --esp-3: 10px; --esp-4: 12px; }
+}
+
+/* ---- La remise à zéro ---- */
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--fond); color: var(--texte); font: 16px/1.4 system-ui, sans-serif; user-select: none; }
-main { max-width: 960px; margin: 0 auto; padding: 16px; }
-h1 { margin: 0; color: var(--accent); letter-spacing: .04em; }
-h2 { font-size: 1.1rem; margin: 0 0 8px; }
-.sous, .etat { color: var(--pale); margin: 4px 0 16px; }
-button { font: inherit; color: var(--texte); background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-button:disabled { opacity: .4; cursor: default; }
-.principal { width: 100%; margin-top: 12px; background: var(--accent); color: var(--fond); border: 0; font-weight: 700; }
-.retour { align-self: flex-start; margin-bottom: 12px; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; overflow-x: hidden;
+  background: var(--ambiance), var(--noir); background-attachment: fixed; color: var(--encre);
+  font-family: var(--corps); font-size: var(--t-3); line-height: 1.45;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3, h4 { margin: 0; font-family: var(--display); font-weight: 800; }
+[hidden] { display: none !important; }
 img.absente { display: none; }
+.ico { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
 
-/* L'alignement. */
-.alignement { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.case { display: flex; align-items: center; gap: 12px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 12px; min-height: 58px; }
-.case.pleine { border-color: var(--accent); }
-.role { width: 64px; flex: none; color: var(--pale); }
-.qui small { color: var(--pale); }
+/* =====================================================================
+   1. LA COQUILLE
+   ===================================================================== */
 
-/* Les couches (le vestiaire, la carte) : plein écran, elles défilent en dedans. */
-.couche { position: fixed; inset: 0; background: var(--fond); padding: 16px; display: flex; flex-direction: column; overflow-y: auto; }
-.couche[hidden] { display: none; }
-.defile { overflow-y: auto; flex: 1; }
+/* ---- Le tableau indicateur : une bande, un filet de la Faille en tête, les chiffres à droite ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 60; min-height: var(--tete-h);
+  display: flex; align-items: center; padding: var(--esp-2) var(--esp-4);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--club-vif) 24%, var(--fond-1)), var(--fond-1) 46%);
+  border-bottom: 1px solid var(--filet); box-shadow: inset 0 3px 0 var(--club-vif);
+}
+.topbar-inner { width: 100%; max-width: var(--large); margin: 0 auto; display: flex; align-items: center; gap: var(--esp-3); min-width: 0; }
+.tete-id { flex: 1 1 auto; display: grid; min-width: 0; line-height: 1.1; }
+.tete-nom { font: 800 var(--t-4)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.tete-etat { font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tete-chiffres { flex: none; display: flex; align-items: stretch; margin-left: auto; }
+.tete-ch { display: grid; align-content: center; justify-items: end; gap: 2px; padding: 0 var(--esp-3); border-left: 1px solid var(--filet); }
+.tete-ch:first-child { border-left: 0; }
+.tete-ch:last-child { padding-right: 0; }
+.tete-ch-l { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-3); white-space: nowrap; }
+.tete-ch-v { font: 800 var(--t-5)/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* La jauge du plafond : ce qui reste en vert, en or quand ça serre ; la barre dessous. */
+.jauge { min-width: 96px; justify-items: stretch; text-align: right; }
+.jauge .tete-ch-v { background: none; color: var(--bon); }
+.jauge .tete-ch-v.serre { color: var(--or); }
+.piste { display: block; height: 4px; background: var(--noir); border-radius: var(--r-1); overflow: hidden; }
+.rempli { display: block; height: 100%; margin-left: auto; background: var(--bon); transition: width var(--t-lent) var(--e-sortie); }
+@media (max-width: 679.98px) {
+  .topbar { padding: var(--esp-2) var(--esp-3); }
+  .tete-ch { padding: 0 var(--esp-2); }
+  .tete-ch-l { display: none; }
+  .tete-ch-v { font-size: var(--t-4); }
+  .jauge { min-width: 72px; }
+  /* Le retour prend la place du nom : on sait déjà où on est. */
+  .retour-btn:not([hidden]) + .tete-id .tete-nom { display: none; }
+}
 
-/* Les photos : les initiales dessous, la photo par-dessus quand elle vient. */
-.vignette, .carte-photo { position: relative; flex: none; display: grid; place-items: center; overflow: hidden; background: #22222a; color: var(--pale); font-weight: 700; }
-.vignette { width: 40px; height: 40px; border-radius: 50%; font-size: .8rem; }
+/* ---- Le retour : une flèche et un mot, comme Échap ou le bouton d'Android (js/pile.js) ---- */
+.retour-btn {
+  flex: none; min-height: 40px; padding: 0 var(--esp-3) 0 var(--esp-1); gap: 2px;
+  font-size: var(--t-2); background: transparent;
+}
+.retour-btn .ico { width: 20px; height: 20px; transition: transform var(--t-lent) var(--e-ressort); }
+.retour-btn:hover .ico { transform: translateX(-3px); }
+
+/* ---- Un écran : une bande de titre, un corps, la barre d'action collée en bas ---- */
+main { max-width: var(--large); margin: 0 auto; padding: 0 var(--esp-4); }
+.ecran-tete { padding: var(--esp-5) 0 var(--esp-3); border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-3); }
+.ecran-tete h1, .couche > h2 {
+  font-size: var(--t-6); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase;
+  background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.couche > h2 { font-size: var(--t-5); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-2); }
+.sous, .etat { color: var(--encre-2); margin: var(--esp-2) 0; font-size: var(--t-2); }
+/* Les intertitres : une étiquette condensée, en capitales, sur un filet. */
+h3 { margin: var(--esp-5) 0 var(--esp-2); padding-bottom: var(--esp-1); border-bottom: 1px solid var(--filet); font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-2); }
+
+/* ---- Les couches (le vestiaire, la carte, la boutique…) : sous le tableau indicateur, elles défilent en dedans ---- */
+.couche {
+  position: fixed; top: var(--tete-h); left: 0; right: 0; bottom: 0; z-index: 50;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 max(var(--esp-4), calc((100% - var(--large)) / 2));
+  background: var(--ambiance), var(--noir);
+  animation: entree var(--t-lent) var(--e-sortie);
+}
+@keyframes entree { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---- La barre d'action : collée en bas ; l'action principale pleine largeur, les autres en contour dessous ---- */
+.actionbar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; gap: var(--esp-2);
+  margin-top: var(--esp-4); padding: var(--esp-3) 0 calc(var(--esp-3) + var(--safe-bas));
+  background: linear-gradient(transparent, var(--noir) 30%);
+}
+.actionbar > button { flex: 1 1 0; }
+.actionbar > .go { flex: 1 1 100%; min-height: 52px; font-size: var(--t-4); }
+
+footer { max-width: var(--large); margin: var(--esp-5) auto 0; padding: var(--esp-4); border-top: 1px solid var(--filet); color: var(--encre-3); font-size: var(--t-1); }
+
+/* =====================================================================
+   2. LES BRIQUES
+   ===================================================================== */
+
+/* ---- Les boutons : en contour ; sous le doigt, ils s'écrasent et rebondissent ---- */
+button {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-2);
+  min-height: 44px; padding: 0 var(--esp-4);
+  border: 1px solid var(--filet); border-radius: var(--r-1);
+  background: var(--fond-1); color: var(--encre); cursor: pointer;
+  font: 800 var(--t-3)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase;
+  transition: transform var(--t-lent) var(--e-ressort), background var(--t-vite), border-color var(--t-vite), box-shadow var(--t-lent) var(--e-sortie);
+}
+button:hover:not(:disabled) { background: var(--fond-2); border-color: color-mix(in srgb, var(--club-vif) 70%, var(--encre-3)); box-shadow: var(--lueur-club); }
+button:active:not(:disabled) { transform: translateY(1px) scale(0.96); transition-duration: 60ms; }
+button:disabled { opacity: 0.45; cursor: default; }
+/* L'action principale : pleine, en vert ; un reflet la traverse toutes les cinq secondes. */
+.go { position: relative; overflow: hidden; background: linear-gradient(180deg, color-mix(in srgb, var(--bon) 78%, #fff), var(--bon) 55%); border-color: var(--bon); color: var(--sur-bon); box-shadow: var(--lueur-bon); }
+.go:hover:not(:disabled) { background: color-mix(in srgb, var(--bon) 88%, #fff); border-color: var(--bon); }
+.go:not(:disabled)::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); transform: translateX(-140%) skewX(-18deg); animation: reflet 5s var(--e-sortie) 1.2s infinite; pointer-events: none; }
+@keyframes reflet { 0%, 78% { transform: translateX(-140%) skewX(-18deg); } 100% { transform: translateX(440%) skewX(-18deg); } }
+.go:disabled { background: var(--fond-2); border-color: var(--filet); color: var(--encre-3); box-shadow: none; }
+
+/* ---- Les photos : les initiales dessous, la photo par-dessus quand elle vient ---- */
+.vignette, .carte-photo { position: relative; flex: none; display: grid; place-items: center; overflow: hidden; background: var(--fond-3); color: var(--encre-2); font: 800 var(--t-2)/1 var(--display); }
+.vignette { width: 44px; height: 44px; border-radius: var(--r-1); }
 .vignette img, .carte-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 
-/* Le vestiaire. */
-.liste-joueurs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
-.joueur { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 10px; cursor: pointer; }
-.joueur.pris { opacity: .45; }
-.joueur-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.joueur-id b, .joueur-id small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.joueur-id small { color: var(--pale); }
-.joueur-champs { display: flex; gap: 2px; flex: none; }
-.ico-champ { width: 26px; height: 26px; border-radius: 4px; display: grid; place-items: center; background: #22222a; font-size: .6rem; }
+/* ---- Le coût sous le plafond : un chiffre, son unité dessous ---- */
+.cout { flex: none; display: grid; justify-items: center; line-height: 1; min-width: 32px; }
+.cout b { font: 800 var(--t-5)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre); }
+.cout small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-3); }
 
-/* Les badges : le palier se dit en mot et se voit en couleur. */
-.badge { display: inline-block; margin: 0 4px 2px 0; border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; font-size: .75rem; white-space: nowrap; }
-.pal-bronze { color: #c98a55; }
-.pal-argent { color: #c9ced6; }
-.pal-or { color: #e5c25a; }
-.pal-platine { color: #8fe0e6; }
+/* ---- Les badges : le palier se dit en mot et se voit en couleur, sans capsule ---- */
+.badge { display: inline-block; margin: 0 var(--esp-2) 0 0; font: 700 var(--t-1)/1.4 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.pal-bronze { color: var(--bronze); }
+.pal-argent { color: var(--argent); }
+.pal-or { color: var(--or-palier); }
+.pal-platine { color: var(--platine); }
 
-/*
- * LA CARTE. La structure est la même pour toutes les époques ; chaque époque
- * (`ere-…`, js/fiche.js) ne change que des variables et quelques traits.
- */
+/* =====================================================================
+   3. LE CINQ — une bande par rôle : le rôle à gauche, le joueur, son coût
+   ===================================================================== */
+.alignement { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-2); }
+.case {
+  display: flex; align-items: center; gap: var(--esp-3); min-height: 64px; padding: var(--esp-2) var(--esp-3);
+  background: var(--panneau); border: 1px solid var(--filet); border-radius: var(--r-2); box-shadow: var(--relief);
+}
+.case.pleine { border-left: 3px solid var(--club-vif); }
+.case-role { flex: none; width: 64px; font: 800 var(--t-2)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-3); }
+.case.pleine .case-role { color: var(--club-vif); }
+.qui { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.qui b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qui small { color: var(--encre-2); font-size: var(--t-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =====================================================================
+   4. LE VESTIAIRE — le bandeau de l'équipe tirée, puis une rangée par joueur
+   ===================================================================== */
+.bandeau {
+  display: flex; align-items: center; gap: var(--esp-3); margin: 0 calc(-1 * var(--esp-4)); padding: var(--esp-4);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--club-vif) 30%, var(--fond-1)), var(--fond-1) 70%);
+  border-bottom: 1px solid var(--filet); box-shadow: inset 4px 0 0 var(--club-vif);
+}
+.bandeau img { width: 48px; height: 48px; object-fit: contain; flex: none; }
+.bandeau-id { min-width: 0; display: grid; gap: 2px; }
+.bandeau-id small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-2); }
+.bandeau-id h2 { font-size: var(--t-6); line-height: 1; letter-spacing: 0.02em; text-transform: uppercase; overflow-wrap: anywhere; }
+.combler { display: flex; justify-content: space-between; gap: var(--esp-3); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-3); }
+.combler b { color: var(--encre); letter-spacing: 0.04em; }
+.combler span:last-child { text-align: right; }
+.liste-joueurs { list-style: none; margin: 0; padding: 0; }
+.joueur { display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); cursor: pointer; transition: background var(--t-vite); }
+.joueur:hover { background: var(--club-sourd); }
+.joueur.pris { opacity: 0.45; }
+.joueur-id { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.joueur-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.joueur-id small { color: var(--encre-2); font-size: var(--t-1); }
+.joueur-champs { display: flex; gap: 3px; }
+.ico-champ { width: 22px; height: 22px; border-radius: var(--r-1); display: grid; place-items: center; background: var(--fond-3); font-size: var(--t-1); }
+.signer { flex: none; min-width: 84px; padding: 0 var(--esp-3); font-size: var(--t-2); }
+.signer:not(:disabled) { background: var(--fond-3); }
+
+/* =====================================================================
+   5. LA CARTE. La structure est la même pour toutes les époques ; chaque
+   époque (`ere-…`, js/fiche.js) ne change que ses variables et quelques
+   traits : ses couleurs sont celles du client de son temps, pas les jetons.
+   ===================================================================== */
 .carte {
   --c-fond: #111; --c-bord: #333; --c-tete: #1b1b1b; --c-texte: #eee; --c-pale: #999; --c-accent: #c8aa6e;
-  --c-police: system-ui, sans-serif; --c-rayon: 12px;
-  width: 100%; max-width: 440px; margin: 0 auto; flex: none; background: var(--c-fond); color: var(--c-texte);
-  border: 2px solid var(--c-bord); border-radius: var(--c-rayon); overflow: hidden; font-family: var(--c-police);
+  --c-police: var(--corps); --c-rayon: var(--r-2);
+  width: 100%; max-width: 440px; margin: var(--esp-4) auto; background: var(--c-fond); color: var(--c-texte);
+  border: 2px solid var(--c-bord); border-radius: var(--c-rayon); overflow: hidden; font-family: var(--c-police); box-shadow: var(--ombre);
 }
 .carte-tete { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 64px; background: var(--c-tete); overflow: hidden; }
 .carte-tete::before { content: ""; position: absolute; inset: 0; background: var(--illus, none) center 20% / cover; opacity: .35; }
 .carte-tete > * { position: relative; }
 .carte-logo { width: 44px; height: 44px; object-fit: contain; }
-.carte-split { font-size: .85rem; color: var(--c-pale); }
+.carte-split { font-size: var(--t-2); color: var(--c-pale); }
 .carte-corps { display: flex; gap: 12px; padding: 12px; }
-.carte-photo { width: 120px; height: 140px; border: 1px solid var(--c-bord); border-radius: calc(var(--c-rayon) / 2); font-size: 2rem; }
+.carte-photo { width: 120px; height: 140px; border: 1px solid var(--c-bord); border-radius: calc(var(--c-rayon) / 2); font-size: var(--t-6); }
 .carte-id { min-width: 0; }
-.carte-id h3 { margin: 0 0 4px; font-size: 1.5rem; line-height: 1.1; overflow-wrap: anywhere; color: var(--c-accent); }
-.carte-id p { margin: 0 0 6px; color: var(--c-pale); }
+.carte-id h3 { margin: 0 0 4px; padding: 0; border: 0; font: 700 var(--t-5)/1.1 var(--c-police); letter-spacing: 0; text-transform: none; overflow-wrap: anywhere; color: var(--c-accent); }
+.carte-id p { margin: 0 0 6px; color: var(--c-pale); font-size: var(--t-2); }
 .carte-id p b { color: var(--c-texte); }
 .carte-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--c-bord); }
 .carte-stats div { padding: 6px 8px; border-right: 1px solid var(--c-bord); border-bottom: 1px solid var(--c-bord); }
 .carte-stats div:nth-child(3n) { border-right: 0; }
-.carte-stats dt { font-size: .7rem; color: var(--c-pale); text-transform: uppercase; letter-spacing: .05em; }
+.carte-stats dt { font-size: var(--t-1); color: var(--c-pale); text-transform: uppercase; letter-spacing: .05em; }
 .carte-stats dd { margin: 0; font-weight: 700; }
-.carte h4 { margin: 12px 12px 6px; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--c-pale); }
+.carte h4 { margin: 12px 12px 6px; font: 700 var(--t-1)/1.2 var(--c-police); text-transform: uppercase; letter-spacing: .08em; color: var(--c-pale); }
 .bassin { list-style: none; margin: 0; padding: 0 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
-.bassin li { display: grid; justify-items: center; text-align: center; gap: 2px; font-size: .7rem; min-width: 0; }
-.bassin img, .ico-vide { width: 44px; height: 44px; border-radius: 6px; border: 1px solid var(--c-bord); background: #22222a; }
+.bassin li { display: grid; justify-items: center; text-align: center; gap: 2px; font-size: var(--t-1); min-width: 0; }
+.bassin img, .ico-vide { width: 44px; height: 44px; border-radius: 6px; border: 1px solid var(--c-bord, var(--filet)); background: var(--fond-3); }
 .bassin b { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bassin small { color: var(--c-pale); }
-.carte .signer-carte { width: calc(100% - 24px); margin: 14px 12px 12px; background: var(--c-accent); color: #000; }
+.carte .signer-carte { width: calc(100% - 24px); margin: 14px 12px 12px; min-height: 52px; }
 
 /* 2011-2013, le client d'origine : bleu acier, cadre argenté, reflets. */
 .ere-origine {
@@ -100,7 +313,7 @@ img.absente { display: none; }
   --c-fond: #0a1428; --c-bord: #d8b46a; --c-tete: linear-gradient(90deg, #0f2140, #1a3358); --c-texte: #e4e9f2; --c-pale: #8fa3bf; --c-accent: #d8b46a;
   --c-rayon: 0; clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
 }
-.ere-saison4 .carte-id h3 { letter-spacing: .06em; text-transform: uppercase; font-size: 1.3rem; }
+.ere-saison4 .carte-id h3 { letter-spacing: .06em; text-transform: uppercase; font-size: var(--t-4); }
 
 /* 2017-2022, le client hextech : noir bleuté, or et cyan, losanges. */
 .ere-hextech {
@@ -109,68 +322,73 @@ img.absente { display: none; }
 }
 .ere-hextech .carte-id h3 { background: linear-gradient(#f0e6d2, #c8aa6e); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .04em; text-transform: uppercase; }
 .ere-hextech h4::before, .ere-hextech h4::after { content: " ◆ "; color: #0ac8b9; }
-.ere-hextech .signer-carte { background: #1e2328; color: #cdbe91; border: 2px solid #c8aa6e; }
+.ere-hextech .signer-carte:not(:disabled) { background: #1e2328; color: #cdbe91; border: 2px solid #c8aa6e; box-shadow: none; }
 
 /* 2023 →, les sites de l'esport : noir, blanc, gros caractères. */
 .ere-esport { --c-fond: #000; --c-bord: #2b2b2b; --c-tete: #000; --c-texte: #fff; --c-pale: #8a8a8a; --c-accent: #fff; --c-rayon: 4px; }
-.ere-esport .carte-id h3 { font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
+.ere-esport .carte-id h3 { font-size: var(--t-6); font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
 .ere-esport .carte-tete::before { opacity: .55; }
-.ere-esport .carte-stats dd { font-size: 1.15rem; }
-.ere-esport .signer-carte { text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
+.ere-esport .carte-stats dd { font-size: var(--t-4); }
 
-/* Le split : la journée, les séries, le classement. Ta ligne en or. */
-#split h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--pale); margin: 16px 0 6px; }
-#split > button:not(.principal) { width: 100%; margin-top: 8px; }
-.series, .classement { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.serie { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 8px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; }
+/* =====================================================================
+   6. LE SPLIT — des bandes : une série par rangée, le classement en tableau, ta rangée en bleu-vert
+   ===================================================================== */
+.series, .classement { list-style: none; margin: 0; padding: 0; }
+.serie { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--esp-2); min-height: 52px; padding: var(--esp-2) var(--esp-3); border-bottom: 1px solid var(--filet); }
 .serie[data-serie] { cursor: pointer; }
+.serie[data-serie]:hover { background: var(--fond-2); }
 .serie .equipe:last-child { text-align: right; }
-.equipe { min-width: 0; overflow-wrap: anywhere; }
-.equipe small { display: block; color: var(--pale); font-size: .7rem; }
-.equipe.gagne b { color: var(--accent); }
-.pointage { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--pale); }
-.toi { border-color: var(--accent); }
-.classement li { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; }
-.classement .coupe { margin-bottom: 8px; }
-.rang, .fiche { color: var(--pale); font-variant-numeric: tabular-nums; }
+.equipe { min-width: 0; overflow-wrap: anywhere; line-height: 1.15; }
+.equipe b { font: 800 var(--t-3)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.equipe small { display: block; color: var(--encre-3); font-size: var(--t-1); }
+.equipe.gagne b { color: var(--or); }
+.pointage { font: 800 var(--t-5)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.toi { background: var(--club-sourd); box-shadow: inset 3px 0 0 var(--club-vif); }
+.classement li { display: grid; grid-template-columns: 28px 1fr auto; gap: var(--esp-2); align-items: center; min-height: 44px; padding: var(--esp-1) var(--esp-3); border-bottom: 1px solid var(--filet); }
+.classement .coupe { border-bottom: 2px solid var(--or); }
+.rang { font: 800 var(--t-3)/1 var(--display); color: var(--encre-3); font-variant-numeric: tabular-nums; }
+.fiche { font: 800 var(--t-4)/1 var(--display); font-variant-numeric: tabular-nums; }
 
-/* La feuille d'une série. */
-.partie { margin-bottom: 20px; }
-.partie h3 { margin: 8px 0; }
-.feuille-equipe { background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
-.feuille-equipe.gagne { border-color: var(--accent); }
-.feuille-equipe h4 { margin: 0; font-size: .9rem; }
-.feuille-equipe .sous { margin: 2px 0 6px; font-size: .8rem; }
-.feuille-equipe table { width: 100%; border-collapse: collapse; font-size: .85rem; table-layout: fixed; }
-.feuille-equipe td { padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feuille-equipe td:first-child { width: 64px; color: var(--pale); }
+/* ---- La feuille d'une série ---- */
+.partie { margin-bottom: var(--esp-5); }
+.feuille-equipe { background: var(--panneau); border: 1px solid var(--filet); border-radius: var(--r-2); padding: var(--esp-2) var(--esp-3); margin-bottom: var(--esp-2); box-shadow: var(--relief); }
+.feuille-equipe.gagne { border-color: var(--or); }
+.feuille-equipe h4 { font-size: var(--t-3); letter-spacing: 0.06em; text-transform: uppercase; }
+.feuille-equipe .sous { margin: 2px 0 6px; }
+.feuille-equipe table { width: 100%; border-collapse: collapse; font-size: var(--t-2); table-layout: fixed; }
+.feuille-equipe td { padding: 3px 0; border-top: 1px solid var(--filet); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feuille-equipe td:first-child { width: 64px; color: var(--encre-3); font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; }
 .feuille-equipe td:nth-child(3), .feuille-equipe td:nth-child(4) { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
-.moments { list-style: none; margin: 8px 0 0; padding: 0; font-size: .85rem; color: var(--pale); }
-.temps { display: inline-block; width: 44px; font-variant-numeric: tabular-nums; color: var(--texte); }
+.moments { list-style: none; margin: var(--esp-2) 0 0; padding: 0; font-size: var(--t-2); color: var(--encre-2); }
+.temps { display: inline-block; width: 44px; font: 800 var(--t-2)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre); }
 
-/* La boutique et le repêchage : des listes de boutons pleine largeur. */
-.cartes-jeu, .repe-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.carte-jeu, .coach, .pack { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; }
-.carte-jeu.active, .coach.active { border-color: var(--accent); background: #221d12; }
-.jeu-ico { font-size: 1.5rem; flex: none; width: 32px; text-align: center; }
+/* =====================================================================
+   7. LA BOUTIQUE ET LE REPÊCHAGE — des rangées à toucher, la rareté en filet à gauche
+   ===================================================================== */
+.cartes-jeu, .repe-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-2); }
+.carte-jeu, .coach, .pack {
+  width: 100%; display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-2) var(--esp-3); text-align: left;
+  background: var(--panneau); border-radius: var(--r-2); box-shadow: var(--relief);
+  font: 400 var(--t-3)/1.35 var(--corps); letter-spacing: 0; text-transform: none;
+}
+.carte-jeu.active, .coach.active { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--fond-1)); }
+.jeu-ico { font-size: var(--t-5); flex: none; width: 32px; text-align: center; }
 .jeu-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.jeu-id small { color: var(--pale); font-size: .75rem; }
-.prix { flex: none; font-weight: 700; color: var(--accent); }
-.rarete-peu { box-shadow: inset 3px 0 0 #5fb760; }
-.rarete-rare { box-shadow: inset 3px 0 0 #4f8fe0; }
-.rarete-legendaire { box-shadow: inset 3px 0 0 #e5a52a; }
-#boutique h3, #repechage h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--pale); margin: 16px 0 6px; }
-#repechage > button:not(.principal):not(.retour) { width: 100%; margin-top: 8px; }
-.repe-joueur { background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 6px 8px; display: grid; gap: 6px; }
-.repe-qui { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
-.repe-qui small { color: var(--pale); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.repe-puces { display: flex; flex-wrap: wrap; gap: 4px; }
-.champ { display: grid; justify-items: center; gap: 2px; width: 64px; padding: 4px 2px; font-size: .65rem; }
-.champ img, .champ .ico-vide { width: 36px; height: 36px; border-radius: 4px; }
+.jeu-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.jeu-id small { color: var(--encre-2); font-size: var(--t-1); }
+.prix { flex: none; font: 800 var(--t-4)/1 var(--display); color: var(--or); }
+.rarete-peu { box-shadow: inset 3px 0 0 var(--peu-commune), var(--relief); }
+.rarete-rare { box-shadow: inset 3px 0 0 var(--rare), var(--relief); }
+.rarete-legendaire { box-shadow: inset 3px 0 0 var(--legendaire), var(--relief); }
+.repe-joueur { padding: var(--esp-2) 0; border-bottom: 1px solid var(--filet); display: grid; gap: var(--esp-2); }
+.repe-qui { display: flex; gap: var(--esp-2); align-items: baseline; min-width: 0; }
+.repe-qui b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.repe-qui small { color: var(--encre-2); font-size: var(--t-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repe-puces { display: flex; flex-wrap: wrap; gap: var(--esp-1); }
+.champ { display: grid; justify-items: center; gap: 2px; width: 64px; min-height: 0; padding: var(--esp-1) 2px; font: 400 var(--t-1)/1.2 var(--corps); letter-spacing: 0; text-transform: none; }
+.champ img, .champ .ico-vide { width: 36px; height: 36px; border-radius: var(--r-1); }
 .champ small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.champ.choisi { border-color: var(--accent); background: #221d12; }
-.champ.prevu { border-color: #4f8fe0; }
+.champ.choisi { border-color: var(--bon); background: color-mix(in srgb, var(--bon) 14%, var(--fond-1)); }
+.champ.prevu { border-color: var(--bleu); }
 .champ.banni { opacity: .35; text-decoration: line-through; }
 .champ.ailleurs { opacity: .6; }
-
-footer { max-width: 960px; margin: 0 auto; padding: 16px; color: var(--pale); font-size: .75rem; }

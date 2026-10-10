@@ -111,7 +111,8 @@ const BADGES = {
 const BASSIN_PROFOND = ['🎭', 'Bassin profond', { bassin: 1 }];
 const PALIERS = [[2, 'Platine'], [1.5, 'Or'], [1, 'Argent'], [0.5, 'Bronze']];
 
-const NIVEAUX = [[0.97, '★ Phénomène'], [0.9, '★ Étoile'], [0.7, 'Pilier'], [0.4, 'Régulier'], [0, 'Remplaçant']];
+/* Le niveau, et son coût sous le plafond : le coût suit le niveau et rien d'autre, il n'en dit pas plus que lui. */
+const NIVEAUX = [[0.97, '★ Phénomène', 7], [0.9, '★ Étoile', 5], [0.7, 'Pilier', 3], [0.4, 'Régulier', 2], [0, 'Remplaçant', 1]];
 const RETENUE = 3;           // un joueur de peu de parties tire vers la moyenne : z × pj / (pj + RETENUE)
 const Z_MAX = 3;             // une partie hors norme ne compte pas pour plus de trois écarts types
 const PJ_ETOILE = 3;          // moins de trois parties : pas assez pour être une Étoile, Pilier au plus
@@ -125,7 +126,7 @@ const moyEt = xs => {
 /**
  * Les profils de tout un split. Rend { formules, joueurs } : `formules` dit,
  * axe par axe, quelle formule le split emploie (null : non mesuré) ;
- * `joueurs` est une Map (joueur du shard → { sous, valeur, niveau, badges }).
+ * `joueurs` est une Map (joueur du shard → { sous, valeur, niveau, cout, badges }).
  */
 export function profilsDuSplit(split) {
   const tous = split.equipes.flatMap(e => e.joueurs.map(j => ({ j, e })));
@@ -179,8 +180,23 @@ export function profilsDuSplit(split) {
     du.forEach((p, i) => {
       const rang = du.length > 1 ? i / (du.length - 1) : 0.5;
       const n = NIVEAUX.findIndex(([seuil]) => rang >= seuil);
-      p.niveau = NIVEAUX[p.pj >= PJ_ETOILE ? n : Math.max(n, 2)][1];
+      [, p.niveau, p.cout] = NIVEAUX[p.pj >= PJ_ETOILE ? n : Math.max(n, 2)];
     });
   }
   return { formules, joueurs };
 }
+
+/*
+ * LE PLAFOND. Ton cinq tient sous PLAFOND : chaque joueur coûte selon son
+ * niveau (un Phénomène 7, un Remplaçant 1). Un joueur se signe si ce qui
+ * reste paie encore le moins cher pour chaque case vide après lui ; ainsi le
+ * cinq se complète toujours — check_plafond.
+ */
+export const PLAFOND = 15;
+const COUT_MIN = Math.min(...NIVEAUX.map(([, , c]) => c));
+
+/** Les niveaux et leurs coûts, du plus cher au moins cher (ce que l'écran annonce). */
+export const TARIFS = NIVEAUX.map(([, n, c]) => [n, c]);
+
+/** Un joueur de ce coût se signe-t-il, avec `reste` sous le plafond et `libres` cases vides (la sienne comprise) ? */
+export const signable = (cout, reste, libres) => cout <= reste - COUT_MIN * (libres - 1);

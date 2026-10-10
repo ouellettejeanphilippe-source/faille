@@ -16,6 +16,10 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 
 `node scripts/build_splits.mjs` interroge Leaguepedia et écrit `data/splits/` et `data/index.json`. L'API limite le débit : c'est lent. Sinon, l'Action « Bâtir les splits » le fait et commite. Voir `docs/donnees.md`.
 
+## Le plafond
+
+Ton cinq tient sous 15 points ; un joueur coûte selon son niveau (Remplaçant 1, Régulier 2, Pilier 3, ★ Étoile 5, ★ Phénomène 7). `node scripts/check_plafond.mjs` vérifie que le coût ne dit rien de plus que le niveau et que le cinq se complète toujours.
+
 ## Le moteur
 
 `js/sim.js` joue chaque partie par événements, un tour de 30 secondes à la fois, de 15 à 80 minutes, calibré sur les vraies parties des shards. `MOTEUR.md` en est la spécification ; `node scripts/check_feuilles.mjs` vérifie la feuille de match et rejoue chaque vraie partie contre ce qui s'est passé.
@@ -23,6 +27,10 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 ## Le rogue
 
 Avant chacune de tes séries, le repêchage des champions : trois bannissements de chaque côté, un champion par joueur dans son vrai bassin. Entre deux journées, la boutique : des packs de cartes de plan de jeu et un coach, payés en jetons gagnés par les résultats. Tout passe par les canaux du moteur et se mesure en paires : `node scripts/check_rogue.mjs` (MOTEUR.md §6 à §8).
+
+## L'interface
+
+La peau de Cap 82-0 : ses jetons de style, son tableau indicateur, une action principale par écran. La police d'affichage, Barlow Condensed, est sous licence SIL Open Font License 1.1 (`fonts/OFL.txt`).
 
 ## Mention légale
 

@@ -2,7 +2,7 @@
 
 ## Où on en est
 
-Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Pas encore de plafond, ni de partie de rogue sur plusieurs splits.
+Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Ton cinq tient sous un plafond de 15 points (le coût suit le niveau). L'interface suit celle de Cap 82-0 : son tableau indicateur, sa condensée, une action principale par écran. Pas encore de partie de rogue sur plusieurs splits.
 
 ## Décisions prises
 
@@ -17,6 +17,9 @@ Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre l
 
 - **Tout effet passe par les canaux du moteur et se mesure en paires** (MOTEUR.md §6 à §8), comme dans Cap 82-0 : une carte change la forme de la partie plus que sa force, et une rare se voit sur la feuille.
 - **Le repêchage est le deck d'une série** : le bassin de chaque joueur est celui de son vrai split ; jouer loin de son plus joué coûte (le confort), et la composition se compte contre celle des vraies équipes, pour qu'un repêchage ordinaire ne change rien.
+
+- **Le coût suit le niveau, et rien d'autre** : il n'y a pas de salaires publics, et un coût tiré finement de la cote la laisserait lire à l'écran. Cinq paliers, le même qu'affiche le niveau.
+- **La peau de Cap 82-0** : mêmes jetons, même condensée (Barlow Condensed, OFL), même coquille ; la carte d'un joueur garde ses habillages d'époque.
 
 ## Dépendances
 

@@ -50,8 +50,7 @@ export function boutique(L, R, ouvertes) {
     return `<li><button class="pack" data-pack="${id}"${jetons < prix ? ' disabled' : ''}>
       <span class="jeu-id"><b>${esc(p.nom)} · ${p.n} cartes</b><small>${ch}</small></span><span class="prix">${prix} 🪙</span></button></li>`;
   }).join('');
-  return `<button class="retour" data-retour>‹ Retour</button>
-    <h2>La boutique</h2>
+  return `<h2>La boutique</h2>
     <p class="etat">🪙 ${jetons} jetons — ${GAINS}</p>
     ${ouvertes ? `<h3>Dans le pack</h3>${ouvertes.length ? `<ul class="cartes-jeu">${ouvertes.map(id => carteJeu(id, { bouton: false })).join('')}</ul>` : '<p class="sous">Tu as déjà toutes les cartes.</p>'}` : ''}
     <h3>Ton plan de jeu · ${R.plan.length}/${PLAN}</h3>

@@ -24,7 +24,7 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [ ] Calibrer `POIDS` ; lire les parties à élimination directe à part (Faker 2024 : Régulier sur les chiffres). Avant : Faker 2024 sortait Remplaçant (ses champions utilitaires rendent peu de dégâts). Une part de la corrélation est circulaire (l'or suit la victoire).
 - [ ] Oracle's Elixir (2014 →) : les écarts à 15 min prennent la tête de Ligne, les plaques celle de Pression, la jungle adverse un badge 🐺 Envahisseur.
 - [ ] Les objets (déjà dans les shards) : leurs étiquettes de Data Dragon pour lire un build (létalité, tank, enchanteur).
-- [ ] Le plafond : un coût tiré de la cote (pas de salaires publics), et le cinq doit tenir dessous.
+- [x] Le plafond : le coût suit le niveau (Remplaçant 1, Régulier 2, Pilier 3, ★ Étoile 5, ★ Phénomène 7), le cinq tient sous 15 ; un joueur ne se signe que si le reste paie les cases vides — `check_plafond` (2 000 repêchages au hasard, tous complets).
 - [ ] Le cache IndexedDB des shards, avec une version des cotes dans sa clé (`COTES_VERSION` à créer avec lui).
 
 ## Jalon 1 bis — les images et la carte
@@ -33,6 +33,14 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] Les icônes et illustrations des champions (Data Dragon) ; le bassin de champions sur la carte.
 - [x] `js/fiche.js` : la carte d'un joueur, quatre habillages d'époque.
 - [ ] lolesports : les visages récents des joueurs que Leaguepedia n'a pas, et la ligne du temps des parties (2023 →).
+
+## Jalon 1 ter — l'interface de Cap 82-0
+
+- [x] `style.css` réécrite sur le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons, Barlow Condensed (`fonts/`, OFL 1.1) pour les titres, les chiffres et les boutons ; la lumière de la Faille sur le noir.
+- [x] Le tableau indicateur : le retour (un seul, en haut), le plafond restant et sa jauge pendant qu'on bâtit ; la fiche, le rang et les jetons pendant le split.
+- [x] Une action principale par écran, collée en bas ; le vestiaire en bandeau d'équipe et en rangées, « Signer » sur chaque rangée ; le cinq en bandes.
+- [ ] Une vérification de la feuille de style à la `check_css` de Cap 82-0 (tailles, rayons, couleurs hors des jetons).
+- [ ] Les couleurs de chaque équipe (le bandeau du vestiaire, la teinte du décor), comme les vraies couleurs de club de Cap 82-0.
 
 ## Jalon 2 — le moteur
 
@@ -65,3 +73,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-10 — Les images : photos et logos de Leaguepedia copiés dans img/lp (leur serveur refuse les autres sites), champions de Data Dragon ; la carte d'un joueur et ses quatre époques ; la sous-cote Économie.
 - 2026-10-10 — Jalon 2 : les parties dans les shards (`matchs`), le moteur par événements (tours de 30 s, de 15 à 80 min) calibré sur les 1 355 parties des Mondiaux, le split au jour le jour et ses séries, `check_feuilles`. Les shards se rebâtissent par l'Action « Bâtir les splits ».
 - 2026-10-10 — Jalon 3 : les canaux du moteur, le repêchage des champions comme deck de série (bannissements, bassins, confort, composition), les jetons, la boutique, les packs, le plan de jeu et les coachs ; `check_rogue` les mesure en paires.
+- 2026-10-10 — Le plafond (le coût suit le niveau, `check_plafond`) et l'interface rapprochée de Cap 82-0 : ses jetons, sa condensée, son tableau indicateur, sa barre d'action.

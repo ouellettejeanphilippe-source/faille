@@ -5,6 +5,11 @@
  * contre neuf vrais vestiaires tirés par la même roulette, joué une journée à
  * la fois (js/sim.js), puis les séries.
  *
+ * Le plafond : chaque joueur coûte selon son niveau, et le cinq tient
+ * dessous (js/cotes.js). L'interface suit Cap 82-0 : le tableau indicateur
+ * en haut (le retour, le plafond, puis la fiche, le rang et les jetons), une
+ * action principale par écran, collée en bas.
+ *
  * Le rogue (jalon 3) : avant chacune de tes séries, le repêchage des
  * champions (js/repechage.js) ; entre deux journées, la boutique — les
  * packs, le plan de jeu, le coach (js/rogue.js). Tout passe par les canaux
@@ -13,46 +18,94 @@
  */
 import { chargerIndex, chargerSplit, chargerChampions } from './data.js';
 import { hasard, piger } from './hasard.js';
-import { esc } from './util.js';
+import { esc, pts } from './util.js';
+import { imageLP } from './images.js';
 import { brancherRetour } from './pile.js';
-import { profilsDuSplit } from './cotes.js';
-import { ROLES, badge, vignette, icones, carte } from './fiche.js';
-import { tempoDuSplit, joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde } from './sim.js';
+import { profilsDuSplit, PLAFOND, TARIFS, signable } from './cotes.js';
+import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
+import { tempoDuSplit, joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { titreSplit, tableauJour, tableauClassement, serieDe, feuilleSerie } from './split.js';
 import { repecher } from './repechage.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, noterJoue } from './rogue.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, noterJoue, jetonsDe } from './rogue.js';
 import { boutique, resumeRogue } from './boutique.js';
 
 const $ = s => document.querySelector(s);
 
 const G = { index: null, champions: null, de: null, tirage: null, alignement: {}, ligue: null, rogue: null, repechage: null, apres: null, ouvertes: null, splits: new Map() };
 const ADVERSAIRES = 9;
+const COUCHES = ['#feuille', '#repechage', '#boutique', '#carte', '#vestiaire'];
+
+/* Le plafond qui reste, et les rôles encore vides. */
+const reste = () => PLAFOND - Object.values(G.alignement).reduce((s, j) => s + j.cout, 0);
+const libres = () => Object.keys(ROLES).filter(r => !G.alignement[r]);
+const rang = k => (k === 1 ? '1er' : `${k}e`);
+
+/* LE TABLEAU INDICATEUR : le retour quand une couche est ouverte ; le plafond pendant qu'on bâtit ; la fiche, le rang et les jetons pendant le split. */
+function majTete() {
+  const L = G.ligue;
+  $('#retourBtn').hidden = !COUCHES.some(id => !$(id).hidden);
+  $('#jauge').hidden = !!L;
+  const r = reste();
+  $('#jaugeReste').textContent = `${r} / ${PLAFOND}`;
+  $('#jaugeReste').className = `tete-ch-v${r <= 3 ? ' serre' : ''}`;
+  $('#jaugeRempli').style.width = `${(100 * r) / PLAFOND}%`;
+  for (const id of ['#teteFiche', '#teteRang', '#teteJetons']) $(id).hidden = !L;
+  if (!L) {
+    $('#teteEtat').textContent = `${Object.keys(G.alignement).length} / 5 signés`;
+    return;
+  }
+  const c = classement(L);
+  const k = c.findIndex(l => l.i === 0);
+  $('#teteFiche .tete-ch-v').textContent = `${c[k].v}-${c[k].d}`;
+  $('#teteRang .tete-ch-v').textContent = rang(k + 1);
+  $('#teteJetons .tete-ch-v').textContent = jetonsDe(L, G.rogue);
+  $('#teteEtat').textContent = titreSplit(L);
+}
+
+function montrer(id) {
+  $(id).hidden = false;
+  $(id).scrollTop = 0;
+  majTete();
+}
 
 function rendreAlignement() {
   $('#alignement').innerHTML = Object.entries(ROLES).map(([r, mot]) => {
     const j = G.alignement[r];
-    return `<li class="case${j ? ' pleine' : ''}">${j ? vignette(j) : ''}<span class="role">${mot}</span><span class="qui">${j ? `${esc(j.n)} <small>${esc(j.equipe)} · ${esc(j.split)}</small>` : '—'}</span></li>`;
+    return `<li class="case${j ? ' pleine' : ''}"><span class="case-role">${mot}</span>${j ? vignette(j) : ''}<span class="qui">${j
+      ? `<b>${esc(j.n)}</b><small>${esc(j.niveau)} · ${esc(j.equipe)} · ${esc(j.split)}</small>` : '<small>À combler</small>'}</span>${j ? coutHtml(j.cout) : ''}</li>`;
   }).join('');
-  const complet = Object.keys(ROLES).every(r => G.alignement[r]);
+  const complet = !libres().length;
   $('#roulette').hidden = complet;
   $('#jouer').hidden = !complet;
   $('#recommencer').hidden = !Object.keys(G.alignement).length;
-  $('#etat').textContent = complet ? 'Alignement complet.' : '';
+  $('#etat').textContent = complet ? `Alignement complet, ${pts(PLAFOND - reste())} sur ${PLAFOND}.` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
+  majTete();
+}
+
+/* Pourquoi un joueur ne se signe pas (null : il se signe). */
+function refus(j, p) {
+  if (G.alignement[j.r]) return `${ROLES[j.r]} comblé`;
+  return signable(p.cout, reste(), libres().length) ? null : 'Trop cher';
 }
 
 function rendreVestiaire() {
   const { split, equipe, profils } = G.tirage;
-  $('#vestiaire-titre').textContent = `${equipe.nom} · ${split.nom}`;
-  $('#vestiaire-fiche').textContent = `${equipe.v}-${equipe.d} en parties · touche un joueur pour sa carte`;
+  const l = libres();
+  $('#vestiaire-bandeau').innerHTML = `${equipe.logo ? `<img src="${imageLP(equipe.logo)}" alt="">` : ''}
+    <span class="bandeau-id"><small>${esc(split.nom)} · ${equipe.v}-${equipe.d} en parties</small><h2>${esc(equipe.nom)}</h2></span>`;
+  $('#vestiaire-libres').textContent = l.map(r => ROLES[r]).join(', ');
+  $('#vestiaire-max').textContent = `jusqu'à ${pts(reste() - (l.length - 1))}`;
   $('#vestiaire-liste').innerHTML = equipe.joueurs.map((j, i) => {
     const p = profils.joueurs.get(j);
+    const non = refus(j, p);
     return `<li class="joueur${G.alignement[j.r] ? ' pris' : ''}" data-i="${i}" tabindex="0">
       ${vignette(j)}
-      <span class="joueur-id"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${p.niveau}</small><span>${p.badges.map(badge).join('')}</span></span>
-      <span class="joueur-champs">${icones(G.champions, j)}</span></li>`;
+      <span class="joueur-id"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${p.niveau}</small><span class="joueur-champs">${icones(G.champions, j)}</span>${p.badges.length ? `<span>${p.badges.map(badge).join('')}</span>` : ''}</span>
+      ${coutHtml(p.cout)}
+      <button class="signer" data-signer="${i}"${non ? ' disabled' : ''}>${non || 'Signer'}</button></li>`;
   }).join('');
-  $('#vestiaire').hidden = false;
+  montrer('#vestiaire');
 }
 
 function ouvrirCarte(i) {
@@ -60,13 +113,15 @@ function ouvrirCarte(i) {
   const j = equipe.joueurs[i];
   if (!j) return;
   G.carte = i;
-  $('#carte').innerHTML = `<button class="retour" data-retour>‹ Retour</button>${carte({ split, equipe, j, profil: profils.joueurs.get(j), champions: G.champions, pris: !!G.alignement[j.r] })}`;
-  $('#carte').hidden = false;
+  const p = profils.joueurs.get(j);
+  $('#carte').innerHTML = carte({ split, equipe, j, profil: p, champions: G.champions, refus: refus(j, p) });
+  montrer('#carte');
 }
 
 function fermer(id) {
   if ($(id).hidden) return false;
   $(id).hidden = true;
+  majTete();
   return true;
 }
 
@@ -80,14 +135,15 @@ async function lireSplit(id) {
 }
 
 async function tourner() {
-  const libres = Object.keys(ROLES).filter(r => !G.alignement[r]);
+  const l = libres();
   $('#roulette').disabled = true;
+  $('#relancer').disabled = true;
   try {
-    // On retire tant que le vestiaire n'a personne pour un rôle libre.
+    // On retire tant que le vestiaire n'a personne à signer : un rôle libre, sous le plafond.
     for (let essai = 0; essai < 20; essai++) {
       const { split, profils, tempo } = await lireSplit(piger(G.index.splits, G.de).id);
       const equipe = piger(split.equipes, G.de);
-      if (equipe.joueurs.some(j => libres.includes(j.r))) {
+      if (equipe.joueurs.some(j => l.includes(j.r) && signable(profils.joueurs.get(j).cout, reste(), l.length))) {
         G.tirage = { split, equipe, profils, tempo };
         rendreVestiaire();
         return;
@@ -95,14 +151,16 @@ async function tourner() {
     }
   } finally {
     $('#roulette').disabled = false;
+    $('#relancer').disabled = false;
   }
 }
 
-function signer() {
+function signer(i) {
   const { split, equipe, profils, tempo } = G.tirage;
-  const j = equipe.joueurs[G.carte];
-  if (!j || G.alignement[j.r]) return;
-  G.alignement[j.r] = { n: j.n, photo: j.photo, equipe: equipe.nom, split: split.nom, moteur: joueurDuMoteur(j, profils.joueurs.get(j)), tempo };
+  const j = equipe.joueurs[i];
+  const p = j && profils.joueurs.get(j);
+  if (!j || refus(j, p)) return;
+  G.alignement[j.r] = { n: j.n, photo: j.photo, equipe: equipe.nom, split: split.nom, niveau: p.niveau, cout: p.cout, moteur: joueurDuMoteur(j, p), tempo };
   fermer('#carte');
   fermer('#vestiaire');
   rendreAlignement();
@@ -147,6 +205,7 @@ function rendreSplit() {
   $('#ronde').hidden = saison || !!(S && S.champion !== null);
   $('#ronde').textContent = S ? 'Ronde suivante' : 'Lancer les séries';
   $('#nouveau').hidden = !(S && S.champion !== null);
+  majTete();
 }
 
 /* Ta série de la prochaine journée, ou de la ronde des séries en cours ; null si tu n'y joues pas. */
@@ -193,7 +252,7 @@ function ronde() {
 function ouvrirRepechage(s) {
   G.repechage = { s, d: nouveauRepechage(G.ligue, s) };
   rendreRepechage();
-  $('#repechage').hidden = false;
+  montrer('#repechage');
 }
 
 function rendreRepechage() {
@@ -219,12 +278,13 @@ function toucherRepechage(ev) {
 function ouvrirBoutique() {
   G.ouvertes = null;
   rendreBoutique();
-  $('#boutique').hidden = false;
+  montrer('#boutique');
 }
 
 function rendreBoutique() {
   $('#boutique').innerHTML = boutique(G.ligue, G.rogue, G.ouvertes);
   $('#jetons').textContent = resumeRogue(G.ligue, G.rogue);
+  majTete();
 }
 
 function toucherBoutique(ev) {
@@ -240,8 +300,8 @@ function toucherBoutique(ev) {
 function ouvrirFeuille(cle) {
   const s = serieDe(G.ligue, cle);
   if (!s || s.gagnant === null) return;
-  $('#feuille').innerHTML = `<button class="retour" data-retour>‹ Retour</button>${feuilleSerie(G.ligue, s)}`;
-  $('#feuille').hidden = false;
+  $('#feuille').innerHTML = feuilleSerie(G.ligue, s);
+  montrer('#feuille');
 }
 
 function recommencer() {
@@ -263,6 +323,7 @@ async function demarrer() {
     return;
   }
   $('#roulette').addEventListener('click', tourner);
+  $('#relancer').addEventListener('click', tourner);
   $('#recommencer').addEventListener('click', recommencer);
   $('#nouveau').addEventListener('click', recommencer);
   $('#jouer').addEventListener('click', jouerLeSplit);
@@ -279,12 +340,14 @@ async function demarrer() {
   $('#split-jour').addEventListener('click', voirSerie);
   $('#split-jour').addEventListener('keydown', voirSerie);
   const choisir = ev => {
+    const b = ev.target.closest('[data-signer]');
+    if (b) { if (ev.type === 'click') signer(Number(b.dataset.signer)); return; }
     const li = ev.target.closest('.joueur');
     if (li && (ev.type === 'click' || ev.key === 'Enter')) ouvrirCarte(Number(li.dataset.i));
   };
   $('#vestiaire-liste').addEventListener('click', choisir);
   $('#vestiaire-liste').addEventListener('keydown', choisir);
-  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte')) signer(); });
+  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte')) signer(G.carte); });
   brancherRetour([() => fermer('#feuille'), () => fermer('#repechage'), () => fermer('#boutique'), () => fermer('#carte'), () => fermer('#vestiaire')]);
   rendreAlignement();
 }

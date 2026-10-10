@@ -80,8 +80,7 @@ export function ecranRepechage(L, d, champions) {
     return `${esc(j.n)} sur ${esc(c)} : ${j.bassin.find(([x]) => x === c)[1]} parties, contre ${top[1]} sur ${esc(top[0])}`;
   }).filter(Boolean);
   const forme = dire(effetsDuRepechage(moi, d.choix, champions.classes));
-  return `<button class="retour" data-retour>‹ Retour</button>
-    <h2>Repêchage · contre ${esc(d.eux.nom)}</h2>
+  return `<h2>Repêchage · contre ${esc(d.eux.nom)}</h2>
     <p class="sous">Ils te bannissent : ${d.contreMoi.map(esc).join(', ') || 'rien'}.</p>
     <h3>Tes bannissements · ${d.bans.length}/${BANS}</h3>
     <ul class="repe-liste">${lignesEux}</ul>
@@ -89,6 +88,5 @@ export function ecranRepechage(L, d, champions) {
     <p class="sous">Tu choisis avant eux : prendre leur champion fétiche le leur enlève.</p>
     <ul class="repe-liste">${lignesMoi}</ul>
     <p class="etat">${forme.length ? `Ta composition : ${forme.map(esc).join(' · ')}.` : 'Une composition ordinaire.'}${malaises.length ? `<br>Moins à l'aise : ${malaises.join(' ; ')}.` : ''}</p>
-    <button id="repe-jouer" class="principal">Jouer la série</button>
-    <button id="repe-auto">Repêchage automatique</button>`;
+    <div class="actionbar"><button id="repe-jouer" class="go">Jouer la série</button><button id="repe-auto">Automatique</button></div>`;
 }
