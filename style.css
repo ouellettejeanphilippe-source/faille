@@ -31,4 +31,9 @@ th { color: var(--pale); font-weight: 600; }
 .nom { font-weight: 700; }
 .champs { color: var(--pale); }
 tr.pris { opacity: .4; }
+.badge { display: inline-block; margin-right: 4px; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; font-size: .8rem; }
+.pal-bronze { color: #c98a55; }
+.pal-argent { color: #c9ced6; }
+.pal-or { color: #e5c25a; }
+.pal-platine { color: #8fe0e6; }
 footer { max-width: 960px; margin: 0 auto; padding: 16px; color: var(--pale); font-size: .75rem; }

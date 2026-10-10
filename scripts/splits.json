@@ -1,6 +1,17 @@
 [
-  { "id": "lck-2019-printemps", "nom": "LCK 2019 · Printemps", "ligue": "LCK", "annee": 2019, "page": "LCK/2019 Season/Spring Season" },
-  { "id": "lck-2019-ete", "nom": "LCK 2019 · Été", "ligue": "LCK", "annee": 2019, "page": "LCK/2019 Season/Summer Season" },
-  { "id": "lec-2019-printemps", "nom": "LEC 2019 · Printemps", "ligue": "LEC", "annee": 2019, "page": "LEC/2019 Season/Spring Season" },
-  { "id": "lec-2019-ete", "nom": "LEC 2019 · Été", "ligue": "LEC", "annee": 2019, "page": "LEC/2019 Season/Summer Season" }
+  {"id": "mondial-2011", "nom": "Mondial 2011", "ligue": "Mondial", "annee": 2011, "pages": ["Season 1 World Championship"]},
+  {"id": "mondial-2012", "nom": "Mondial 2012", "ligue": "Mondial", "annee": 2012, "pages": ["Season 2 World Championship"]},
+  {"id": "mondial-2013", "nom": "Mondial 2013", "ligue": "Mondial", "annee": 2013, "pages": ["Season 3 World Championship"]},
+  {"id": "mondial-2014", "nom": "Mondial 2014", "ligue": "Mondial", "annee": 2014, "pages": ["2014 Season World Championship"]},
+  {"id": "mondial-2015", "nom": "Mondial 2015", "ligue": "Mondial", "annee": 2015, "pages": ["2015 Season World Championship"]},
+  {"id": "mondial-2016", "nom": "Mondial 2016", "ligue": "Mondial", "annee": 2016, "pages": ["2016 Season World Championship"]},
+  {"id": "mondial-2017", "nom": "Mondial 2017", "ligue": "Mondial", "annee": 2017, "pages": ["2017 Season World Championship"]},
+  {"id": "mondial-2018", "nom": "Mondial 2018", "ligue": "Mondial", "annee": 2018, "pages": ["2018 Season World Championship"]},
+  {"id": "mondial-2019", "nom": "Mondial 2019", "ligue": "Mondial", "annee": 2019, "pages": ["2019 Season World Championship"]},
+  {"id": "mondial-2020", "nom": "Mondial 2020", "ligue": "Mondial", "annee": 2020, "pages": ["2020 Season World Championship"]},
+  {"id": "mondial-2021", "nom": "Mondial 2021", "ligue": "Mondial", "annee": 2021, "pages": ["2021 Season World Championship"]},
+  {"id": "mondial-2022", "nom": "Mondial 2022", "ligue": "Mondial", "annee": 2022, "pages": ["2022 Season World Championship"]},
+  {"id": "mondial-2023", "nom": "Mondial 2023", "ligue": "Mondial", "annee": 2023, "pages": ["2023 Season World Championship"]},
+  {"id": "mondial-2024", "nom": "Mondial 2024", "ligue": "Mondial", "annee": 2024, "pages": ["2024 Season World Championship"]},
+  {"id": "mondial-2025", "nom": "Mondial 2025", "ligue": "Mondial", "annee": 2025, "pages": ["2025 Season World Championship"]}
 ]

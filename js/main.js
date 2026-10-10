@@ -8,6 +8,7 @@ import { chargerIndex, chargerSplit } from './data.js';
 import { hasard, piger } from './hasard.js';
 import { esc, virgule } from './util.js';
 import { brancherRetour } from './pile.js';
+import { profilsDuSplit } from './cotes.js';
 
 const ROLES = [['haut', 'Haut'], ['jungle', 'Jungle'], ['milieu', 'Milieu'], ['bas', 'Bas'], ['soutien', 'Soutien']];
 const $ = s => document.querySelector(s);
@@ -15,6 +16,9 @@ const $ = s => document.querySelector(s);
 const G = { index: null, de: null, tirage: null, alignement: {} };
 
 const kda = j => virgule((j.k + j.a) / Math.max(1, j.m));
+/* Une stat par minute, ou un tiret quand l'époque ne la mesurait pas. */
+const parMin = (t, dec) => (t && t[1] ? virgule(t[0] / t[2], dec) : '—');
+const badge = b => `<span class="badge pal-${b.palier.toLowerCase()}">${b.ico} ${esc(b.nom)} ${b.palier}</span>`;
 const fiche = (v, d) => `${v}-${d}`;
 
 function rendreAlignement() {
@@ -29,15 +33,17 @@ function rendreAlignement() {
 }
 
 function rendreVestiaire() {
-  const { split, equipe } = G.tirage;
+  const { split, equipe, profils } = G.tirage;
   $('#vestiaire-titre').textContent = `${equipe.nom} · ${split.nom}`;
   $('#vestiaire-fiche').textContent = `${fiche(equipe.v, equipe.d)} en parties`;
   $('#vestiaire-liste').innerHTML = equipe.joueurs.map((j, i) => {
     const pris = !!G.alignement[j.r];
+    const p = profils.joueurs.get(j);
     return `<tr class="${pris ? 'pris' : ''}" data-i="${i}">
-      <td>${ROLES.find(([r]) => r === j.r)[1]}</td><td class="nom">${esc(j.n)}</td>
-      <td>${j.pj}</td><td>${kda(j)}</td><td>${virgule(j.cs_min)}</td><td>${j.deg_min}</td>
-      <td class="champs">${j.champs.map(esc).join(', ')}</td>
+      <td>${ROLES.find(([r]) => r === j.r)[1]}</td><td class="nom">${esc(j.n)}</td><td>${p.niveau}</td>
+      <td>${p.badges.map(badge).join('')}</td>
+      <td>${j.pj}</td><td>${kda(j)}</td><td>${parMin(j.cs, 1)}</td><td>${parMin(j.deg, 0)}</td>
+      <td class="champs">${j.champs.slice(0, 3).map(c => esc(c[0])).join(', ')}</td>
       <td><button class="signer" data-i="${i}"${pris ? ' disabled' : ''}>Signer</button></td></tr>`;
   }).join('');
   $('#vestiaire').hidden = false;
@@ -58,7 +64,7 @@ async function tourner() {
       const split = await chargerSplit(piger(G.index.splits, G.de).id);
       const equipe = piger(split.equipes, G.de);
       if (equipe.joueurs.some(j => libres.includes(j.r))) {
-        G.tirage = { split, equipe };
+        G.tirage = { split, equipe, profils: profilsDuSplit(split) };
         rendreVestiaire();
         return;
       }

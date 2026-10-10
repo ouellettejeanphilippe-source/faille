@@ -8,7 +8,7 @@ const VERSION = 'faille-0.1.0';
 const FICHIERS = [
   './', 'index.html', 'style.css',
   // Le graphe de modules au complet — scripts/check_coquille.mjs le vérifie.
-  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js',
+  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js',
   'data/index.json',
 ];
 

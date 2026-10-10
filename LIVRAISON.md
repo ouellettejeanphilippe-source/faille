@@ -9,16 +9,20 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] `js/hasard.js` : le hasard à graine — `check_graine`.
 - [x] `sw.js` : la coquille hors ligne — `check_coquille`.
 - [x] Zéro code mort — `check_mort`.
-- [ ] Bâtir les quatre premiers splits (LCK et LEC 2019) et les commiter par l'Action.
-- [ ] Élargir `scripts/splits.json` : LCK, LPL, LEC, LCS, de 2015 à aujourd'hui, et les Mondiaux.
+- [x] `scripts/splits.json` : les Mondiaux de 2011 à 2025 ; `scripts/catalogue.mjs` pour les splits de LCS, LEC, LCK et LPL.
+- [ ] Bâtir les Mondiaux par l'Action et confirmer, époque par époque, ce qui est mesuré (docs/donnees.md).
+- [ ] Le catalogue des quatre ligues, relu, puis leurs splits par tranches d'années.
 
 ## Jalon 1 — les cotes
 
-- [ ] `js/cotes.js` : une cote par rôle, relative au split (or/min, CS/min, dégâts/min, KDA, participation aux éliminations), partagée par le build et le navigateur.
-- [ ] `check_cotes` : la force d'équipe tirée des cotes suit le vrai classement (corrélation autour de 0,8).
-- [ ] Le niveau à l'écran (Soutien → Phénomène), jamais la cote.
+- [x] `js/cotes.js` : huit sous-cotes, chacune avec ses formules de remplacement par époque ; valeur par rôle ; niveau ; badges lus sur les sous-cotes et les classes des champions.
+- [x] Le niveau et les badges dans le vestiaire, jamais la cote.
+- [x] `check_cotes` : les remplacements sur des splits d'essai de deux époques.
+- [ ] `check_cotes` : poser la borne de la corrélation force / fiche sur la première mesure des Mondiaux, puis calibrer `POIDS`.
+- [ ] Oracle's Elixir (2014 →) : les écarts à 15 min prennent la tête de Ligne, les plaques celle de Pression, la jungle adverse un badge 🐺 Envahisseur.
+- [ ] Les objets (déjà dans les shards) : leurs étiquettes de Data Dragon pour lire un build (létalité, tank, enchanteur).
 - [ ] Le plafond : un coût tiré de la cote (pas de salaires publics), et le cinq doit tenir dessous.
-- [ ] Le cache IndexedDB des shards, la version des cotes dans sa clé.
+- [ ] Le cache IndexedDB des shards, avec une version des cotes dans sa clé (`COTES_VERSION` à créer avec lui).
 
 ## Jalon 2 — le moteur
 
@@ -35,3 +39,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 ## Journal
 
 - 2026-10-10 — Jalon 0 : le dépôt, la coquille, le script Leaguepedia, les vérifications rapides et la CI.
+- 2026-10-10 — Jalon 1 commencé : les Mondiaux de 2011 à 2025, le catalogue des quatre ligues, la récolte élargie (objectifs, vision, objets, classes), `js/cotes.js` et ses remplacements par époque, `check_cotes`.
