@@ -23,7 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { champsDe, cargo } from './lib/leaguepedia.mjs';
+import { cargo } from './lib/leaguepedia.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DDRAGON = 'https://ddragon.leagueoflegends.com';
@@ -56,13 +56,13 @@ const OBJECTIFS = ['tours', 'dragons', 'barons', 'herauts', 'larves', 'inhib'];
 async function construire(split, ctx) {
   // Un split peut couvrir plusieurs pages (la saison et ses séries) : chacune est un préfixe.
   const ou = split.pages.map(p => `OverviewPage LIKE '${p.replace(/'/g, "\\'")}%'`).join(' OR ');
-  const parties = await cargo('ScoreboardGames', ctx.champsParties, {
+  const parties = await cargo('ScoreboardGames', {
     id: 'GameId', eq1: 'Team1', eq2: 'Team2', gagnant: 'WinTeam', duree: 'Gamelength_Number',
     tours1: 'Team1Towers', tours2: 'Team2Towers', dragons1: 'Team1Dragons', dragons2: 'Team2Dragons',
     barons1: 'Team1Barons', barons2: 'Team2Barons', herauts1: 'Team1RiftHeralds', herauts2: 'Team2RiftHeralds',
     larves1: 'Team1VoidGrubs', larves2: 'Team2VoidGrubs', inhib1: 'Team1Inhibitors', inhib2: 'Team2Inhibitors',
   }, ou);
-  const lignes = await cargo('ScoreboardPlayers', ctx.champsJoueurs, {
+  const lignes = await cargo('ScoreboardPlayers', {
     n: 'Link', eq: 'Team', role: 'Role', roleJeu: 'IngameRole', champion: 'Champion', k: 'Kills', m: 'Deaths', a: 'Assists',
     or: 'Gold', cs: 'CS', deg: 'DamageToChampions', vision: 'VisionScore', objets: 'Items', gagne: 'PlayerWin', id: 'GameId',
   }, ou);
@@ -107,7 +107,8 @@ async function construire(split, ctx) {
     const j = eq.joueurs.get(cle);
     const duree = nb(p.duree) || 0;
     const tot = totauxEq.get(`${l.id}|${l.eq}`);
-    j.pj++; j.v += l.gagne === 'Yes' ? 1 : 0; j.min += duree;
+    const gagne = [true, 1, '1', 'Yes'].includes(l.gagne);
+    j.pj++; j.v += gagne ? 1 : 0; j.min += duree;
     j.k += nb(l.k) || 0; j.m += nb(l.m) || 0; j.a += nb(l.a) || 0; j.eqK += tot.k;
     for (const s of MESURABLES) {
       const x = nb(l[s]);
@@ -117,12 +118,14 @@ async function construire(split, ctx) {
       if (s === 'deg') j.eqDeg += tot.deg;
     }
     const c = j.champs.get(l.champion) || [0, 0];
-    c[0]++; c[1] += l.gagne === 'Yes' ? 1 : 0;
+    c[0]++; c[1] += gagne ? 1 : 0;
     j.champs.set(l.champion, c);
     const tags = ctx.classes.de(l.champion);
     if (tags) for (const t of tags) j.classes[t] = (j.classes[t] || 0) + 1 / tags.length;
     else ctx.inconnus.add(l.champion);
-    for (const o of String(l.objets || '').split(';;').map(s => s.trim()).filter(Boolean)) j.objets.set(o, (j.objets.get(o) || 0) + 1);
+    // Un objet porte parfois sa fenêtre de temps (« Liandry's Torment (0.0 - 10.23) ») : on garde le nom.
+    const objets = Array.isArray(l.objets) ? l.objets : String(l.objets || '').split(';;');
+    for (const o of objets.map(s => String(s).replace(/\s*\([\d.\s-]+\)$/, '').trim()).filter(Boolean)) j.objets.set(o, (j.objets.get(o) || 0) + 1);
   }
   if (sansRole) console.log(`  ${sansRole} ligne(s) sans rôle reconnu ou sans partie, écartées`);
 
@@ -146,7 +149,7 @@ const tous = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/splits.json'), 
 const voulus = process.argv.slice(2);
 const dossier = path.join(ROOT, 'data/splits');
 fs.mkdirSync(dossier, { recursive: true });
-const ctx = { classes: await classesDesChampions(), champsParties: await champsDe('ScoreboardGames'), champsJoueurs: await champsDe('ScoreboardPlayers'), inconnus: new Set() };
+const ctx = { classes: await classesDesChampions(), inconnus: new Set() };
 let echecs = 0;
 for (const s of tous.filter(s => !voulus.length || voulus.some(v => s.id.startsWith(v)))) {
   console.log(`${s.nom}…`);

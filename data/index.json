@@ -1,4 +1,95 @@
 {
- "source": "Leaguepedia (lol.fandom.com), CC BY-SA 3.0",
- "splits": []
+ "source": "Leaguepedia (lol.fandom.com), CC BY-SA 3.0 ; classes des champions : Data Dragon (Riot Games)",
+ "splits": [
+  {
+   "id": "mondial-2011",
+   "nom": "Mondial 2011",
+   "ligue": "Mondial",
+   "annee": 2011
+  },
+  {
+   "id": "mondial-2012",
+   "nom": "Mondial 2012",
+   "ligue": "Mondial",
+   "annee": 2012
+  },
+  {
+   "id": "mondial-2013",
+   "nom": "Mondial 2013",
+   "ligue": "Mondial",
+   "annee": 2013
+  },
+  {
+   "id": "mondial-2014",
+   "nom": "Mondial 2014",
+   "ligue": "Mondial",
+   "annee": 2014
+  },
+  {
+   "id": "mondial-2015",
+   "nom": "Mondial 2015",
+   "ligue": "Mondial",
+   "annee": 2015
+  },
+  {
+   "id": "mondial-2016",
+   "nom": "Mondial 2016",
+   "ligue": "Mondial",
+   "annee": 2016
+  },
+  {
+   "id": "mondial-2017",
+   "nom": "Mondial 2017",
+   "ligue": "Mondial",
+   "annee": 2017
+  },
+  {
+   "id": "mondial-2018",
+   "nom": "Mondial 2018",
+   "ligue": "Mondial",
+   "annee": 2018
+  },
+  {
+   "id": "mondial-2019",
+   "nom": "Mondial 2019",
+   "ligue": "Mondial",
+   "annee": 2019
+  },
+  {
+   "id": "mondial-2020",
+   "nom": "Mondial 2020",
+   "ligue": "Mondial",
+   "annee": 2020
+  },
+  {
+   "id": "mondial-2021",
+   "nom": "Mondial 2021",
+   "ligue": "Mondial",
+   "annee": 2021
+  },
+  {
+   "id": "mondial-2022",
+   "nom": "Mondial 2022",
+   "ligue": "Mondial",
+   "annee": 2022
+  },
+  {
+   "id": "mondial-2023",
+   "nom": "Mondial 2023",
+   "ligue": "Mondial",
+   "annee": 2023
+  },
+  {
+   "id": "mondial-2024",
+   "nom": "Mondial 2024",
+   "ligue": "Mondial",
+   "annee": 2024
+  },
+  {
+   "id": "mondial-2025",
+   "nom": "Mondial 2025",
+   "ligue": "Mondial",
+   "annee": 2025
+  }
+ ]
 }

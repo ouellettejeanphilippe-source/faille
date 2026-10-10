@@ -14,7 +14,7 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 - L'API Cargo de lol.fandom.com. `ScoreboardGames` (une ligne par partie : vainqueur, durée, tours, dragons, Nashor, hérauts, larves, inhibiteurs) et `ScoreboardPlayers` (une ligne par joueur par partie : K/M/A, or, CS, dégâts, score de vision, objets).
 - Le script demande d'abord à l'API quels champs la table a (`cargofields`) et ne demande que ceux-là.
 - **Licence** : CC BY-SA 3.0, attribution dans chaque shard (`source`) et au pied de la page. Les shards dérivés sont sous la même licence.
-- **Débit** : l'API freine vite. Depuis un conteneur partagé, la limite peut durer des heures ; l'Action « Bâtir les splits » passe par les machines de GitHub.
+- **Par la page d'export, pas par l'API.** Mesuré le 10 octobre 2026 : l'API (`api.php?action=cargoquery`) refuse l'anonyme après la première requête, depuis un conteneur comme depuis GitHub. `Special:CargoExport` rend les mêmes tables sans compte et sans cette limite, en JSON typé (une valeur absente en `null`, les objets en tableau, le texte échappé pour le HTML, qu'on décode). Les quinze Mondiaux se bâtissent en quelques minutes.
 
 ### Data Dragon (Riot)
 
@@ -24,15 +24,16 @@ La **classe** de chaque champion (Tank, Combattant, Mage, Assassin, Tireur, Sout
 
 Les écarts d'or, d'XP et de CS à 10 et 15 min, les plaques, le premier sang, la première tour, les balises, les monstres de la jungle adverse. Le site répond 403 aux robots : il faudra déposer ses CSV dans `data/sources/` ou les télécharger par l'Action, et lire ses conditions avant d'en commiter quoi que ce soit.
 
-## Ce que chaque époque mesure (à confirmer au premier build)
+## Ce que chaque époque mesure (mesuré sur les Mondiaux, 10 octobre 2026)
 
-| Époque | Mesuré | Absent |
+| Mondiaux | Mesuré | Absent, donc remplacé ou neutre |
 |---|---|---|
-| 2011-2013 | K/M/A, champions, or et CS (souvent), tours, dragons, Nashor | Dégâts, vision, hérauts, plaques |
-| 2014-2015 | + dégâts (selon les parties) | Vision, hérauts, plaques |
-| 2016-2018 | + score de vision, hérauts, dragons par élément | Plaques |
-| 2019 → | + plaques (Oracle's Elixir seulement) | — |
-| 2024 → | + larves du néant | — |
+| 2011-2013 | K/M/A, or, CS, champions, objets | Tours et dragons de l'équipe (pression et objectifs neutres), dégâts, vision |
+| 2014-2017 | + tours, dragons, Nashor, hérauts | Dégâts, vision |
+| 2018-2019 | + score de vision | Dégâts |
+| 2020 → | Tout ce que Leaguepedia a : toutes les formules de tête | — |
+
+Les rôles de 2011 sont parfois mêlés chez Leaguepedia (un joueur au milieu et en haut).
 
 `check_cotes` écrit, split par split, quelles formules son époque emploie : c'est la vraie version de ce tableau.
 

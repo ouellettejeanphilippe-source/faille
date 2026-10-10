@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { profilsDuSplit, AXES } from '../js/cotes.js';
 import { hasard } from '../js/hasard.js';
-import { exiger, informer, verdict } from './verdict.mjs';
+import { exiger, borne, informer, verdict } from './verdict.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
@@ -97,7 +97,12 @@ function correlation(ps) {
   return c / Math.sqrt(vx * vy);
 }
 
-// Pas encore de borne : elle se pose sur la première mesure des vrais splits, jamais avant (scripts/verdict.mjs).
-informer('force d\'équipe et vraie fiche, tous splits', fichiers.length ? `r = ${correlation(paires).toFixed(2)} sur ${paires.length} équipes` : 'aucun split bâti');
+/*
+ * La borne vient de la première mesure (les quinze Mondiaux, 10 octobre 2026) : r = 0,85 sur 279 équipes, de 0,78
+ * à 0,98 d'un Mondial à l'autre. Attention, une part est circulaire : l'or et la participation d'une équipe qui gagne
+ * montent PARCE qu'elle gagne. Une corrélation qui frôlerait 1 dirait que les cotes ne lisent plus que la fiche.
+ */
+if (fichiers.length) borne('force d\'équipe et vraie fiche, tous splits', correlation(paires), 0.75, 0.95);
+else informer('force d\'équipe et vraie fiche, tous splits', 'aucun split bâti');
 
 verdict('Les cotes');
