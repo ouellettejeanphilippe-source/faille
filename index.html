@@ -17,17 +17,13 @@
       <button id="recommencer" class="principal" hidden>Recommencer</button>
       <p id="etat" class="etat"></p>
     </section>
-    <section id="vestiaire" class="vestiaire" hidden>
+    <section id="vestiaire" class="couche" hidden>
       <button class="retour" data-retour>‹ Retour</button>
       <h2 id="vestiaire-titre"></h2>
       <p id="vestiaire-fiche" class="sous"></p>
-      <div class="defile">
-        <table>
-          <thead><tr><th>Rôle</th><th>Joueur</th><th>Niveau</th><th>Style</th><th>PJ</th><th>KDA</th><th>CS/min</th><th>Dég./min</th><th>Champions</th><th></th></tr></thead>
-          <tbody id="vestiaire-liste"></tbody>
-        </table>
-      </div>
+      <ul id="vestiaire-liste" class="liste-joueurs defile"></ul>
     </section>
+    <section id="carte" class="couche" hidden></section>
   </main>
   <footer>
     <p id="source"></p>

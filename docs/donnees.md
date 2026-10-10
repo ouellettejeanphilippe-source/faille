@@ -20,6 +20,14 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 
 La **classe** de chaque champion (Tank, Combattant, Mage, Assassin, Tireur, Soutien), lue sur la dernière version. Un champion à deux classes compte pour moitié dans chacune. Les champions que Data Dragon ne reconnaît pas sont listés à la fin du build.
 
+### Les images
+
+- **Photos des joueurs** : la table `PlayerImages` de Leaguepedia (une photo par joueur par tournoi). Le build garde celle du tournoi même, sinon la même année (l'été d'abord), sinon la plus proche ; les photos d'All-Star passent après. Mesuré sur les Mondiaux : 1 420 photos pour 1 498 joueurs-splits.
+- **Logos** : la table `Teams` (248 sur 281 équipes des Mondiaux).
+- **Le serveur d'images** de Leaguepedia rend 404 à une page d'un autre site (le référent est vérifié). On ne contourne pas ça : `scripts/images.mjs` copie chaque image une fois, à la taille de la carte, dans `img/lp/`. Ce dossier n'est pas dans le dépôt (18 Mo pour les seuls Mondiaux) : l'Action « Publier » le remplit au déploiement et le garde en cache.
+- **Les licences** : les photos de Leaguepedia ont chacune la leur, souvent des photos de Riot Games ou des ligues. Elles servent ici à un jeu de fan gratuit, avec l'attribution au pied de la page ; une photo qu'un ayant droit demande de retirer se retire.
+- **Champions** : Data Dragon (l'icône carrée, l'illustration au fond de la carte), permis par la politique « fan content » de Riot.
+
 ### Oracle's Elixir (2014 →, pas encore branché)
 
 Les écarts d'or, d'XP et de CS à 10 et 15 min, les plaques, le premier sang, la première tour, les balises, les monstres de la jungle adverse. Le site répond 403 aux robots : il faudra déposer ses CSV dans `data/sources/` ou les télécharger par l'Action, et lire ses conditions avant d'en commiter quoi que ce soit.
