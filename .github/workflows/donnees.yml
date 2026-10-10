@@ -1,14 +1,20 @@
 name: Bâtir les splits
 
-# Interroge Leaguepedia (lente, limitée en débit) et commite data/ sur main.
-# Lancée à la main : Actions → « Bâtir les splits » → Run workflow.
+# Interroge Leaguepedia (lente, limitée en débit) et commite data/ sur la
+# branche où on la lance. Lancée à la main : Actions → « Bâtir les splits »
+# → Run workflow. Les splits réussis sont commités même si un autre échoue ;
+# l'Action finit alors en rouge pour le dire.
 on:
   workflow_dispatch:
     inputs:
       splits:
-        description: 'Les id à bâtir, séparés par des espaces (vide : tous ceux de scripts/splits.json)'
+        description: 'Les débuts d''id à bâtir, séparés par des espaces (« mondial », « lck-2019 »…) ; vide : tous'
         required: false
-        default: ''
+        default: 'mondial'
+      catalogue:
+        description: 'Regénérer d''abord scripts/splits.json depuis la table Tournaments'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -16,12 +22,18 @@ permissions:
 jobs:
   batir:
     runs-on: ubuntu-latest
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Le catalogue
+        if: ${{ github.event.inputs.catalogue == 'true' }}
+        run: node scripts/catalogue.mjs
       - name: Bâtir
+        id: batir
+        continue-on-error: true
         run: node scripts/build_splits.mjs ${{ github.event.inputs.splits }}
       - name: Vérifier avant de commiter
         run: node scripts/tout.mjs
@@ -29,6 +41,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --cached --quiet || git commit -m "Données : splits rebâtis depuis Leaguepedia"
+          git add data/ scripts/splits.json
+          git diff --cached --quiet || git commit -m "Données : splits rebâtis depuis Leaguepedia (${{ github.event.inputs.splits }})"
           git push
+      - name: Un split a échoué
+        if: ${{ steps.batir.outcome == 'failure' }}
+        run: exit 1
