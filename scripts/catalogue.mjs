@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { champsDe, cargo } from './lib/leaguepedia.mjs';
+import { cargo } from './lib/leaguepedia.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FICHIER = path.join(ROOT, 'scripts/splits.json');
@@ -30,14 +30,13 @@ const ECARTES = /Promotion|Qualif|Relegation|Regional|Academy|Challengers|All-St
 const SAISONS = { spring: 'Printemps', summer: 'Été', winter: 'Hiver', split: 'Split', cup: 'Coupe' };
 const slug = s => s.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-const champs = await champsDe('Tournaments');
-const tournois = await cargo('Tournaments', champs, { nom: 'Name', page: 'OverviewPage', annee: 'Year', saison: 'Split', niveau: 'TournamentLevel', qualif: 'IsQualifier' },
+const tournois = await cargo('Tournaments', { nom: 'Name', page: 'OverviewPage', annee: 'Year', saison: 'Split', niveau: 'TournamentLevel', qualif: 'IsQualifier' },
   `Year >= 2011 AND (${LIGUES.map(([p]) => `Name LIKE '${p}%'`).join(' OR ')})`);
 
 const splits = new Map();
 for (const t of tournois) {
   const ligue = LIGUES.find(([p]) => t.nom.startsWith(p));
-  if (!ligue || ECARTES.test(t.nom) || ['1', 'Yes', 'true'].includes(t.qualif) || (t.niveau && t.niveau !== 'Primary')) continue;
+  if (!ligue || ECARTES.test(t.nom) || [true, 1, '1', 'Yes', 'true'].includes(t.qualif) || (t.niveau && t.niveau !== 'Primary')) continue;
   const annee = Number(t.annee);
   // La saison : la colonne Split, sinon le mot du nom qui suit l'année.
   const brut = t.saison || (t.nom.match(new RegExp(`${annee}\\s+(\\S+)`)) || [])[1] || 'Saison';
