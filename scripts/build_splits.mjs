@@ -17,6 +17,7 @@
  *   node scripts/build_splits.mjs                  # tous les splits de scripts/splits.json
  *   node scripts/build_splits.mjs mondial-2013     # seulement celui-là
  *   node scripts/build_splits.mjs mondial lck-2019 # ceux dont l'id commence ainsi
+ *   node scripts/build_splits.mjs --champions      # aucun split : data/champions.json seulement
  *
  * Sortie : data/splits/<id>.json et data/index.json.
  */
@@ -232,14 +233,20 @@ for (const s of tous.filter(s => !voulus.length || voulus.some(v => s.id.startsW
 }
 if (ctx.inconnus.size) console.log(`Champions sans classe (Data Dragon) : ${[...ctx.inconnus].join(', ')}`);
 
-// Les champions joués, nom → id de Data Dragon (ses images) : data/champions.json, pour la page.
-const champions = { ...(fs.existsSync(path.join(ROOT, 'data/champions.json')) ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data/champions.json'), 'utf8')).ids : {}) };
+// Les champions joués, nom → id de Data Dragon (ses images) et ses classes (le repêchage, js/repechage.js) :
+// data/champions.json, pour la page.
+const champions = new Map();
 for (const f of fs.readdirSync(dossier).filter(f => f.endsWith('.json'))) {
   for (const e of JSON.parse(fs.readFileSync(path.join(dossier, f), 'utf8')).equipes) {
-    for (const j of e.joueurs) for (const [c] of j.champs) { const fi = ctx.classes.ficheDe(c); if (fi) champions[c] = fi.id; }
+    for (const j of e.joueurs) for (const [c] of j.champs) { const fi = ctx.classes.ficheDe(c); if (fi) champions.set(c, fi); }
   }
 }
-fs.writeFileSync(path.join(ROOT, 'data/champions.json'), `${JSON.stringify({ version: ctx.classes.version, ids: Object.fromEntries(Object.entries(champions).sort()) })}\n`);
+const tries = [...champions].sort(([a], [b]) => (a < b ? -1 : 1));
+fs.writeFileSync(path.join(ROOT, 'data/champions.json'), `${JSON.stringify({
+  version: ctx.classes.version,
+  ids: Object.fromEntries(tries.map(([c, fi]) => [c, fi.id])),
+  classes: Object.fromEntries(tries.map(([c, fi]) => [c, fi.tags])),
+})}\n`);
 
 // L'index : ce qui est sur le disque, pas ce qui était demandé.
 const index = tous.filter(s => fs.existsSync(path.join(dossier, `${s.id}.json`))).map(({ id, nom, ligue, annee }) => ({ id, nom, ligue, annee }));

@@ -103,3 +103,56 @@ Sept réglages, et rien d'autre ne se règle (`REGLAGES`, js/sim.js) : `force`, 
 - **Au jour le jour** (la règle de Cap 82-0) : rien ne se joue d'avance ; `jouerJournee` joue une journée. Chaque partie a son propre dé, tiré de la graine du split et de sa place au calendrier (`graineDe`) : jouées une à une ou d'un bloc, avec du hasard tiré ailleurs entre deux, elles donnent la même chose — `check_graine`.
 - **Le classement** : les séries gagnées, l'écart des parties, le face-à-face.
 - **Les séries** : les six premiers, en BO5. 3 contre 6 et 4 contre 5 ouvrent ; le premier croise le moins bien classé des survivants ; une ronde se joue d'un coup. Dans une série, le perdant de la partie d'avant prend le côté bleu.
+
+## 6. Les canaux (jalon 3)
+
+Ce qui change une partie (le repêchage des champions, les cartes du plan de jeu, le coach) passe par **les canaux** de `js/sim.js`, et par rien d'autre. Une source d'effets est un objet dont chaque clé est un canal ; les sources se somment en un seul endroit (`sommerEffets`), puis chaque canal reste dans sa borne (`BORNES`).
+
+| Canal | Ce qu'il fait | Borne |
+|---|---|---|
+| `ligne` | écarts types ajoutés aux trois lignes (la phase de lignes) | ± 0,5 |
+| `combat` | écarts types ajoutés au combat (escarmouches, tours, combat final) | ± 0,4 |
+| `objectifs` | écarts types ajoutés aux objectifs (dragons, héraut, Nashor) | ± 0,5 |
+| `tardif` | écarts types de combat qui comptent selon l'heure : × 2 (t ÷ durée de l'époque − 0,8), de −1 à 1 | ± 0,8 |
+| `rythme` | × le débit des éliminations, pour les deux équipes | 0,7 à 1,4 |
+| `siege` | × le débit des tours, pour les deux équipes | 0,7 à 1,4 |
+| `fin` | × la hâte du combat final : plus de 1, on ferme tôt ; moins, on étire | 0,7 à 1,4 |
+| `confort` | { rôle : écarts types } ajoutés à toutes les sous-cotes d'un joueur | −1 à 0 |
+
+Les trois multiplicatifs touchent la partie entière : chacune des deux équipes en porte la racine carrée. **Neutres, les canaux rejouent la partie calibrée au tirage près** : les vraies parties de `check_feuilles` ne passent par aucun effet, et une ligue sans effet donne la même empreinte qu'avant les canaux.
+
+## 7. Le repêchage des champions
+
+`js/repechage.js`. Avant chacune de tes séries : l'adversaire bannit tes trois plus joués (le plus joué de chacun de tes cinq, les plus joués d'abord), tu bannis trois champions dans leurs bassins, tu choisis un champion pour chacun de tes cinq dans son **vrai bassin** du split, puis l'adversaire prend, joueur par joueur, son plus joué qui reste. Tu choisis avant lui : prendre son champion fétiche le lui enlève.
+
+- **Le confort.** Sur un champion qu'il a moins joué que son plus joué, un joueur perd 0,6 × (1 − √(ses parties dessus ÷ celles sur son plus joué)) écart type sur toutes ses sous-cotes ; hors de son bassin, 0,6 entier. Sur son plus joué, rien.
+- **La composition.** Les classes des cinq champions (Data Dragon, `data/champions.json`) donnent la forme de la partie, **comptées contre la composition moyenne des vraies équipes**, chacun sur son plus joué : 0,54 assassin, 0,78 tireur, 0,84 tank, 1,27 mage, 0,85 combattant, 0,73 soutien (`REFERENCE`, mesurée sur les 281 équipes des Mondiaux ; `check_rogue` la remesure). Une composition ordinaire ne change rien.
+- Les séries où tu ne joues pas n'ont pas de repêchage : chacun y prend son plus joué, ce qui est la partie calibrée.
+
+## 8. Le rogue, mesuré en paires
+
+`js/rogue.js`, repris de Cap 82-0. Les **jetons** ne se gardent pas : ils se recomptent des résultats (20 au départ, 4 par série gagnée, 1 par série perdue, 20 par ronde de séries gagnée) moins les achats. La **boutique** vend trois packs (bronze 10 jetons, argent 18, or 30 ; chaque pack hausse le suivant de 10 %), tirés du dé de la ligue et du numéro de l'achat ; une carte ne sort qu'une fois. Le **plan de jeu** : trois cartes actives au plus, changées entre deux journées. Le **coach** (12 jetons, un seul en poste) monte de palier à 3, 6 et 9 séries jouées avec une carte de sa couleur au plan ; la couleur d'une carte se lit sur ses canaux (`couleurDe`), jamais à la main.
+
+**La mesure en paires** (`check_rogue`) : la même ligue de dix vraies équipes jouée sous la même graine, l'effet donné aux équipes paires puis aux impaires ; pour chaque équipe, ses victoires avec l'effet moins ses victoires sans. Douze ligues, 120 paires par mesure. La forme se lit sur les parties d'une équipe traitée contre une qui ne l'est pas, comparées aux mêmes parties sans aucun effet. Sans effet, les deux passes sont identiques (le témoin).
+
+**Les bornes**, par saison de 18 parties : une carte rapporte au plus 0,6 victoire (commune), 1 (peu commune), 1,5 (rare), 2,5 (légendaire, et un coach au palier III) ; une rare, une légendaire et un coach au palier III **se voient** sur la feuille (± 1 min, ± 2 éliminations, ± 0,6 tour, ± 0,3 objectif par partie, ou ± 0,3 objectif de plus pour elle). Le repêchage automatique des deux côtés ne penche pas (± 0,6).
+
+**Mesuré** le 10 octobre 2026 (victoires de plus par saison ; la forme contre une équipe sans effet, par partie) :
+
+| | Victoires | Durée | Éliminations | Tours | Ses objectifs |
+|---|---|---|---|---|---|
+| ⚡ Escarmouches au niveau 3 (rare) | +0,40 | −1,55 min | +2,30 | −0,63 | +0,19 |
+| 🦀 Le héraut au milieu (rare) | +0,02 | −0,27 | −0,31 | +0,69 | +0,14 |
+| 🟣 Le coup de Nashor (rare) | +0,03 | +0,34 | −3,20 | +0,03 | +0,08 |
+| 🏆 La méta du tournoi (légendaire) | +0,58 | −1,08 | +1,46 | −0,50 | +0,37 |
+| 🌀 Le 4-1 (légendaire) | +0,13 | −0,41 | −0,45 | +0,62 | +0,17 |
+| 🐺 L'agresseur, palier III | +0,37 | −1,24 | +2,01 | −0,56 | +0,25 |
+| 🐉 Le stratège, palier III | +0,03 | +0,79 | −2,57 | +0,12 | +0,14 |
+| ⏳ Le patient, palier III | −0,15 | +1,33 | −1,75 | +0,29 | −0,05 |
+| 🏰 L'assiégeant, palier III | 0,00 | −0,23 | −0,28 | +0,69 | +0,10 |
+| Trois bannissements (l'adversaire n'en fait pas) | +0,78 | −0,14 | −0,37 | −0,04 | +0,34 |
+| Le repêchage automatique, des deux côtés | +0,10 | +0,03 | −0,21 | −0,10 | −0,12 |
+
+Le reste (les communes, les peu communes, une classe de plus au repêchage) est dans la sortie de `check_rogue`. Une lecture a un bruit d'environ ± 0,1 victoire : on ne retouche pas une carte sur une seule lecture.
+
+**Ce que ça dit.** Une carte change la forme de la partie bien plus que sa force : la plus forte rapporte à peine plus d'une demi-victoire par saison. Ce qui pèse le plus, ce sont les bannissements, à jeu égal avec l'adversaire. Le tardif coûte encore un peu (−0,18 et −0,37 pour ses deux cartes) : son pivot, 0,8 de la durée, se calibrera quand on aura la ligne du temps des parties (Oracle's Elixir).

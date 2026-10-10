@@ -65,15 +65,19 @@ function moments(L, p) {
     ? `: premier sang, ${esc(f.equipes[x.camp].joueurs[x.tueur].n)} sur ${esc(f.equipes[1 - x.camp].joueurs[x.victime].n)}` : MOTS[x.quoi]}</li>`).join('');
 }
 
-/** La feuille d'une série : chaque partie, ses deux équipes, leurs joueurs, ses moments. */
+/** La feuille d'une série : son repêchage, chaque partie, ses deux équipes, leurs joueurs, ses moments. */
 export function feuilleSerie(L, s) {
-  return `<h2>${esc(L.equipes[s.a].nom)} ${s.v[0]}-${s.v[1]} ${esc(L.equipes[s.b].nom)}</h2>${s.parties.map((p, k) => {
+  const rp = s.repechage;
+  // Le champion d'un joueur, quand la série a eu son repêchage (js/repechage.js).
+  const champ = (i, r) => (rp && rp.choix[i === s.a ? 0 : 1][r] ? ` · ${esc(rp.choix[i === s.a ? 0 : 1][r])}` : '');
+  const bans = rp ? `<p class="sous">Bannis : ${[...rp.contreMoi, ...rp.bans].map(esc).join(', ')}.</p>` : '';
+  return `<h2>${esc(L.equipes[s.a].nom)} ${s.v[0]}-${s.v[1]} ${esc(L.equipes[s.b].nom)}</h2>${bans}${s.parties.map((p, k) => {
     const f = p.feuille;
     const camps = [p.bleu, p.rouge];
     const equipe = (e, x) => `<div class="feuille-equipe${f.gagnant === x ? ' gagne' : ''}">
       <h4>${x ? 'Rouge' : 'Bleu'} · ${esc(L.equipes[camps[x]].nom)}${f.gagnant === x ? ' · victoire' : ''}</h4>
       <p class="sous">${e.k} élim. · ${virgule(e.or / 1000)} k d'or · ${e.tours} tours · ${e.dragons} dragons · ${e.barons} Nashor</p>
-      <table><tbody>${e.joueurs.map(j => `<tr><td>${ROLES[j.r]}</td><td>${esc(j.n)}</td><td>${j.k}/${j.m}/${j.a}</td><td>${virgule(j.or / 1000)} k</td></tr>`).join('')}</tbody></table></div>`;
+      <table><tbody>${e.joueurs.map(j => `<tr><td>${ROLES[j.r]}</td><td>${esc(j.n)}${champ(camps[x], j.r)}</td><td>${j.k}/${j.m}/${j.a}</td><td>${virgule(j.or / 1000)} k</td></tr>`).join('')}</tbody></table></div>`;
     return `<section class="partie"><h3>Partie ${k + 1} · ${horloge(f.duree)}</h3>${f.equipes.map(equipe).join('')}<ul class="moments">${moments(L, p)}</ul></section>`;
   }).join('')}`;
 }
