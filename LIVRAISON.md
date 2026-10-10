@@ -10,6 +10,7 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] `sw.js` : la coquille hors ligne — `check_coquille`.
 - [x] Zéro code mort — `check_mort`.
 - [x] `scripts/splits.json` : les Mondiaux de 2011 à 2025 ; `scripts/catalogue.mjs` pour les splits de LCS, LEC, LCK et LPL.
+- [x] La connexion à Leaguepedia par mot de passe de robot (anonyme, la limite de débit bloque tout).
 - [ ] Bâtir les Mondiaux par l'Action et confirmer, époque par époque, ce qui est mesuré (docs/donnees.md).
 - [ ] Le catalogue des quatre ligues, relu, puis leurs splits par tranches d'années.
 
@@ -40,3 +41,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 
 - 2026-10-10 — Jalon 0 : le dépôt, la coquille, le script Leaguepedia, les vérifications rapides et la CI.
 - 2026-10-10 — Jalon 1 commencé : les Mondiaux de 2011 à 2025, le catalogue des quatre ligues, la récolte élargie (objectifs, vision, objets, classes), `js/cotes.js` et ses remplacements par époque, `check_cotes`.
+- 2026-10-10 — Leaguepedia refuse l'anonyme, même depuis GitHub : connexion par mot de passe de robot (secrets `LEAGUEPEDIA_USER` et `LEAGUEPEDIA_PASS`).

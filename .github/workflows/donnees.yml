@@ -30,10 +30,16 @@ jobs:
           node-version: 22
       - name: Le catalogue
         if: ${{ github.event.inputs.catalogue == 'true' }}
+        env:
+          LEAGUEPEDIA_USER: ${{ secrets.LEAGUEPEDIA_USER }}
+          LEAGUEPEDIA_PASS: ${{ secrets.LEAGUEPEDIA_PASS }}
         run: node scripts/catalogue.mjs
       - name: Bâtir
         id: batir
         continue-on-error: true
+        env:
+          LEAGUEPEDIA_USER: ${{ secrets.LEAGUEPEDIA_USER }}
+          LEAGUEPEDIA_PASS: ${{ secrets.LEAGUEPEDIA_PASS }}
         run: node scripts/build_splits.mjs ${{ github.event.inputs.splits }}
       - name: Vérifier avant de commiter
         run: node scripts/tout.mjs

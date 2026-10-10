@@ -14,7 +14,12 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 - L'API Cargo de lol.fandom.com. `ScoreboardGames` (une ligne par partie : vainqueur, durée, tours, dragons, Nashor, hérauts, larves, inhibiteurs) et `ScoreboardPlayers` (une ligne par joueur par partie : K/M/A, or, CS, dégâts, score de vision, objets).
 - Le script demande d'abord à l'API quels champs la table a (`cargofields`) et ne demande que ceux-là.
 - **Licence** : CC BY-SA 3.0, attribution dans chaque shard (`source`) et au pied de la page. Les shards dérivés sont sous la même licence.
-- **Débit** : l'API freine vite. Depuis un conteneur partagé, la limite peut durer des heures ; l'Action « Bâtir les splits » passe par les machines de GitHub.
+- **Débit** : anonyme, on ne passe pas. Mesuré le 10 octobre 2026, depuis un conteneur comme depuis les machines de GitHub : la première requête passe, la suivante est refusée pendant plus d'une demi-heure. Il faut un **mot de passe de robot** :
+  1. un compte Fandom, connecté sur lol.fandom.com ;
+  2. `Special:BotPasswords` : un nom de robot (ex. « faille »), avec les droits de base ; la page donne un identifiant « Compte@faille » et un mot de passe ;
+  3. dans le dépôt GitHub, Settings → Secrets and variables → Actions : `LEAGUEPEDIA_USER` (l'identifiant) et `LEAGUEPEDIA_PASS` (le mot de passe).
+
+  En local : `LEAGUEPEDIA_USER=… LEAGUEPEDIA_PASS=… node scripts/build_splits.mjs mondial`.
 
 ### Data Dragon (Riot)
 
