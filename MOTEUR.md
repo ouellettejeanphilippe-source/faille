@@ -1,0 +1,105 @@
+# Le moteur — la spécification
+
+`js/sim.js` joue une partie, un split, ses séries. Ce document dit ce qu'il fait, d'où vient chaque chiffre et comment on sait qu'il retombe sur le vrai. Tout ce qui est marqué « mesuré » l'a été sur les 1 355 parties des quinze Mondiaux (2011 à 2025), le 10 octobre 2026 ; `check_feuilles` refait la mesure à chaque PR.
+
+## 1. Les vraies parties
+
+`scripts/build_splits.mjs` garde maintenant une ligne par partie dans chaque shard (`matchs`, voir docs/donnees.md) : les deux équipes, la durée, le côté gagnant, puis par côté les éliminations, l'or, les tours, les dragons, le Nashor, les hérauts, les inhibiteurs. Leaguepedia met le côté bleu en `Team1` (vérifié : `Side` 1 dans `ScoreboardPlayers`).
+
+**Mesuré**, Mondial par Mondial :
+
+| Mondial | Parties | Durée (min) | Éliminations / partie | Côté bleu | Écart d'or final | Tours / partie |
+|---|---|---|---|---|---|---|
+| 2011 | 28 | 38,0 ± 8,9 | — | 61 % | — | — |
+| 2012 | 31 | 34,4 ± 7,2 | — | 45 % | — | — |
+| 2013 | 63 | 32,1 ± 6,4 | — | 57 % | — | — |
+| 2014 | 78 | 36,2 ± 8,6 | 28,6 | 59 % | 29,8 % | 12,4 |
+| 2015 | 73 | 36,0 ± 7,2 | 26,5 | 59 % | 21,3 % | 12,9 |
+| 2016 | 77 | 38,5 ± 9,3 | 25,0 | 55 % | 21,3 % | 12,3 |
+| 2017 | 119 | 35,1 ± 8,8 | 19,5 | 56 % | 19,3 % | 12,6 |
+| 2018 | 119 | 32,2 ± 5,9 | 23,1 | 57 % | 21,3 % | 11,5 |
+| 2019 | 120 | 33,3 ± 6,4 | 26,4 | 53 % | 17,4 % | 12,3 |
+| 2020 | 114 | 32,2 ± 5,0 | 26,3 | 51 % | 18,7 % | 11,6 |
+| 2021 | 121 | 33,0 ± 6,3 | 27,1 | 49 % | 18,9 % | 12,4 |
+| 2022 | 127 | 31,5 ± 5,5 | 26,2 | 54 % | 20,4 % | 11,6 |
+| 2023 | 95 | 31,5 ± 5,4 | 25,3 | 61 % | 19,2 % | 11,9 |
+| 2024 | 106 | 33,0 ± 5,2 | 27,2 | 58 % | 17,0 % | 12,4 |
+| 2025 | 84 | 32,8 ± 5,5 | 30,2 | 50 % | 18,5 % | 11,3 |
+
+L'écart d'or final est |or bleu − or rouge| sur l'or moyen d'une équipe. De 2011 à 2013, Leaguepedia n'a ni les éliminations d'équipe, ni l'or, ni les tours partie par partie : le moteur prend alors ce que les fiches des joueurs donnent (les éliminations, l'or) ou s'en passe (les tours), jamais un chiffre d'une autre époque.
+
+**Mesuré, tous Mondiaux :** le côté bleu gagne 54,9 % des parties ; le vainqueur a fait tomber 9,35 tours, le perdant 2,72 ; **aucun vainqueur n'a moins de cinq tours ni zéro inhibiteur** (1 233 parties où c'est mesuré) — pas d'abandon dans ces données, le nexus tombe toujours. Les parties durent de 19,1 à 71,6 min (1 % sous 22,1, 1 % au-dessus de 54,4). L'écart type de la durée est 19,6 % de la durée moyenne de son Mondial.
+
+**Pas encore mesurable :** l'écart d'or à 15 min et la ligne du temps d'une partie (le premier sang, la première tour). Leaguepedia ne les a pas ; ils viendront d'Oracle's Elixir (2014 →) ou de lolesports (2023 →). D'ici là, le moteur n'a aucun chiffre sur la phase de lignes qui ne se lise pas dans la partie entière.
+
+## 2. Le principe : une partie par événements
+
+Une partie avance par **tours de 30 secondes** et dure **de 15 à 80 minutes** : le nexus ne tombe pas avant l'abandon permis (15 min) et le combat final est forcé à 80. À chaque tour, chaque événement peut arriver :
+
+| Événement | Quand | Débit | Qui le gagne |
+|---|---|---|---|
+| Élimination | dès 1 min 30 (les sbires se croisent) | éliminations de l'époque ÷ durée | avant 14 min : une ligne tirée au hasard, sa puissance de ligne ; après : la puissance de combat |
+| Dragon | dès 5 min | dragons de l'époque ÷ (durée − 5) | la puissance d'objectifs |
+| Héraut | de 8 à 20 min | hérauts de l'époque ÷ 12 | la puissance d'objectifs |
+| Nashor | dès 20 min | Nashor de l'époque ÷ (durée − 20) | la puissance d'objectifs |
+| Tour | dès 10 min | `tours` × tours de l'époque ÷ (durée − 10) | la puissance de combat, avec moins de boule de neige (`siege`) |
+| Combat final | dès 15 min, forcé à 80 | de plus en plus probable avec le temps, plus tôt quand une équipe mène | la puissance de combat |
+
+Les débits sont ceux **de l'époque** : le tempo de chaque équipe est celui de son split (`tempoDuSplit`), et une partie prend la moyenne des deux ; ton cinq, fait de cinq splits, prend la moyenne des cinq. Une partie de 2016 dure plus longtemps et compte plus d'éliminations qu'une de 2020 parce que ses vraies parties étaient ainsi.
+
+**Qui gagne un événement.** La chance du côté bleu est `σ(force × écart de puissance + boule × avance d'or en milliers + cote × logit(part du côté bleu de l'époque))`. Les puissances sont lues sur les sous-cotes (js/cotes.js), qui sont des écarts types dans le rôle et le split :
+
+- **combat** : la moyenne des valeurs des cinq ;
+- **ligne** (haut, milieu, bas) : la ligne et la pression du joueur, l'implication du jungleur ; au bas, la ligne du tireur, l'implication et la vision du soutien ;
+- **objectifs** : le combat, les objectifs du jungleur, la vision du soutien ;
+- **ferme** : la moyenne des sous-cotes de ligne des cinq, qui donne un peu plus d'or par minute.
+
+**Qui tue, qui aide, qui meurt, qui prend l'or : les vraies parts de chaque joueur dans son split.** Le tueur est tiré selon sa part des éliminations de l'équipe, la victime selon ses morts par partie, chaque coéquipier aide avec sa vraie chance d'aider sur une élimination qu'il ne fait pas, et le revenu de base se partage selon sa vraie part de l'or. Avant 14 min, seuls les joueurs de la ligne (et le jungleur) sont en jeu.
+
+**Les primes et les horaires sont ceux du jeu**, pas des réglages : 300 d'or l'élimination, 150 partagés entre les aides, 250 la tour, 300 par joueur au Nashor ; le revenu de base est l'or de l'époque moins ce que ces primes en donnent déjà.
+
+**Le combat final.** Son vainqueur fait tomber le nexus : trois tours d'une ligne (déjà prises, ou prises là), puis les deux du nexus, toujours là, et un inhibiteur. Les deux tours du nexus ne tombent jamais avant.
+
+## 3. La feuille se ferme par construction
+
+Une élimination crédite d'un même geste l'équipe, le tueur, la victime de l'autre équipe et les aides ; l'or va aux joueurs et à l'équipe ensemble ; chaque événement va au fil. `check_feuilles` le vérifie sur trois splits complets (saison et séries, ~330 parties) :
+
+- les éliminations d'une équipe = celles de ses joueurs = les morts de l'autre ;
+- l'or d'une équipe = celui de ses joueurs ;
+- le fil compte ce que la feuille compte (éliminations, tours, dragons, hérauts, Nashor, inhibiteurs) et suit l'horloge ;
+- au plus quatre aides par élimination, jamais le tueur ; au plus onze tours ;
+- le vainqueur a fait tomber le nexus : cinq tours, un inhibiteur, 15 min passées, le dernier mot du fil ;
+- dans la ligue, chaque élimination est une mort ; chaque série finit à sa dernière victoire ; chaque équipe joue ses 18 ; les séries couronnent un champion.
+
+## 4. La calibration
+
+Sept réglages, et rien d'autre ne se règle (`REGLAGES`, js/sim.js) : `force`, `boule`, `ferme`, `tours`, `siege`, `cote`, `fin` (base, pente, avance). Ils ont été cherchés ensemble pour que **chaque vraie partie des Mondiaux, rejouée entre ses deux vraies équipes**, retombe sur ce qui s'est passé. `check_feuilles` rejoue les 1 355 parties huit fois chacune et juge chaque repère contre **l'intervalle de la mesure elle-même** (deux erreurs types de part et d'autre) :
+
+| Repère | Réel | Moteur | Borne |
+|---|---|---|---|
+| Durée, sur celle de l'époque | 1,000 | 0,996 | 0,989 à 1,011 |
+| Écart type de la durée, idem | 0,196 | 0,198 | 0,189 à 0,204 |
+| Éliminations par partie | 25,76 | 25,85 | 25,27 à 26,25 |
+| Victoires du côté bleu | 54,9 % | 55,9 % | 52,2 à 57,6 % |
+| Le favori des cotes gagne, écart < 0,1 | 55,3 % | 51,7 % | 49,2 à 61,4 % |
+| … écart de 0,1 à 0,2 | 57,4 % | 58,3 % | 51,4 à 63,4 % |
+| … écart de 0,2 à 0,4 | 72,1 % | 72,9 % | 67,4 à 76,8 % |
+| … écart de 0,4 et plus | 84,0 % | 84,6 % | 80,5 à 87,4 % |
+| Tours du gagnant | 9,35 | 9,36 | 9,28 à 9,42 |
+| Tours du perdant | 2,72 | 2,74 | 2,60 à 2,83 |
+| Écart d'or final | 20,0 % | 20,2 % | 19,4 à 20,5 % |
+| Dragons par partie | 4,10 | 4,11 | 4,03 à 4,17 |
+| Nashor par partie | 1,37 | 1,39 | 1,33 à 1,41 |
+
+« Le favori des cotes » : l'équipe dont les cinq ont la plus grande valeur moyenne. Une part de ce lien est circulaire (les cotes lisent l'or et la participation, qui suivent la victoire — voir check_cotes) : le moteur reproduit ce que les cotes prédisent du vrai, pas plus.
+
+**Pour recalibrer** (de nouveaux splits, un nouvel axe) : `node scripts/check_feuilles.mjs` dit quel repère sort ; on bouge le réglage qui le porte (la durée : `fin.base` ; sa dispersion : `fin.pente` ; les tours : `tours`, et leur partage : `siege` ; l'écart d'or : `ferme` et `boule` ; les favoris : `force` ; le côté : `cote`), et on vérifie avec plusieurs graines (`graineDe(n + 100, …)` dans le script) que la borne ne tient pas à un tirage.
+
+**Ce qui ne retombe pas encore tout à fait.** Les parties les plus courtes : le moteur en sort 1 % sous 18,5 min, le réel 1 % sous 22,1 (le plus court mesuré : 19,1). Le combat final ne connaît que le temps et l'avance ; il lui manque ce qui empêche de finir tôt (les tours encore debout, les inhibiteurs qui repoussent).
+
+## 5. Le split et les séries
+
+- **La ligue** : ton cinq et neuf vrais vestiaires, tirés par la même roulette (un split, une équipe ; à chaque rôle, celui qui l'a le plus joué). Deux rondes où chacun croise chacun, côtés inversés au retour : 18 journées de BO1 (`creerSplit` sait faire le BO3).
+- **Au jour le jour** (la règle de Cap 82-0) : rien ne se joue d'avance ; `jouerJournee` joue une journée. Chaque partie a son propre dé, tiré de la graine du split et de sa place au calendrier (`graineDe`) : jouées une à une ou d'un bloc, avec du hasard tiré ailleurs entre deux, elles donnent la même chose — `check_graine`.
+- **Le classement** : les séries gagnées, l'écart des parties, le face-à-face.
+- **Les séries** : les six premiers, en BO5. 3 contre 6 et 4 contre 5 ouvrent ; le premier croise le moins bien classé des survivants ; une ronde se joue d'un coup. Dans une série, le perdant de la partie d'avant prend le côté bleu.

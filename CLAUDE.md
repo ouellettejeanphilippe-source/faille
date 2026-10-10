@@ -10,7 +10,7 @@ Hébergé sur GitHub Pages. Aucun backend, aucune dépendance npm, aucun framewo
 
 Lis `LIVRAISON.md` — le plan de travail : les jalons, chaque item avec son fichier et le script qui le prouve. Coche les cases et ajoute une ligne au journal.
 
-`PLAN.md` garde l'état court et les décisions prises. `docs/donnees.md` dit d'où viennent les données et sous quelles conditions.
+`PLAN.md` garde l'état court et les décisions prises. `docs/donnees.md` dit d'où viennent les données et sous quelles conditions. `MOTEUR.md` est la spécification du moteur et sa calibration.
 
 ## Structure
 
@@ -28,6 +28,8 @@ js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par
 js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
+js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
+js/split.js           l'écran du split : la journée, le classement, les séries, la feuille d'une série
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
 js/util.js            les petits outils partagés
@@ -39,7 +41,8 @@ scripts/splits.json        les splits à bâtir : les Mondiaux, puis le catalogu
 scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
 scripts/tout.mjs           enchaîne les vérifications rapides
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes)
+scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, feuilles)
 ```
 
 ## Règles fermes
@@ -59,7 +62,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 
 **Le moteur (jalon 2)**
 - Tout le hasard passe par `hasard()` (js/hasard.js) ; la même graine rejoue le même split — `check_graine`.
-- Aucun chiffre de calibration inventé : chaque repère vient des vraies parties (durée, éliminations, or à 15 min, côté bleu).
+- Aucun chiffre de calibration inventé : chaque repère vient des vraies parties (durée, éliminations, or, tours, dragons, Nashor, côté bleu), et chaque partie rejouée retombe dans l'intervalle de la mesure — `check_feuilles`.
+- La feuille de match se ferme par construction (les éliminations des joueurs font celles de l'équipe et les morts de l'autre…) — `check_feuilles`.
 
 **Les images**
 - Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.

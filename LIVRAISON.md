@@ -36,10 +36,14 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 
 ## Jalon 2 — le moteur
 
-- [ ] `MOTEUR.md` : la spécification, mesurée sur de vraies parties (durée, éliminations, écart d'or à 15 min, dragons, Nashor, tours, côté bleu).
-- [ ] `js/sim.js` : une partie par événements (phase de lignes, escarmouches, objectifs, combat final), tout son hasard par `hasard()`.
-- [ ] `check_feuilles` : les égalités de la feuille (les éliminations des joueurs font celles de l'équipe, etc.).
-- [ ] Le split au jour le jour (séries BO1/BO3), puis les séries (BO5) — `check_graine` étendu au split.
+- [x] `scripts/build_splits.mjs` : une ligne par partie dans chaque shard (`matchs`) — les repères du moteur s'y mesurent.
+- [x] `MOTEUR.md` : la spécification, mesurée sur les 1 355 parties des Mondiaux (durée, éliminations, écart d'or final, dragons, Nashor, tours, côté bleu).
+- [ ] L'écart d'or à 15 min et la ligne du temps (premier sang, première tour) : Leaguepedia ne les a pas — Oracle's Elixir ou lolesports.
+- [x] `js/sim.js` : une partie par événements, des tours de 30 s, de 15 à 80 min (phase de lignes, escarmouches, objectifs, combat final), tout son hasard par `hasard()`.
+- [x] `check_feuilles` : les égalités de la feuille, et chaque vraie partie rejouée contre ce qui s'est passé (13 repères dans l'intervalle de la mesure).
+- [x] Le split au jour le jour (BO1, deux rondes), puis les séries (BO5, six équipes) — `check_graine` étendu au split.
+- [x] `js/split.js` : la journée, le classement, les séries, la feuille d'une série.
+- [ ] Les parties trop courtes : le combat final ne connaît pas les tours encore debout (1 % sous 18,5 min contre 22,1 au réel).
 
 ## Jalon 3 — le Rogue
 
@@ -52,3 +56,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-10 — Jalon 1 commencé : les Mondiaux de 2011 à 2025, le catalogue des quatre ligues, la récolte élargie (objectifs, vision, objets, classes), `js/cotes.js` et ses remplacements par époque, `check_cotes`.
 - 2026-10-10 — Leaguepedia refuse l'anonyme par l'API, même depuis GitHub ; la page d'export passe. Les quinze Mondiaux bâtis : r = 0,85 entre la force tirée des cotes et la vraie fiche.
 - 2026-10-10 — Les images : photos et logos de Leaguepedia copiés dans img/lp (leur serveur refuse les autres sites), champions de Data Dragon ; la carte d'un joueur et ses quatre époques ; la sous-cote Économie.
+- 2026-10-10 — Jalon 2 : les parties dans les shards (`matchs`), le moteur par événements (tours de 30 s, de 15 à 80 min) calibré sur les 1 355 parties des Mondiaux, le split au jour le jour et ses séries, `check_feuilles`. Les shards se rebâtissent par l'Action « Bâtir les splits ».

@@ -68,11 +68,15 @@ Un joueur de peu de parties tire vers la moyenne (z × pj / (pj + 3)), une parti
 
 ```
 { id, nom, ligue, annee, pages, source, ddragon, parties,
+  matchs: [[équipe bleue, équipe rouge, durée, côté gagnant (1 bleu, 2 rouge),
+            éliminations ×2, or ×2, tours ×2, dragons ×2, Nashor ×2, hérauts ×2, inhibiteurs ×2]],
   equipes: [{ nom, v, d,
     obj: { tours, dragons, barons, herauts, larves, inhib : [somme, parties mesurées] },
     joueurs: [{ n, r, pj, v, min, k, m, a, eqK, eqOr, eqDeg,
       or, cs, deg, vision : [somme, parties mesurées, minutes de ces parties],
       champs: [[champion, pj, v]], classes: { tank: 0,4, … }, objets: [les 8 plus achetés] }] }] }
 ```
+
+`matchs` : une ligne par partie, chaque nombre du côté bleu puis du rouge, null quand Leaguepedia ne le mesure pas (de 2011 à 2013 : ni éliminations d'équipe, ni or, ni tours). Le côté bleu est `Team1` chez Leaguepedia. Le moteur s'y mesure (MOTEUR.md).
 
 `r` : haut, jungle, milieu, bas, soutien. `eqK`, `eqOr`, `eqDeg` : les totaux de son équipe dans ses parties (la part d'un joueur s'y mesure). `v`/`d` : parties gagnées et perdues.

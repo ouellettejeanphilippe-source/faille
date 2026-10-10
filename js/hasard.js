@@ -18,3 +18,14 @@ export function hasard(graine) {
 
 /** Un élément d'une liste, tiré par `de`. */
 export const piger = (liste, de) => liste[Math.floor(de() * liste.length)];
+
+/**
+ * La graine d'une partie, tirée de celle du split et d'une clé (« j3-2 ») :
+ * chaque partie a son propre dé, donc l'ordre où on les joue, et le hasard
+ * tiré ailleurs entre deux, ne changent rien à ce qu'elles donnent.
+ */
+export function graineDe(graine, cle) {
+  let h = 0x811c9dc5 ^ (graine >>> 0);
+  for (const c of String(cle)) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+  return h >>> 0;
+}

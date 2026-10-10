@@ -118,4 +118,34 @@ img.absente { display: none; }
 .ere-esport .carte-stats dd { font-size: 1.15rem; }
 .ere-esport .signer-carte { text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
 
+/* Le split : la journée, les séries, le classement. Ta ligne en or. */
+#split h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--pale); margin: 16px 0 6px; }
+#split > button:not(.principal) { width: 100%; margin-top: 8px; }
+.series, .classement { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.serie { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 8px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; }
+.serie[data-serie] { cursor: pointer; }
+.serie .equipe:last-child { text-align: right; }
+.equipe { min-width: 0; overflow-wrap: anywhere; }
+.equipe small { display: block; color: var(--pale); font-size: .7rem; }
+.equipe.gagne b { color: var(--accent); }
+.pointage { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--pale); }
+.toi { border-color: var(--accent); }
+.classement li { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; }
+.classement .coupe { margin-bottom: 8px; }
+.rang, .fiche { color: var(--pale); font-variant-numeric: tabular-nums; }
+
+/* La feuille d'une série. */
+.partie { margin-bottom: 20px; }
+.partie h3 { margin: 8px 0; }
+.feuille-equipe { background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
+.feuille-equipe.gagne { border-color: var(--accent); }
+.feuille-equipe h4 { margin: 0; font-size: .9rem; }
+.feuille-equipe .sous { margin: 2px 0 6px; font-size: .8rem; }
+.feuille-equipe table { width: 100%; border-collapse: collapse; font-size: .85rem; table-layout: fixed; }
+.feuille-equipe td { padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feuille-equipe td:first-child { width: 64px; color: var(--pale); }
+.feuille-equipe td:nth-child(3), .feuille-equipe td:nth-child(4) { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.moments { list-style: none; margin: 8px 0 0; padding: 0; font-size: .85rem; color: var(--pale); }
+.temps { display: inline-block; width: 44px; font-variant-numeric: tabular-nums; color: var(--texte); }
+
 footer { max-width: 960px; margin: 0 auto; padding: 16px; color: var(--pale); font-size: .75rem; }

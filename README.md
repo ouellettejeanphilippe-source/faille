@@ -16,6 +16,10 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 
 `node scripts/build_splits.mjs` interroge Leaguepedia et écrit `data/splits/` et `data/index.json`. L'API limite le débit : c'est lent. Sinon, l'Action « Bâtir les splits » le fait et commite. Voir `docs/donnees.md`.
 
+## Le moteur
+
+`js/sim.js` joue chaque partie par événements, un tour de 30 secondes à la fois, de 15 à 80 minutes, calibré sur les vraies parties des shards. `MOTEUR.md` en est la spécification ; `node scripts/check_feuilles.mjs` vérifie la feuille de match et rejoue chaque vraie partie contre ce qui s'est passé.
+
 ## Mention légale
 
 Faille n'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.
