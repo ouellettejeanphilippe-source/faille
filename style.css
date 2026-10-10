@@ -1,4 +1,4 @@
-/* Une seule feuille, mobile d'abord (390 px). Le noir est le décor. */
+/* Une seule feuille, dans l'ordre des écrans, mobile d'abord (390 px). Le noir est le décor. */
 :root {
   --fond: #0b0b0d;
   --carte: #17171c;
@@ -16,24 +16,106 @@ h2 { font-size: 1.1rem; margin: 0 0 8px; }
 button { font: inherit; color: var(--texte); background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
 button:disabled { opacity: .4; cursor: default; }
 .principal { width: 100%; margin-top: 12px; background: var(--accent); color: var(--fond); border: 0; font-weight: 700; }
+.retour { align-self: flex-start; margin-bottom: 12px; }
+img.absente { display: none; }
+
+/* L'alignement. */
 .alignement { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.case { display: flex; gap: 12px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 10px 12px; }
+.case { display: flex; align-items: center; gap: 12px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 12px; min-height: 58px; }
 .case.pleine { border-color: var(--accent); }
 .role { width: 64px; flex: none; color: var(--pale); }
 .qui small { color: var(--pale); }
-.vestiaire { position: fixed; inset: 0; background: var(--fond); padding: 16px; display: flex; flex-direction: column; }
-.vestiaire[hidden] { display: none; }
-.retour { align-self: flex-start; margin-bottom: 12px; }
-.defile { overflow: auto; flex: 1; }
-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
-th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--trait); white-space: nowrap; }
-th { color: var(--pale); font-weight: 600; }
-.nom { font-weight: 700; }
-.champs { color: var(--pale); }
-tr.pris { opacity: .4; }
-.badge { display: inline-block; margin-right: 4px; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; font-size: .8rem; }
+
+/* Les couches (le vestiaire, la carte) : plein écran, elles défilent en dedans. */
+.couche { position: fixed; inset: 0; background: var(--fond); padding: 16px; display: flex; flex-direction: column; overflow-y: auto; }
+.couche[hidden] { display: none; }
+.defile { overflow-y: auto; flex: 1; }
+
+/* Les photos : les initiales dessous, la photo par-dessus quand elle vient. */
+.vignette, .carte-photo { position: relative; flex: none; display: grid; place-items: center; overflow: hidden; background: #22222a; color: var(--pale); font-weight: 700; }
+.vignette { width: 40px; height: 40px; border-radius: 50%; font-size: .8rem; }
+.vignette img, .carte-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* Le vestiaire. */
+.liste-joueurs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; align-content: start; }
+.joueur { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--carte); border: 1px solid var(--trait); border-radius: 10px; cursor: pointer; }
+.joueur.pris { opacity: .45; }
+.joueur-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.joueur-id b, .joueur-id small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.joueur-id small { color: var(--pale); }
+.joueur-champs { display: flex; gap: 2px; flex: none; }
+.ico-champ { width: 26px; height: 26px; border-radius: 4px; display: grid; place-items: center; background: #22222a; font-size: .6rem; }
+
+/* Les badges : le palier se dit en mot et se voit en couleur. */
+.badge { display: inline-block; margin: 0 4px 2px 0; border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; font-size: .75rem; white-space: nowrap; }
 .pal-bronze { color: #c98a55; }
 .pal-argent { color: #c9ced6; }
 .pal-or { color: #e5c25a; }
 .pal-platine { color: #8fe0e6; }
+
+/*
+ * LA CARTE. La structure est la même pour toutes les époques ; chaque époque
+ * (`ere-…`, js/fiche.js) ne change que des variables et quelques traits.
+ */
+.carte {
+  --c-fond: #111; --c-bord: #333; --c-tete: #1b1b1b; --c-texte: #eee; --c-pale: #999; --c-accent: #c8aa6e;
+  --c-police: system-ui, sans-serif; --c-rayon: 12px;
+  width: 100%; max-width: 440px; margin: 0 auto; flex: none; background: var(--c-fond); color: var(--c-texte);
+  border: 2px solid var(--c-bord); border-radius: var(--c-rayon); overflow: hidden; font-family: var(--c-police);
+}
+.carte-tete { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 64px; background: var(--c-tete); overflow: hidden; }
+.carte-tete::before { content: ""; position: absolute; inset: 0; background: var(--illus, none) center 20% / cover; opacity: .35; }
+.carte-tete > * { position: relative; }
+.carte-logo { width: 44px; height: 44px; object-fit: contain; }
+.carte-split { font-size: .85rem; color: var(--c-pale); }
+.carte-corps { display: flex; gap: 12px; padding: 12px; }
+.carte-photo { width: 120px; height: 140px; border: 1px solid var(--c-bord); border-radius: calc(var(--c-rayon) / 2); font-size: 2rem; }
+.carte-id { min-width: 0; }
+.carte-id h3 { margin: 0 0 4px; font-size: 1.5rem; line-height: 1.1; overflow-wrap: anywhere; color: var(--c-accent); }
+.carte-id p { margin: 0 0 6px; color: var(--c-pale); }
+.carte-id p b { color: var(--c-texte); }
+.carte-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--c-bord); }
+.carte-stats div { padding: 6px 8px; border-right: 1px solid var(--c-bord); border-bottom: 1px solid var(--c-bord); }
+.carte-stats div:nth-child(3n) { border-right: 0; }
+.carte-stats dt { font-size: .7rem; color: var(--c-pale); text-transform: uppercase; letter-spacing: .05em; }
+.carte-stats dd { margin: 0; font-weight: 700; }
+.carte h4 { margin: 12px 12px 6px; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--c-pale); }
+.bassin { list-style: none; margin: 0; padding: 0 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.bassin li { display: grid; justify-items: center; text-align: center; gap: 2px; font-size: .7rem; min-width: 0; }
+.bassin img, .ico-vide { width: 44px; height: 44px; border-radius: 6px; border: 1px solid var(--c-bord); background: #22222a; }
+.bassin b { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bassin small { color: var(--c-pale); }
+.carte .signer-carte { width: calc(100% - 24px); margin: 14px 12px 12px; background: var(--c-accent); color: #000; }
+
+/* 2011-2013, le client d'origine : bleu acier, cadre argenté, reflets. */
+.ere-origine {
+  --c-fond: linear-gradient(#16263a, #0b1520); --c-bord: #8ea6bf; --c-tete: linear-gradient(#4a6d92, #1d324a 60%, #14263a);
+  --c-texte: #e8eef5; --c-pale: #a9bccf; --c-accent: #f2d58a; --c-police: Georgia, 'Times New Roman', serif; --c-rayon: 6px;
+  box-shadow: inset 0 0 0 1px #c8d6e4, 0 0 18px #4a6d9255;
+}
+.ere-origine .carte-id h3 { text-shadow: 0 1px 0 #000, 0 0 8px #f2d58a66; }
+
+/* 2014-2016, le client des saisons 4 à 6 : bleu nuit, filet doré, coins taillés. */
+.ere-saison4 {
+  --c-fond: #0a1428; --c-bord: #d8b46a; --c-tete: linear-gradient(90deg, #0f2140, #1a3358); --c-texte: #e4e9f2; --c-pale: #8fa3bf; --c-accent: #d8b46a;
+  --c-rayon: 0; clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.ere-saison4 .carte-id h3 { letter-spacing: .06em; text-transform: uppercase; font-size: 1.3rem; }
+
+/* 2017-2022, le client hextech : noir bleuté, or et cyan, losanges. */
+.ere-hextech {
+  --c-fond: #010a13; --c-bord: #785a28; --c-tete: linear-gradient(#0a1a24, #010a13); --c-texte: #f0e6d2; --c-pale: #a09b8c; --c-accent: #c8aa6e;
+  --c-rayon: 2px; box-shadow: inset 0 0 0 3px #010a13, inset 0 0 0 4px #463714;
+}
+.ere-hextech .carte-id h3 { background: linear-gradient(#f0e6d2, #c8aa6e); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .04em; text-transform: uppercase; }
+.ere-hextech h4::before, .ere-hextech h4::after { content: " ◆ "; color: #0ac8b9; }
+.ere-hextech .signer-carte { background: #1e2328; color: #cdbe91; border: 2px solid #c8aa6e; }
+
+/* 2023 →, les sites de l'esport : noir, blanc, gros caractères. */
+.ere-esport { --c-fond: #000; --c-bord: #2b2b2b; --c-tete: #000; --c-texte: #fff; --c-pale: #8a8a8a; --c-accent: #fff; --c-rayon: 4px; }
+.ere-esport .carte-id h3 { font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
+.ere-esport .carte-tete::before { opacity: .55; }
+.ere-esport .carte-stats dd { font-size: 1.15rem; }
+.ere-esport .signer-carte { text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
+
 footer { max-width: 960px; margin: 0 auto; padding: 16px; color: var(--pale); font-size: .75rem; }

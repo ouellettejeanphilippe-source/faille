@@ -19,17 +19,22 @@ index.html            la page unique
 style.css             tous les styles, mobile d'abord (390 px)
 sw.js                 travailleur de service : la coquille hors ligne (FICHIERS)
 data/index.json       la liste des splits bâtis
-data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats
+data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats, chemins de leurs images
+data/champions.json   les champions joués : nom → id de Data Dragon (leurs images)
+img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
 js/main.js            le contrôleur : la roulette, le vestiaire, l'alignement
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges
-js/data.js            le chargeur (index, shard)
+js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
+js/images.js          d'où vient chaque image (img/lp, Data Dragon)
+js/data.js            le chargeur (index, shard, champions)
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
 js/util.js            les petits outils partagés
 
 scripts/build_splits.mjs   Leaguepedia + Data Dragon → data/ (lent : l'API limite le débit)
 scripts/catalogue.mjs      la table Tournaments → scripts/splits.json (les splits des quatre ligues)
+scripts/images.mjs         les photos et les logos des shards → img/lp/, une fois chacun
 scripts/splits.json        les splits à bâtir : les Mondiaux, puis le catalogue
 scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
@@ -56,6 +61,11 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Tout le hasard passe par `hasard()` (js/hasard.js) ; la même graine rejoue le même split — `check_graine`.
 - Aucun chiffre de calibration inventé : chaque repère vient des vraies parties (durée, éliminations, or à 15 min, côté bleu).
 
+**Les images**
+- Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
+- Champions : Data Dragon, demandé à Riot, gardé par le travailleur de service.
+- La carte d'un joueur s'inspire de l'esprit de l'interface de LoL de son époque, sans en copier ni police, ni logo, ni élément.
+
 **L'interface**
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
@@ -78,6 +88,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **niveau** : ce que le joueur valait dans son split, à son rôle — Remplaçant, Régulier, Pilier, ★ Étoile, ★ Phénomène. Pas « Soutien » : c'est un rôle.
 - **sous-cote** : un axe caché de son jeu (ligne, pression, dégâts, implication, survie, vision, objectifs, bassin) ; jamais à l'écran.
 - **badge** : ce qu'il fait, à un palier — Bronze, Argent, Or, Platine (« 🗡️ Bourreau de ligne Or ») ; deux au plus.
+- **carte** : la fiche d'un joueur, habillée selon l'époque (le client d'origine, la saison 4, hextech, l'esport).
+- **bassin** : les champions qu'un joueur a joués dans le split, avec ses parties et sa fiche sur chacun.
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
 
 ## Tester

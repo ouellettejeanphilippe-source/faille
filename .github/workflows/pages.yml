@@ -1,0 +1,47 @@
+name: Publier
+
+# Le site sur GitHub Pages, avec ses images. Les photos des joueurs et les
+# logos (img/lp/) ne vivent PAS dans le dépôt : le serveur de Leaguepedia
+# refuse les autres sites, donc on les copie ici, au déploiement, une fois
+# chacune — le cache de l'Action garde celles déjà copiées d'un déploiement
+# à l'autre (scripts/images.mjs ne redemande que les nouvelles).
+#
+# Réglage à faire une fois : Settings → Pages → Source : « GitHub Actions ».
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Les images déjà copiées
+        uses: actions/cache@v4
+        with:
+          path: img/lp
+          key: images-${{ hashFiles('data/splits/*.json') }}
+          restore-keys: images-
+      - name: Copier les nouvelles images
+        run: node scripts/images.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploiement
+        uses: actions/deploy-pages@v4

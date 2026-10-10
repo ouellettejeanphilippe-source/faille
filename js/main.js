@@ -1,32 +1,26 @@
 /*
- * LE CONTRÔLEUR (jalon 0). La boucle du repêchage, sans cotes ni plafond
- * encore : la roulette sort un split et une équipe, tu piges un joueur dans
- * ce vestiaire pour un rôle libre, et tu recommences jusqu'à cinq.
- * Ce qui s'affiche est une vraie stat, jamais une cote.
+ * LE CONTRÔLEUR. La boucle du repêchage, sans plafond encore : la roulette
+ * sort un split et une équipe, tu ouvres la carte d'un joueur de ce vestiaire
+ * et tu le signes pour un rôle libre, jusqu'à cinq.
+ * Ce qui s'affiche est le niveau, les badges ou une vraie stat, jamais une cote.
  */
-import { chargerIndex, chargerSplit } from './data.js';
+import { chargerIndex, chargerSplit, chargerChampions } from './data.js';
 import { hasard, piger } from './hasard.js';
-import { esc, virgule } from './util.js';
+import { esc } from './util.js';
 import { brancherRetour } from './pile.js';
 import { profilsDuSplit } from './cotes.js';
+import { ROLES, badge, vignette, icones, carte } from './fiche.js';
 
-const ROLES = [['haut', 'Haut'], ['jungle', 'Jungle'], ['milieu', 'Milieu'], ['bas', 'Bas'], ['soutien', 'Soutien']];
 const $ = s => document.querySelector(s);
 
-const G = { index: null, de: null, tirage: null, alignement: {} };
-
-const kda = j => virgule((j.k + j.a) / Math.max(1, j.m));
-/* Une stat par minute, ou un tiret quand l'époque ne la mesurait pas. */
-const parMin = (t, dec) => (t && t[1] ? virgule(t[0] / t[2], dec) : '—');
-const badge = b => `<span class="badge pal-${b.palier.toLowerCase()}">${b.ico} ${esc(b.nom)} ${b.palier}</span>`;
-const fiche = (v, d) => `${v}-${d}`;
+const G = { index: null, champions: null, de: null, tirage: null, alignement: {} };
 
 function rendreAlignement() {
-  $('#alignement').innerHTML = ROLES.map(([r, mot]) => {
+  $('#alignement').innerHTML = Object.entries(ROLES).map(([r, mot]) => {
     const j = G.alignement[r];
-    return `<li class="case${j ? ' pleine' : ''}"><span class="role">${mot}</span><span class="qui">${j ? `${esc(j.n)} <small>${esc(j.equipe)} · ${esc(j.split)}</small>` : '—'}</span></li>`;
+    return `<li class="case${j ? ' pleine' : ''}">${j ? vignette(j) : ''}<span class="role">${mot}</span><span class="qui">${j ? `${esc(j.n)} <small>${esc(j.equipe)} · ${esc(j.split)}</small>` : '—'}</span></li>`;
   }).join('');
-  const complet = ROLES.every(([r]) => G.alignement[r]);
+  const complet = Object.keys(ROLES).every(r => G.alignement[r]);
   $('#roulette').hidden = complet;
   $('#recommencer').hidden = !complet;
   $('#etat').textContent = complet ? 'Alignement complet. La simulation du split arrive au jalon 2.' : '';
@@ -35,28 +29,34 @@ function rendreAlignement() {
 function rendreVestiaire() {
   const { split, equipe, profils } = G.tirage;
   $('#vestiaire-titre').textContent = `${equipe.nom} · ${split.nom}`;
-  $('#vestiaire-fiche').textContent = `${fiche(equipe.v, equipe.d)} en parties`;
+  $('#vestiaire-fiche').textContent = `${equipe.v}-${equipe.d} en parties · touche un joueur pour sa carte`;
   $('#vestiaire-liste').innerHTML = equipe.joueurs.map((j, i) => {
-    const pris = !!G.alignement[j.r];
     const p = profils.joueurs.get(j);
-    return `<tr class="${pris ? 'pris' : ''}" data-i="${i}">
-      <td>${ROLES.find(([r]) => r === j.r)[1]}</td><td class="nom">${esc(j.n)}</td><td>${p.niveau}</td>
-      <td>${p.badges.map(badge).join('')}</td>
-      <td>${j.pj}</td><td>${kda(j)}</td><td>${parMin(j.cs, 1)}</td><td>${parMin(j.deg, 0)}</td>
-      <td class="champs">${j.champs.slice(0, 3).map(c => esc(c[0])).join(', ')}</td>
-      <td><button class="signer" data-i="${i}"${pris ? ' disabled' : ''}>Signer</button></td></tr>`;
+    return `<li class="joueur${G.alignement[j.r] ? ' pris' : ''}" data-i="${i}" tabindex="0">
+      ${vignette(j)}
+      <span class="joueur-id"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${p.niveau}</small><span>${p.badges.map(badge).join('')}</span></span>
+      <span class="joueur-champs">${icones(G.champions, j)}</span></li>`;
   }).join('');
   $('#vestiaire').hidden = false;
 }
 
-function fermerVestiaire() {
-  if ($('#vestiaire').hidden) return false;
-  $('#vestiaire').hidden = true;
+function ouvrirCarte(i) {
+  const { split, equipe, profils } = G.tirage;
+  const j = equipe.joueurs[i];
+  if (!j) return;
+  G.carte = i;
+  $('#carte').innerHTML = `<button class="retour" data-retour>‹ Retour</button>${carte({ split, equipe, j, profil: profils.joueurs.get(j), champions: G.champions, pris: !!G.alignement[j.r] })}`;
+  $('#carte').hidden = false;
+}
+
+function fermer(id) {
+  if ($(id).hidden) return false;
+  $(id).hidden = true;
   return true;
 }
 
 async function tourner() {
-  const libres = ROLES.map(([r]) => r).filter(r => !G.alignement[r]);
+  const libres = Object.keys(ROLES).filter(r => !G.alignement[r]);
   $('#roulette').disabled = true;
   try {
     // On retire tant que le vestiaire n'a personne pour un rôle libre.
@@ -74,19 +74,20 @@ async function tourner() {
   }
 }
 
-function signer(i) {
+function signer() {
   const { split, equipe } = G.tirage;
-  const j = equipe.joueurs[i];
+  const j = equipe.joueurs[G.carte];
   if (!j || G.alignement[j.r]) return;
-  G.alignement[j.r] = { n: j.n, equipe: equipe.nom, split: split.nom };
-  fermerVestiaire();
+  G.alignement[j.r] = { n: j.n, photo: j.photo, equipe: equipe.nom, split: split.nom };
+  fermer('#carte');
+  fermer('#vestiaire');
   rendreAlignement();
 }
 
 async function demarrer() {
   G.de = hasard(Date.now());
-  G.index = await chargerIndex();
-  $('#source').textContent = `Données : ${G.index.source}.`;
+  [G.index, G.champions] = await Promise.all([chargerIndex(), chargerChampions()]);
+  $('#source').textContent = `Données : ${G.index.source}. Photos et logos : Leaguepedia.`;
   if (!G.index.splits.length) {
     $('#etat').textContent = 'Aucun split bâti : lance scripts/build_splits.mjs.';
     $('#roulette').hidden = true;
@@ -94,11 +95,14 @@ async function demarrer() {
   }
   $('#roulette').addEventListener('click', tourner);
   $('#recommencer').addEventListener('click', () => { G.alignement = {}; rendreAlignement(); });
-  $('#vestiaire-liste').addEventListener('click', ev => {
-    const b = ev.target.closest('.signer');
-    if (b) signer(Number(b.dataset.i));
-  });
-  brancherRetour([fermerVestiaire]);
+  const choisir = ev => {
+    const li = ev.target.closest('.joueur');
+    if (li && (ev.type === 'click' || ev.key === 'Enter')) ouvrirCarte(Number(li.dataset.i));
+  };
+  $('#vestiaire-liste').addEventListener('click', choisir);
+  $('#vestiaire-liste').addEventListener('keydown', choisir);
+  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte')) signer(); });
+  brancherRetour([() => fermer('#carte'), () => fermer('#vestiaire')]);
   rendreAlignement();
 }
 

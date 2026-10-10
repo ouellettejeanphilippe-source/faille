@@ -78,13 +78,17 @@ export const AXES = {
     { nom: 'tours de l\'équipe (remplacement)', stats: [['tours_eq', 1]] },
   ],
   bassin: [{ nom: 'nombre effectif de champions', stats: [['bassin', 1]] }],
+  // Ce qu'il rend pour ce qu'il coûte : beaucoup d'éliminations touchées avec peu de l'or de l'équipe. Le joueur
+  // qui laisse les ressources aux autres et reste partout (Faker au Mondial 2024 : la plus petite part de l'or des
+  // milieux, une participation dans la moyenne, champion du monde) ; les dégâts ne le voient pas.
+  economie: [{ nom: 'participation aux éliminations et part de l\'or (moins, c\'est mieux)', stats: [['kp', 1], ['part_or', -1]] }],
 };
 
 /* Ce que pèse chaque axe dans la valeur, par rôle. À calibrer : check_cotes dit si la force suit le classement. */
 const POIDS = {
-  haut: { ligne: 0.3, pression: 0.15, degats: 0.2, implication: 0.1, survie: 0.15, bassin: 0.1 },
-  jungle: { implication: 0.25, objectifs: 0.2, ligne: 0.15, survie: 0.15, degats: 0.1, vision: 0.1, bassin: 0.05 },
-  milieu: { ligne: 0.25, degats: 0.25, implication: 0.15, survie: 0.15, pression: 0.1, bassin: 0.1 },
+  haut: { ligne: 0.3, pression: 0.15, degats: 0.15, implication: 0.1, survie: 0.15, bassin: 0.05, economie: 0.1 },
+  jungle: { implication: 0.25, objectifs: 0.2, ligne: 0.1, survie: 0.15, degats: 0.05, vision: 0.1, bassin: 0.05, economie: 0.1 },
+  milieu: { ligne: 0.2, degats: 0.15, implication: 0.15, survie: 0.15, pression: 0.05, bassin: 0.1, economie: 0.2 },
   bas: { degats: 0.3, ligne: 0.25, survie: 0.2, implication: 0.15, bassin: 0.1 },
   soutien: { implication: 0.3, vision: 0.25, survie: 0.2, objectifs: 0.1, bassin: 0.15 },
 };
@@ -96,10 +100,11 @@ const POIDS = {
  */
 const PREMIERE_LIGNE = ['🛡️', 'Première ligne', { cls_tank: 1, survie: 0.5 }];
 const BOURREAU = ['🗡️', 'Bourreau de ligne', { ligne: 1 }];
+const CHEF = ['🧩', 'Chef d\'orchestre', { economie: 1, implication: 0.5 }];
 const BADGES = {
-  haut: [['🪓', 'Pousseur', { pression: 1, implication: -0.5 }], PREMIERE_LIGNE, BOURREAU, ['💥', 'Combattant', { cls_combattant: 1, degats: 0.5 }]],
-  jungle: [['⚡', 'Ganker', { implication: 1 }], ['🐉', 'Chasseur d\'objectifs', { objectifs: 1 }], ['🌾', 'Fermier', { ligne: 1, implication: -0.5 }], PREMIERE_LIGNE],
-  milieu: [['🔪', 'Assassin', { cls_assassin: 1, degats: 0.5 }], ['🔮', 'Mage de contrôle', { cls_mage: 1, implication: 0.5 }], ['🎯', 'Carry', { degats: 1 }], BOURREAU],
+  haut: [['🪓', 'Pousseur', { pression: 1, implication: -0.5 }], PREMIERE_LIGNE, BOURREAU, ['💥', 'Combattant', { cls_combattant: 1, degats: 0.5 }], CHEF],
+  jungle: [['⚡', 'Ganker', { implication: 1 }], ['🐉', 'Chasseur d\'objectifs', { objectifs: 1 }], ['🌾', 'Fermier', { ligne: 1, implication: -0.5 }], PREMIERE_LIGNE, CHEF],
+  milieu: [['🔪', 'Assassin', { cls_assassin: 1, degats: 0.5 }], ['🔮', 'Mage de contrôle', { cls_mage: 1, implication: 0.5 }], ['🎯', 'Carry', { degats: 1 }], BOURREAU, CHEF],
   bas: [['💎', 'Hypercarry', { degats: 1, ligne: 0.5 }], ['🪨', 'Le rocher', { survie: 1 }], BOURREAU],
   soutien: [['🚪', 'Engageur', { cls_tank: 1, implication: 0.5 }], ['✨', 'Enchanteur', { cls_soutien: 1, survie: 0.5 }], ['👁️', 'Gardien de la vision', { vision: 1 }], ['🤝', 'Omniprésent', { implication: 1 }]],
 };
