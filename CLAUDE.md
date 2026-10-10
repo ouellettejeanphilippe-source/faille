@@ -16,7 +16,8 @@ Lis `LIVRAISON.md` — le plan de travail : les jalons, chaque item avec son fic
 
 ```
 index.html            la page unique
-style.css             tous les styles, mobile d'abord (390 px)
+style.css             tous les styles, mobile d'abord (390 px), sur le système de Cap 82-0
+fonts/                Barlow Condensed (OFL 1.1), la condensée de Cap 82-0
 sw.js                 travailleur de service : la coquille hors ligne (FICHIERS)
 data/index.json       la liste des splits bâtis
 data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats, chemins de leurs images
@@ -24,7 +25,7 @@ data/champions.json   les champions joués : nom → id de Data Dragon (leurs im
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
 js/main.js            le contrôleur : la roulette, le vestiaire, l'alignement
-js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges
+js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
 js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
@@ -46,7 +47,7 @@ scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, feuilles, rogue)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, feuilles, rogue)
 ```
 
 ## Règles fermes
@@ -61,6 +62,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **Les cotes**
 - Aucune cote dans le DOM, jamais ; ce qui s'affiche est le niveau, les badges ou une vraie stat.
 - Une seule implémentation des cotes (`js/cotes.js`, partagée par les scripts et le navigateur).
+- Le coût sous le plafond suit le niveau et rien d'autre ; le cinq se complète toujours — `check_plafond`.
 - Chaque sous-cote se juge contre le même rôle dans le même split ; la force d'équipe suit la vraie fiche — `check_cotes`.
 - Une stat qu'une époque ne mesure pas n'est jamais inventée : on la lit par une formule de remplacement écrite dans `AXES`, ou l'axe reste neutre et ses badges ne se décernent pas — `check_cotes`.
 
@@ -85,6 +87,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner.
 - Le noir est le décor.
+- Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
 
 **Le code et les tests**
 - Modules ES natifs, pas de build step, aucune dépendance npm.
@@ -99,6 +102,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **rôle** : haut, jungle, milieu, bas, soutien — la case d'un joueur dans le cinq.
 - **vestiaire** : l'équipe d'un split où l'on pige.
 - **champion** : le personnage joué ; on ne dit pas « perso ». Sa **classe** (tank, mage…) vient de Data Dragon.
+- **plafond** : ce que ton cinq peut coûter (15 points) ; le **coût** d'un joueur suit son niveau.
 - **niveau** : ce que le joueur valait dans son split, à son rôle — Remplaçant, Régulier, Pilier, ★ Étoile, ★ Phénomène. Pas « Soutien » : c'est un rôle.
 - **sous-cote** : un axe caché de son jeu (ligne, pression, dégâts, implication, survie, vision, objectifs, bassin) ; jamais à l'écran.
 - **badge** : ce qu'il fait, à un palier — Bronze, Argent, Or, Platine (« 🗡️ Bourreau de ligne Or ») ; deux au plus.

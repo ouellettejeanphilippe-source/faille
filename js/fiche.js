@@ -11,7 +11,7 @@
  * de Riot n'est repris, seulement l'esprit de chaque époque (CLAUDE.md).
  * Aucune cote ici : le niveau, les badges, les vraies stats.
  */
-import { esc, virgule } from './util.js';
+import { esc, virgule, pts } from './util.js';
 import { imageLP, iconeChampion, illustration } from './images.js';
 
 const ERES = [[2023, 'ere-esport'], [2017, 'ere-hextech'], [2014, 'ere-saison4'], [0, 'ere-origine']];
@@ -25,14 +25,17 @@ export const badge = b => `<span class="badge pal-${b.palier.toLowerCase()}">${b
 /** La petite photo d'une ligne du vestiaire. */
 export const vignette = j => `<span class="vignette">${initiales(j.n)}${j.photo ? `<img src="${imageLP(j.photo)}" alt="" loading="lazy">` : ''}</span>`;
 
+/** Le coût d'un joueur sous le plafond : le chiffre, son unité dessous. */
+export const coutHtml = n => `<span class="cout"><b>${n}</b><small>${pts(n).split(' ')[1]}</small></span>`;
+
 /** Les icônes de champions d'une ligne (les trois plus joués). */
 export const icones = (champions, j, n = 3) => j.champs.slice(0, n).map(([c]) => {
   const src = iconeChampion(champions, c);
   return src ? `<img class="ico-champ" src="${src}" alt="${esc(c)}" title="${esc(c)}" loading="lazy">` : `<span class="ico-champ">${esc(c.slice(0, 2))}</span>`;
 }).join('');
 
-/** La carte entière. `pris` : le rôle est déjà comblé dans l'alignement. */
-export function carte({ split, equipe, j, profil, champions, pris }) {
+/** La carte entière. `refus` : pourquoi il ne se signe pas (le rôle est comblé, trop cher), ou null. */
+export function carte({ split, equipe, j, profil, champions, refus }) {
   const fond = illustration(champions, j.champs[0] && j.champs[0][0]);
   const stats = [
     ['Parties', `${j.pj} (${j.v}-${j.pj - j.v})`],
@@ -55,13 +58,13 @@ export function carte({ split, equipe, j, profil, champions, pris }) {
       <div class="carte-photo">${initiales(j.n)}${j.photo ? `<img src="${imageLP(j.photo)}" alt="">` : ''}</div>
       <div class="carte-id">
         <h3>${esc(j.n)}</h3>
-        <p>${ROLES[j.r]} · <b>${profil.niveau}</b></p>
+        <p>${ROLES[j.r]} · <b>${profil.niveau}</b> · ${pts(profil.cout)}</p>
         <p>${profil.badges.map(badge).join('')}</p>
       </div>
     </div>
     <dl class="carte-stats">${stats.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
     <h4>Bassin de champions</h4>
     <ul class="bassin">${bassin}</ul>
-    <button class="principal signer-carte"${pris ? ' disabled' : ''}>${pris ? `${ROLES[j.r]} déjà comblé` : 'Signer'}</button>
+    <button class="go signer-carte"${refus ? ' disabled' : ''}>${refus || `Signer · ${pts(profil.cout)}`}</button>
   </article>`;
 }

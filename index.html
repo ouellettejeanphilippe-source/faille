@@ -2,39 +2,67 @@
 <html lang="fr-CA">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050608">
   <title>Faille</title>
+  <!-- La condensée de Cap 82-0 (Barlow Condensed, fonts/, OFL 1.1) porte les titres, les chiffres, les boutons ; les phrases restent en police système. -->
+  <link rel="preload" href="fonts/BarlowCondensed-800-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-retour" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+    <symbol id="i-des" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-marche" viewBox="0 0 24 24"><path d="M3 4h2.5l2.2 10.5h10.6L20.5 7H7"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol>
+    <symbol id="i-saut" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7V5z" fill="currentColor" stroke="none"/><path d="M18 5v14"/></symbol>
+  </svg>
+
+  <!-- LE TABLEAU INDICATEUR, comme dans Cap 82-0 : toujours là. À gauche le retour et où en est la partie ; à droite les chiffres — le plafond pendant qu'on bâtit, la fiche, le rang et les jetons pendant le split. -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button type="button" class="retour-btn" id="retourBtn" data-retour hidden><svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Retour</button>
+      <div class="tete-id"><b class="tete-nom">Faille</b><span class="tete-etat" id="teteEtat">—</span></div>
+      <div class="tete-chiffres">
+        <div class="tete-ch" id="teteFiche" hidden><span class="tete-ch-l">Fiche</span><b class="tete-ch-v"></b></div>
+        <div class="tete-ch" id="teteRang" hidden><span class="tete-ch-l">Rang</span><b class="tete-ch-v"></b></div>
+        <div class="tete-ch" id="teteJetons" hidden><span class="tete-ch-l">Jetons</span><b class="tete-ch-v"></b></div>
+        <div class="tete-ch jauge" id="jauge"><span class="tete-ch-l">Plafond restant</span><b class="tete-ch-v" id="jaugeReste">—</b><span class="piste" aria-hidden="true"><span class="rempli" id="jaugeRempli"></span></span></div>
+      </div>
+    </div>
+  </header>
+
   <main>
-    <header><h1>Faille</h1><p class="sous">Pige un pro, bâtis ton cinq, joue le split.</p></header>
-    <section id="bati">
-      <h2>Ton alignement</h2>
+    <section id="bati" class="ecran">
+      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p></div>
       <ol id="alignement" class="alignement"></ol>
-      <button id="roulette" class="principal">Tourner la roulette</button>
-      <button id="jouer" class="principal" hidden>Jouer le split</button>
-      <button id="recommencer" hidden>Recommencer</button>
       <p id="etat" class="etat"></p>
+      <div class="actionbar">
+        <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg>Tourner la roulette</button>
+        <button id="jouer" class="go" hidden>Jouer le split</button>
+        <button id="recommencer" hidden>Recommencer</button>
+      </div>
     </section>
-    <section id="split" hidden>
-      <h2 id="split-titre"></h2>
-      <p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties). Avant chacune de tes séries, le repêchage des champions.</p>
-      <p id="jetons" class="etat"></p>
-      <button id="ouvrir-boutique">La boutique · le plan de jeu · le coach</button>
+
+    <section id="split" class="ecran" hidden>
+      <div class="ecran-tete"><h1 id="split-titre"></h1><p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties). Avant chacune de tes séries, le repêchage des champions.</p></div>
       <div id="split-jour"></div>
-      <button id="journee" class="principal">Journée suivante</button>
-      <button id="jusqua">Jusqu'aux séries</button>
-      <button id="ronde" class="principal" hidden>Ronde suivante</button>
-      <button id="nouveau" class="principal" hidden>Un nouveau cinq</button>
       <div id="split-classement"></div>
+      <div class="actionbar">
+        <button id="journee" class="go">Journée suivante</button>
+        <button id="ronde" class="go" hidden>Ronde suivante</button>
+        <button id="nouveau" class="go" hidden>Un nouveau cinq</button>
+        <button id="jusqua"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Aux séries</button>
+        <button id="ouvrir-boutique"><svg class="ico" aria-hidden="true"><use href="#i-marche"/></svg>Boutique</button>
+      </div>
+      <p id="jetons" class="etat"></p>
     </section>
+
     <section id="vestiaire" class="couche" hidden>
-      <button class="retour" data-retour>‹ Retour</button>
-      <h2 id="vestiaire-titre"></h2>
-      <p id="vestiaire-fiche" class="sous"></p>
-      <ul id="vestiaire-liste" class="liste-joueurs defile"></ul>
+      <header class="bandeau" id="vestiaire-bandeau"></header>
+      <div class="combler"><span>À combler <b id="vestiaire-libres"></b></span><span>Ce choix <b id="vestiaire-max"></b></span></div>
+      <ul id="vestiaire-liste" class="liste-joueurs"></ul>
+      <div class="actionbar"><button id="relancer"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg>Un autre vestiaire</button></div>
     </section>
     <section id="carte" class="couche" hidden></section>
     <section id="repechage" class="couche" hidden></section>
