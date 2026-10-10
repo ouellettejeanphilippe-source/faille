@@ -1,0 +1,34 @@
+name: Bâtir les splits
+
+# Interroge Leaguepedia (lente, limitée en débit) et commite data/ sur main.
+# Lancée à la main : Actions → « Bâtir les splits » → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      splits:
+        description: 'Les id à bâtir, séparés par des espaces (vide : tous ceux de scripts/splits.json)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  batir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bâtir
+        run: node scripts/build_splits.mjs ${{ github.event.inputs.splits }}
+      - name: Vérifier avant de commiter
+        run: node scripts/tout.mjs
+      - name: Commiter
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Données : splits rebâtis depuis Leaguepedia"
+          git push

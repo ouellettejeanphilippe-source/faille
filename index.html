@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faille</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <main>
+    <header><h1>Faille</h1><p class="sous">Pige un pro, bâtis ton cinq, joue le split.</p></header>
+    <section>
+      <h2>Ton alignement</h2>
+      <ol id="alignement" class="alignement"></ol>
+      <button id="roulette" class="principal">Tourner la roulette</button>
+      <button id="recommencer" class="principal" hidden>Recommencer</button>
+      <p id="etat" class="etat"></p>
+    </section>
+    <section id="vestiaire" class="vestiaire" hidden>
+      <button class="retour" data-retour>‹ Retour</button>
+      <h2 id="vestiaire-titre"></h2>
+      <p id="vestiaire-fiche" class="sous"></p>
+      <div class="defile">
+        <table>
+          <thead><tr><th>Rôle</th><th>Joueur</th><th>PJ</th><th>KDA</th><th>CS/min</th><th>Dég./min</th><th>Champions</th><th></th></tr></thead>
+          <tbody id="vestiaire-liste"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p id="source"></p>
+    <p>Faille n'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.</p>
+  </footer>
+</body>
+</html>

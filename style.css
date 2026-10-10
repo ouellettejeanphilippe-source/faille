@@ -1,0 +1,34 @@
+/* Une seule feuille, mobile d'abord (390 px). Le noir est le décor. */
+:root {
+  --fond: #0b0b0d;
+  --carte: #17171c;
+  --trait: #2a2a31;
+  --texte: #ecebe8;
+  --pale: #9a99a1;
+  --accent: #c8aa6e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fond); color: var(--texte); font: 16px/1.4 system-ui, sans-serif; user-select: none; }
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+h1 { margin: 0; color: var(--accent); letter-spacing: .04em; }
+h2 { font-size: 1.1rem; margin: 0 0 8px; }
+.sous, .etat { color: var(--pale); margin: 4px 0 16px; }
+button { font: inherit; color: var(--texte); background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:disabled { opacity: .4; cursor: default; }
+.principal { width: 100%; margin-top: 12px; background: var(--accent); color: var(--fond); border: 0; font-weight: 700; }
+.alignement { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.case { display: flex; gap: 12px; background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 10px 12px; }
+.case.pleine { border-color: var(--accent); }
+.role { width: 64px; flex: none; color: var(--pale); }
+.qui small { color: var(--pale); }
+.vestiaire { position: fixed; inset: 0; background: var(--fond); padding: 16px; display: flex; flex-direction: column; }
+.vestiaire[hidden] { display: none; }
+.retour { align-self: flex-start; margin-bottom: 12px; }
+.defile { overflow: auto; flex: 1; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--trait); white-space: nowrap; }
+th { color: var(--pale); font-weight: 600; }
+.nom { font-weight: 700; }
+.champs { color: var(--pale); }
+tr.pris { opacity: .4; }
+footer { max-width: 960px; margin: 0 auto; padding: 16px; color: var(--pale); font-size: .75rem; }
