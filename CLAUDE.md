@@ -20,7 +20,7 @@ style.css             tous les styles, mobile d'abord (390 px)
 sw.js                 travailleur de service : la coquille hors ligne (FICHIERS)
 data/index.json       la liste des splits bâtis
 data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats, chemins de leurs images
-data/champions.json   les champions joués : nom → id de Data Dragon (leurs images)
+data/champions.json   les champions joués : nom → id de Data Dragon (leurs images) et leurs classes
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
 js/main.js            le contrôleur : la roulette, le vestiaire, l'alignement
@@ -30,6 +30,10 @@ js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
 js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
 js/split.js           l'écran du split : la journée, le classement, les séries, la feuille d'une série
+js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
+js/tableau-repechage.js l'écran du repêchage
+js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs (MOTEUR.md §8)
+js/boutique.js        l'écran de la boutique
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
 js/util.js            les petits outils partagés
@@ -42,7 +46,7 @@ scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, feuilles)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, feuilles, rogue)
 ```
 
 ## Règles fermes
@@ -64,6 +68,12 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Tout le hasard passe par `hasard()` (js/hasard.js) ; la même graine rejoue le même split — `check_graine`.
 - Aucun chiffre de calibration inventé : chaque repère vient des vraies parties (durée, éliminations, or, tours, dragons, Nashor, côté bleu), et chaque partie rejouée retombe dans l'intervalle de la mesure — `check_feuilles`.
 - La feuille de match se ferme par construction (les éliminations des joueurs font celles de l'équipe et les morts de l'autre…) — `check_feuilles`.
+
+**Le rogue (jalon 3)**
+- Tout ce qui change une partie (repêchage, carte, coach) passe par les canaux de `js/sim.js` (`sommerEffets`), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
+- Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
+- Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
+- Ce qu'un effet fait s'écrit en mots (`dire`), jamais en cote.
 
 **Les images**
 - Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
@@ -95,6 +105,9 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **carte** : la fiche d'un joueur, habillée selon l'époque (le client d'origine, la saison 4, hextech, l'esport).
 - **bassin** : les champions qu'un joueur a joués dans le split, avec ses parties et sa fiche sur chacun.
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
+- **repêchage** : les bannissements et les champions d'une série ; le **confort** est ce qu'un joueur perd loin de son plus joué.
+- **canal** : une prise du moteur par où passe un effet (ligne, combat, objectifs, tardif, rythme, siège, fin, confort).
+- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
 
 ## Tester
 

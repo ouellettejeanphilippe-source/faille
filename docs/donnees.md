@@ -20,6 +20,8 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 
 La **classe** de chaque champion (Tank, Combattant, Mage, Assassin, Tireur, Soutien), lue sur la dernière version. Un champion à deux classes compte pour moitié dans chacune. Les champions que Data Dragon ne reconnaît pas sont listés à la fin du build.
 
+`data/champions.json` garde, pour chaque champion joué dans les shards, son id de Data Dragon (les images) et ses classes (le repêchage, js/repechage.js). `node scripts/build_splits.mjs --champions` le refait sans rebâtir de split.
+
 ### Les images
 
 - **Photos des joueurs** : la table `PlayerImages` de Leaguepedia (une photo par joueur par tournoi). Le build garde celle du tournoi même, sinon la même année (l'été d'abord), sinon la plus proche ; les photos d'All-Star passent après. Mesuré sur les Mondiaux : 1 420 photos pour 1 498 joueurs-splits.

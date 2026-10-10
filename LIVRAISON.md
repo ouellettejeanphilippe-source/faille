@@ -47,8 +47,15 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 
 ## Jalon 3 — le Rogue
 
-- [ ] Le repêchage des champions (choix et bannissements) comme deck de match.
-- [ ] Jetons, boutique, packs, coachs : repris de Cap 82-0 par les canaux du moteur, mesurés en paires.
+- [x] `js/sim.js` : les canaux (ligne, combat, objectifs, tardif, rythme, siège, fin, confort), sommés en un seul endroit et bornés ; neutres, ils rejouent la partie calibrée au tirage près — MOTEUR.md §6.
+- [x] `data/champions.json` : la classe de chaque champion (Data Dragon), par `build_splits.mjs --champions`.
+- [x] `js/repechage.js` : le repêchage des champions avant chacune de tes séries — trois bannissements de chaque côté, ton champion pour chacun de tes cinq dans son vrai bassin ; le confort et la composition (contre celle des vraies équipes) par les canaux — MOTEUR.md §7.
+- [x] `js/tableau-repechage.js` : l'écran du repêchage ; le repêchage sur la feuille d'une série.
+- [x] `js/rogue.js`, `js/boutique.js` : les jetons recomptés des résultats, trois packs, quinze cartes de plan de jeu, quatre coachs et leurs paliers de confiance — MOTEUR.md §8.
+- [x] `check_rogue` : chaque carte, chaque coach au palier III, chaque classe et le repêchage mesurés en paires (12 ligues, 120 paires) ; les bornes par rareté, la visibilité des rares ; les packs rejouent, les jetons se recomptent.
+- [ ] Une partie de rogue sur plusieurs splits : les mandats, les médailles, les déblocages (Cap 82-0) ; la sauvegarde.
+- [ ] Ce que l'écran annonce, en chiffres de la mesure (« ≈ +2 éliminations par partie », `check_chiffres` de Cap 82-0) ; pour l'instant, la direction de chaque canal, en mots.
+- [ ] Le pivot du tardif, mesuré sur la ligne du temps des parties (Oracle's Elixir) : ses deux cartes coûtent encore un peu.
 
 ## Journal
 
@@ -57,3 +64,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-10 — Leaguepedia refuse l'anonyme par l'API, même depuis GitHub ; la page d'export passe. Les quinze Mondiaux bâtis : r = 0,85 entre la force tirée des cotes et la vraie fiche.
 - 2026-10-10 — Les images : photos et logos de Leaguepedia copiés dans img/lp (leur serveur refuse les autres sites), champions de Data Dragon ; la carte d'un joueur et ses quatre époques ; la sous-cote Économie.
 - 2026-10-10 — Jalon 2 : les parties dans les shards (`matchs`), le moteur par événements (tours de 30 s, de 15 à 80 min) calibré sur les 1 355 parties des Mondiaux, le split au jour le jour et ses séries, `check_feuilles`. Les shards se rebâtissent par l'Action « Bâtir les splits ».
+- 2026-10-10 — Jalon 3 : les canaux du moteur, le repêchage des champions comme deck de série (bannissements, bassins, confort, composition), les jetons, la boutique, les packs, le plan de jeu et les coachs ; `check_rogue` les mesure en paires.
