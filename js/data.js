@@ -13,3 +13,5 @@ async function lire(url) {
 
 export const chargerIndex = () => lire('data/index.json');
 export const chargerSplit = id => lire(`data/splits/${id}.json`);
+/* Les champions joués : nom → id de Data Dragon, et la version (leurs images). */
+export const chargerChampions = () => lire('data/champions.json');

@@ -20,6 +20,7 @@
  *
  * Sortie : data/splits/<id>.json et data/index.json.
  */
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,11 +40,66 @@ async function classesDesChampions() {
   const { data } = await (await fetch(`${DDRAGON}/cdn/${version}/data/en_US/champion.json`)).json();
   const table = new Map();
   for (const c of Object.values(data)) {
-    const tags = c.tags.map(t => CLASSES[t]).filter(Boolean);
-    table.set(normal(c.id), tags);
-    table.set(normal(c.name), tags);
+    const fiche = { id: c.id, tags: c.tags.map(t => CLASSES[t]).filter(Boolean) };
+    table.set(normal(c.id), fiche);
+    table.set(normal(c.name), fiche);
   }
-  return { version, de: nom => table.get(ALIAS[normal(nom)] || normal(nom)) || null };
+  const ficheDe = nom => table.get(ALIAS[normal(nom)] || normal(nom)) || null;
+  return { version, ficheDe, de: nom => ficheDe(nom)?.tags || null };
+}
+
+/*
+ * Le chemin d'une image de Leaguepedia sur son serveur d'images : MediaWiki
+ * range un fichier sous les deux premiers caractères du md5 de son nom
+ * (« e/e6/SKT_T1_K_Piglet.jpg »). Le calcul se fait ici : le navigateur n'a
+ * pas de md5.
+ */
+const cheminImage = f => {
+  if (!f) return null;
+  const nom = String(f).replace(/ /g, '_');
+  const h = crypto.createHash('md5').update(nom).digest('hex');
+  return `${h[0]}/${h.slice(0, 2)}/${encodeURIComponent(nom)}`;
+};
+
+/* Les noms par paquets, pour une clause IN. */
+const paquets = (xs, n = 40) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
+const enIN = xs => xs.map(x => `'${String(x).replace(/'/g, "\\'")}'`).join(',');
+/* L'année d'un tournoi : « 2016 Season », sinon « Season 3 » (2013). */
+const anneeDe = t => { const m = String(t).match(/\b(20\d\d)\b/); if (m) return Number(m[1]); const s = String(t).match(/Season (\d)\b/); return s ? 2010 + Number(s[1]) : null; };
+
+/*
+ * LA PHOTO D'UN JOUEUR DANS CE SPLIT (table PlayerImages : une photo par
+ * joueur par tournoi). La meilleure : celle du tournoi même ; sinon celle de
+ * la même année, l'été d'abord (le Mondial suit l'été) ; sinon la plus proche,
+ * le passé avant l'avenir. Les photos d'All-Star passent après.
+ */
+async function photosDe(noms, split) {
+  const choix = new Map();
+  for (const lot of paquets(noms)) {
+    const lignes = await cargo('PlayerImages', { fichier: 'FileName', n: 'Link', tournoi: 'Tournament' }, `Link IN (${enIN(lot)})`);
+    const par = new Map();
+    for (const l of lignes) if (l.fichier) (par.get(l.n) || par.set(l.n, []).get(l.n)).push(l);
+    for (const [n, ls] of par) {
+      const cout = l => {
+        const t = String(l.tournoi || '');
+        if (split.pages.some(p => t.startsWith(p))) return 0;
+        const a = anneeDe(t);
+        const ecart = a === null ? 50 : Math.abs(a - split.annee) * 10 + (a > split.annee ? 5 : 0);
+        return ecart + (/All-Star/i.test(t) ? 3 : 0) + (/Summer|World/i.test(t) ? 0 : 1);
+      };
+      choix.set(n, ls.sort((a, b) => cout(a) - cout(b))[0].fichier);
+    }
+  }
+  return choix;
+}
+
+/* Le logo de chaque équipe (table Teams). */
+async function logosDe(noms) {
+  const logos = new Map();
+  for (const lot of paquets(noms)) {
+    for (const l of await cargo('Teams', { nom: 'Name', logo: 'Image' }, `Name IN (${enIN(lot)})`)) if (l.logo) logos.set(l.nom, l.logo);
+  }
+  return logos;
 }
 
 const nb = x => (x === null || x === undefined ? null : Number(x));
@@ -129,13 +185,17 @@ async function construire(split, ctx) {
   }
   if (sansRole) console.log(`  ${sansRole} ligne(s) sans rôle reconnu ou sans partie, écartées`);
 
+  // Les images : une photo par joueur (celle de ce split, sinon la plus proche), un logo par équipe.
+  const photos = await photosDe([...new Set([...equipes.values()].flatMap(e => [...e.joueurs.values()].map(j => j.n)))], split);
+  const logos = await logosDe([...equipes.keys()]);
+
   const r1 = x => Math.round(x * 10) / 10;
   return {
     ...split, source: SOURCE, ddragon: ctx.classes.version, parties: parties.length,
     equipes: [...equipes.values()].sort((a, b) => b.v - a.v || a.d - b.d).map(e => ({
-      nom: e.nom, v: e.v, d: e.d, obj: e.obj,
+      nom: e.nom, v: e.v, d: e.d, obj: e.obj, logo: cheminImage(logos.get(e.nom)),
       joueurs: [...e.joueurs.values()].sort((a, b) => b.pj - a.pj).map(j => ({
-        n: j.n, r: j.r, pj: j.pj, v: j.v, min: r1(j.min), k: j.k, m: j.m, a: j.a, eqK: j.eqK, eqOr: j.eqOr, eqDeg: j.eqDeg,
+        n: j.n, photo: cheminImage(photos.get(j.n)), r: j.r, pj: j.pj, v: j.v, min: r1(j.min), k: j.k, m: j.m, a: j.a, eqK: j.eqK, eqOr: j.eqOr, eqDeg: j.eqDeg,
         ...Object.fromEntries(MESURABLES.map(s => [s, [j[s][0], j[s][1], r1(j[s][2])]])),
         champs: [...j.champs.entries()].sort((a, b) => b[1][0] - a[1][0]).map(([c, [pj, v]]) => [c, pj, v]),
         classes: Object.fromEntries(Object.entries(j.classes).map(([c, x]) => [c, Math.round((x / j.pj) * 100) / 100])),
@@ -164,6 +224,15 @@ for (const s of tous.filter(s => !voulus.length || voulus.some(v => s.id.startsW
   }
 }
 if (ctx.inconnus.size) console.log(`Champions sans classe (Data Dragon) : ${[...ctx.inconnus].join(', ')}`);
+
+// Les champions joués, nom → id de Data Dragon (ses images) : data/champions.json, pour la page.
+const champions = { ...(fs.existsSync(path.join(ROOT, 'data/champions.json')) ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data/champions.json'), 'utf8')).ids : {}) };
+for (const f of fs.readdirSync(dossier).filter(f => f.endsWith('.json'))) {
+  for (const e of JSON.parse(fs.readFileSync(path.join(dossier, f), 'utf8')).equipes) {
+    for (const j of e.joueurs) for (const [c] of j.champs) { const fi = ctx.classes.ficheDe(c); if (fi) champions[c] = fi.id; }
+  }
+}
+fs.writeFileSync(path.join(ROOT, 'data/champions.json'), `${JSON.stringify({ version: ctx.classes.version, ids: Object.fromEntries(Object.entries(champions).sort()) })}\n`);
 
 // L'index : ce qui est sur le disque, pas ce qui était demandé.
 const index = tous.filter(s => fs.existsSync(path.join(dossier, `${s.id}.json`))).map(({ id, nom, ligue, annee }) => ({ id, nom, ligue, annee }));
