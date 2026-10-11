@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
 import { CARTES, COACHS, PACKS, JETONS, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
 import { exiger, borne, informer, verdict } from './verdict.mjs';
 
@@ -186,8 +187,11 @@ if (splits.length) {
   const tes = [...L.journees.flat(), ...L.series.rondes.flat()].filter(s => s.a === 0 || s.b === 0);
   const v = tes.filter(s => s.gagnant === 0).length;
   const rondes = L.series.rondes.flat().filter(s => s.gagnant === 0).length;
-  const attendu = JETONS.depart + v * JETONS.victoire + (tes.length - v) * JETONS.defaite + rondes * JETONS.ronde - R.achats.reduce((s, a) => s + a.prix, 0);
-  exiger('les jetons se recomptent des résultats et des achats', jetonsDe(L, R) === attendu, `${jetonsDe(L, R)} jetons, ${v} séries gagnées sur ${tes.length}`);
+  // Les primes du proprio (js/gestion.js) : les objectifs atteints, et l'élan — quatre victoires de suite en saison, comptées ici à la main.
+  const suite = L.journees.map(j => j.find(s => s.a === 0 || s.b === 0).gagnant === 0).reduce(([n, m], x) => [x ? n + 1 : 0, Math.max(m, x ? n + 1 : 0)], [0, 0])[1];
+  const primes = objectifsDe(L).filter(o => o.etat === 'atteint').length * OBJECTIF.jetons + (suite >= ELAN.suite ? ELAN.jetons : 0);
+  const attendu = JETONS.depart + v * JETONS.victoire + (tes.length - v) * JETONS.defaite + rondes * JETONS.ronde + primes - R.achats.reduce((s, a) => s + a.prix, 0);
+  exiger('les jetons se recomptent des résultats et des achats', jetonsDe(L, R) === attendu, `${jetonsDe(L, R)} jetons, ${v} séries gagnées sur ${tes.length}, ${primes} de primes`);
   exiger('la confiance du coach suit les séries jouées à sa couleur', confiance(R).palier === (couleurDe(R.plan[0]) === R.coach.id ? 3 : 0), `${confiance(R).series} séries, palier ${confiance(R).palier}`);
 }
 

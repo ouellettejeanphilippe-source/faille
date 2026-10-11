@@ -24,7 +24,10 @@ data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vr
 data/champions.json   les champions joués : nom → id de Data Dragon (leurs images) et leurs classes
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
-js/main.js            le contrôleur : la roulette, le vestiaire, l'alignement
+js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, les écrans
+js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde
+js/gestion.js         les règles du DG : relances, marché et banc, mandats, objectifs, événements
+js/bureau.js          la boîte de réception, le marché et l'effectif, le bilan d'un split
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
 js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
@@ -47,7 +50,7 @@ scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, feuilles, rogue)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, feuilles, rogue)
 ```
 
 ## Règles fermes
@@ -76,6 +79,11 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
 - Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
 - Ce qu'un effet fait s'écrit en mots (`dire`), jamais en cote.
+
+**La gestion (jalon 4)**
+- Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
+- Le plafond tient après chaque action, le marché ferme à la date limite, les relances restent dans leur nombre — `check_gestion`.
+- La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.
 
 **Les images**
 - Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
@@ -111,6 +119,9 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
 - **repêchage** : les bannissements et les champions d'une série ; le **confort** est ce qu'un joueur perd loin de son plus joué.
 - **canal** : une prise du moteur par où passe un effet (ligne, combat, objectifs, tardif, rythme, siège, fin, confort).
+- **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et ceux qu'on **garde**.
+- **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
+- **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
 
 ## Tester
