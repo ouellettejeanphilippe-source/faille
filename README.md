@@ -26,6 +26,10 @@ Une run se joue sur plusieurs splits : le proprio fixe un mandat (les séries, p
 
 Des autres jeux de gestion de LoL : les commanditaires et leurs objectifs (Teamfight Manager), les liens d'origine entre joueurs qui ont joué ensemble (LoL Esports Manager), l'entraînement d'un champion que les autres jouaient au même rôle.
 
+## La stratégie
+
+Au centre du split : ce que ton cinq priorise — les dragons, le Nashor, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, le tardif. Chaque stratégie demande des joueurs ; bien ajustée, elle rapporte, à contre-emploi, elle coûte. Les objectifs valent ce qu'ils valent dans les vraies parties (`check_feuilles`), et chaque stratégie se mesure en paires (`check_rogue`, MOTEUR.md §10).
+
 ## Le moteur
 
 `js/sim.js` joue chaque partie par événements, un tour de 30 secondes à la fois, de 15 à 80 minutes, calibré sur les vraies parties des shards. `MOTEUR.md` en est la spécification ; `node scripts/check_feuilles.mjs` vérifie la feuille de match et rejoue chaque vraie partie contre ce qui s'est passé.

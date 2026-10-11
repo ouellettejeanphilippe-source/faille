@@ -72,7 +72,7 @@ export const COACHS = {
 };
 
 /* L'ampleur d'un canal : ce qui compte pour « un » dans la couleur d'une carte. Les multiplicatifs se lisent en logarithme. */
-const AMPLEUR = { ligne: 0.1, combat: 0.06, objectifs: 0.1, tardif: 0.2, rythme: 0.1, siege: 0.1, fin: 0.1 };
+const AMPLEUR = { ligne: 0.1, combat: 0.06, objectifs: 0.1, dragons: 0.2, heraut: 0.2, nashor: 0.2, split: 0.2, tardif: 0.2, rythme: 0.1, siege: 0.1, fin: 0.1 };
 const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
 const lu = (c, v) => (MULTIPLIE.has(c) ? Math.log(v) : v) / AMPLEUR[c];
 
@@ -177,10 +177,10 @@ export const LIENS = {
 /** Les liens actifs d'un cinq ({ rôle : contrat }). */
 export const liensDe = cinq => Object.keys(LIENS).filter(id => LIENS[id][4](cinq));
 
-/** Les effets de ton cinq : les cartes du plan, le palier du coach et les liens d'origine, sommés par le moteur. */
-export function effetsDeToi(R, liens = []) {
+/** Les effets de ton cinq : ta stratégie (js/strategie.js), les cartes du plan, le palier du coach et les liens d'origine, sommés par le moteur. */
+export function effetsDeToi(R, liens = [], strategie = null) {
   const { palier } = confiance(R);
-  return sommerEffets([...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null, ...liens.map(id => LIENS[id][3])]);
+  return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null, ...liens.map(id => LIENS[id][3])]);
 }
 
 /** Note les séries que ton cinq vient de jouer, avec le plan qui les a jouées. */
@@ -194,6 +194,7 @@ export function noterJoue(R, n) {
  */
 const MOTS = {
   ligne: ['la phase de lignes'], combat: ['les combats'], objectifs: ['les objectifs neutres'],
+  dragons: ['les dragons'], heraut: ['le héraut'], nashor: ['le Nashor'], split: ['la pression de côté'],
   tardif: ['plus fort tard, plus faible tôt', 'plus fort tôt, plus faible tard'],
   rythme: ['plus d\'éliminations', 'moins d\'éliminations'], siege: ['les tours tombent plus vite', 'les tours tiennent plus longtemps'],
   fin: ['on ferme plus tôt', 'des parties plus longues'],

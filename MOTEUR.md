@@ -73,23 +73,28 @@ Une élimination crédite d'un même geste l'équipe, le tueur, la victime de l'
 
 ## 4. La calibration
 
-Sept réglages, et rien d'autre ne se règle (`REGLAGES`, js/sim.js) : `force`, `boule`, `ferme`, `tours`, `siege`, `cote`, `fin` (base, pente, avance). Ils ont été cherchés ensemble pour que **chaque vraie partie des Mondiaux, rejouée entre ses deux vraies équipes**, retombe sur ce qui s'est passé. `check_feuilles` rejoue les 1 355 parties huit fois chacune et juge chaque repère contre **l'intervalle de la mesure elle-même** (deux erreurs types de part et d'autre) :
+Huit réglages, et rien d'autre ne se règle (`REGLAGES`, js/sim.js) : `force`, `boule`, `ferme`, `tours`, `siege`, `cote`, `fin` (base, pente, avance) et `obj`, ce que valent les objectifs neutres (la part de la boule de neige sur un objectif et sur le héraut, le buff d'un dragon et de l'âme, celui du Nashor pendant trois minutes, la chance que le héraut fasse tomber une tour). Ils ont été cherchés ensemble pour que **chaque vraie partie des Mondiaux, rejouée entre ses deux vraies équipes**, retombe sur ce qui s'est passé. `check_feuilles` rejoue les 1 355 parties huit fois chacune et juge chaque repère contre **l'intervalle de la mesure elle-même** (deux erreurs types de part et d'autre) :
 
 | Repère | Réel | Moteur | Borne |
 |---|---|---|---|
-| Durée, sur celle de l'époque | 1,000 | 0,996 | 0,989 à 1,011 |
+| Durée, sur celle de l'époque | 1,000 | 0,994 | 0,989 à 1,011 |
 | Écart type de la durée, idem | 0,196 | 0,198 | 0,189 à 0,204 |
-| Éliminations par partie | 25,76 | 25,85 | 25,27 à 26,25 |
-| Victoires du côté bleu | 54,9 % | 55,9 % | 52,2 à 57,6 % |
-| Le favori des cotes gagne, écart < 0,1 | 55,3 % | 51,7 % | 49,2 à 61,4 % |
-| … écart de 0,1 à 0,2 | 57,4 % | 58,3 % | 51,4 à 63,4 % |
-| … écart de 0,2 à 0,4 | 72,1 % | 72,9 % | 67,4 à 76,8 % |
-| … écart de 0,4 et plus | 84,0 % | 84,6 % | 80,5 à 87,4 % |
-| Tours du gagnant | 9,35 | 9,36 | 9,28 à 9,42 |
-| Tours du perdant | 2,72 | 2,74 | 2,60 à 2,83 |
-| Écart d'or final | 20,0 % | 20,2 % | 19,4 à 20,5 % |
-| Dragons par partie | 4,10 | 4,11 | 4,03 à 4,17 |
+| Éliminations par partie | 25,76 | 25,81 | 25,27 à 26,25 |
+| Victoires du côté bleu | 54,9 % | 55,5 % | 52,2 à 57,6 % |
+| Le favori des cotes gagne, écart < 0,1 | 55,3 % | 51,1 % | 49,2 à 61,4 % |
+| … écart de 0,1 à 0,2 | 57,4 % | 59,5 % | 51,4 à 63,4 % |
+| … écart de 0,2 à 0,4 | 72,1 % | 73,5 % | 67,4 à 76,8 % |
+| … écart de 0,4 et plus | 84,0 % | 86,2 % | 80,5 à 87,4 % |
+| Tours du gagnant | 9,35 | 9,35 | 9,28 à 9,42 |
+| Tours du perdant | 2,72 | 2,76 | 2,60 à 2,83 |
+| Écart d'or final | 20,0 % | 19,8 % | 19,4 à 20,5 % |
+| Dragons par partie | 4,10 | 4,14 | 4,03 à 4,17 |
 | Nashor par partie | 1,37 | 1,39 | 1,33 à 1,41 |
+| Le camp qui prend plus de dragons gagne | 83,3 % | 84,7 % | 81,0 à 85,6 % |
+| … plus de Nashor | 92,5 % | 91,6 % | 90,9 à 94,1 % |
+| … plus de hérauts | 66,2 % | 66,0 % | 62,9 à 69,5 % |
+
+**Les objectifs comptent (11 octobre 2026).** Avant, un objectif ne faisait que suivre la force : celui qui prenait plus de dragons gagnait 91 % du temps au moteur contre 83 % au réel, le Nashor 97,5 % contre 92,5 %, le héraut 80 % contre 66 % — et un dragon ne donnait rien. Maintenant un objectif se dispute avec moins de boule de neige (le héraut, tôt, encore moins), et il porte quelque chose : chaque dragon et l'âme renforcent le camp, le Nashor aussi pendant trois minutes, le héraut fait souvent tomber une tour. `scripts/calibrer.mjs` a cherché les réglages ensemble contre tous les repères (scripts/lib/reperes.mjs) ; ils tiennent sur trois jeux de graines. C'est ce qui permet à une stratégie de prioriser un objectif pour quelque chose (§10).
 
 « Le favori des cotes » : l'équipe dont les cinq ont la plus grande valeur moyenne. Une part de ce lien est circulaire (les cotes lisent l'or et la participation, qui suivent la victoire — voir check_cotes) : le moteur reproduit ce que les cotes prédisent du vrai, pas plus.
 
@@ -113,6 +118,8 @@ Ce qui change une partie (le repêchage des champions, les cartes du plan de jeu
 | `ligne` | écarts types ajoutés aux trois lignes (la phase de lignes) | ± 0,5 |
 | `combat` | écarts types ajoutés au combat (escarmouches, tours, combat final) | ± 0,4 |
 | `objectifs` | écarts types ajoutés aux objectifs (dragons, héraut, Nashor) | ± 0,5 |
+| `dragons`, `heraut`, `nashor` | écarts types ajoutés à CET objectif seulement (une priorité) | ± 2,5 |
+| `split` | écarts types ajoutés aux tours que l'équipe dispute (la pression de côté) | ± 2,5 |
 | `tardif` | écarts types de combat qui comptent selon l'heure : × 2 (t ÷ durée de l'époque − 0,8), de −1 à 1 | ± 0,8 |
 | `rythme` | × le débit des éliminations, pour les deux équipes | 0,7 à 1,4 |
 | `siege` | × le débit des tours, pour les deux équipes | 0,7 à 1,4 |
@@ -162,3 +169,17 @@ Le reste (les communes, les peu communes, une classe de plus au repêchage) est 
 Les **liens d'origine** (`LIENS`, js/rogue.js, repris des « liens » de LoL Esports Manager) récompensent les joueurs de ton cinq qui ont joué ensemble pour vrai : le duo bas-soutien ou milieu-jungle d'un même vestiaire, trois d'un même vestiaire, trois aux couleurs d'un même club. Une vraie équipe a déjà les siens dans la partie calibrée ; un lien rend à ton cinq une part de ce qu'elle a. Chacun passe par les canaux, comme une carte, et `check_rogue` le mesure en paires à sa rareté : de +0,03 à +0,13 victoire par saison, l'ordre de grandeur des cartes peu communes.
 
 L'**entraînement** (js/gestion.js) ne crée aucun canal : un champion entraîné entre au bout du bassin du joueur, compté pour le quart de son plus joué (`ENTRAINEMENT.part`). Le confort le lit comme les autres : il coûte −0,3 écart type, entre ses vrais champions et le hors-bassin (−0,6). `check_gestion` vérifie qu'il tombe là. L'écran le dit « entraîné », jamais en parties.
+
+## 10. La stratégie (jalon 5)
+
+`js/strategie.js`. Le plan de match de ton cinq, au centre du split : sept stratégies — le contrôle des dragons, jouer autour du Nashor, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, jouer pour le tardif. Chacune **demande** des joueurs (trois rôles et un axe chacun : un jungler d'objectifs, un haut qui gagne sa ligne…), et son **fit** est la moyenne de ces sous-cotes, jugées dans le split de chaque joueur. Comme les systèmes de Cap 82-0 :
+
+- son **gain** (ses canaux : la priorité sur un objectif, la pression de côté, le rythme…) suit le fit : la moitié à fit nul, une fois et demie sur mesure, rien à contre-emploi marqué ;
+- son **prix** se paie toujours (céder un autre objectif, une ligne plus faible…) ;
+- son **exécution** : un plan que tes joueurs savent jouer rend l'équipe meilleure au combat, un plan à contre-emploi la défait (de −0,25 à +0,5 écart type, nulle à fit nul).
+
+Le fit se dit en mots, comme un badge (Sur mesure, Bon fit, Fit moyen, À contre-emploi ; ✓ ≈ ✗ par demande), jamais en cote.
+
+**Mesuré en paires** (`check_rogue`) : chaque équipe traitée joue la stratégie avec SES joueurs ; le tiers le mieux ajusté y gagne de 0,5 à 2,5 victoires par saison, le tiers le moins bien ajusté y perd (0 ou moins), et chacune se voit sur sa propre signature (les dragons, le Nashor, les hérauts, les tours que l'équipe prend de plus que l'autre ; la durée ; les objectifs). Mesuré le 11 octobre 2026 : le tiers le mieux ajusté gagne de +0,5 (combats à cinq) à +1,1 (pousser en solitaire, agression précoce) ; le moins bien ajusté de 0 à −0,4.
+
+**Les vraies équipes jouent leur vraie partie** : aucune stratégie ne s'ajoute à elles (elles sont la calibration). Leur **identité** se lit sur leurs vraies parties — l'objectif qu'elles prenaient le plus au-dessus de la moyenne de leur split — et le dépisteur la dit.

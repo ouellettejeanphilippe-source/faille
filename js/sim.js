@@ -44,8 +44,22 @@ const LIGNES = { haut: ['haut', 'jungle'], milieu: ['milieu', 'jungle'], bas: ['
  *   siege    la part de la boule de neige qui joue sur une tour (on en échange d'un bout à l'autre de la carte)
  *   cote     la part de l'avantage mesuré du côté bleu que porte chaque événement
  *   fin      le rythme du combat final : sa base, sa pente avec le temps, l'avance qui le hâte
+ *   obj      ce que valent les objectifs neutres : la part de la boule de neige qui
+ *            joue sur un objectif (sur le héraut, disputé tôt, la sienne) ; le dragon (par dragon, écarts de combat et
+ *            d'objectifs, quatre au plus) et l'âme (de plus, au quatrième) ; le
+ *            Nashor (écarts de combat pendant NASHOR_BUFF) ; le héraut (la chance
+ *            qu'il fasse tomber une tour). Réglés sur ce que le camp qui en
+ *            prend le plus gagne dans les vraies parties (MOTEUR.md §4).
  */
-const REGLAGES = { force: 0.27, boule: 0.48, ferme: 0.024, tours: 0.91, siege: 0.49, cote: 0.42, fin: { base: 0.27, pente: 4.1, avance: 0.27 } };
+const REGLAGES = {
+  force: 0.29, boule: 0.48, ferme: 0.025, tours: 0.883, siege: 0.49, cote: 0.42, fin: { base: 0.3, pente: 4.4, avance: 0.27 },
+  obj: { boule: 0.52, bouleHeraut: 0.35, dragon: 0.07, ame: 0.22, nashor: 0.32, heraut: 0.31 },
+};
+
+/** Pour scripts/calibrer.mjs seulement : remplace des réglages (un objet de la même forme), le temps d'une recherche. */
+export function regler(r) {
+  for (const [k, v] of Object.entries(r)) REGLAGES[k] = typeof v === 'object' ? { ...REGLAGES[k], ...v } : v;
+}
 
 const PAS = 0.5;               // un tour de moteur : 30 secondes de partie
 const LIGNES_FIN = 14;         // les plaques tombent : fin de la phase de lignes
@@ -53,6 +67,7 @@ const ABANDON = 15;            // le nexus ne tombe pas avant (l'abandon permis)
 const DUREE_MAX = 80;          // et toujours à 80 min : le combat final est forcé
 const SBIRES = 1.5, DRAGON = 5, HERAUT = [8, 20], NASHOR = 20, TOUR = 10;   // TOUR : la première tour, rarement avant
 const PRIME = 300, PRIME_AIDES = 150, PRIME_NASHOR = 300, PRIME_TOUR = 250;
+const NASHOR_BUFF = 3, AME = 4;   // le buff du Nashor dure trois minutes ; l'âme vient au quatrième dragon
 const TOURS_MAX = 11, TOURS_LIGNE = 3, TOURS_NEXUS = 2;   // trois par ligne, deux devant le nexus
 
 /*
@@ -63,6 +78,8 @@ const TOURS_MAX = 11, TOURS_LIGNE = 3, TOURS_NEXUS = 2;   // trois par ligne, de
  *   ligne      écarts types ajoutés aux trois lignes (la phase de lignes)
  *   combat     écarts types ajoutés au combat (escarmouches, tours, combat final)
  *   objectifs  écarts types ajoutés aux objectifs (dragons, héraut, Nashor)
+ *   dragons, heraut, nashor   écarts types ajoutés à CET objectif seulement (une priorité)
+ *   split      écarts types ajoutés aux tours que l'équipe dispute (la pression d'une ligne de côté)
  *   tardif     écarts types de combat qui comptent selon l'heure : moins tôt,
  *              plus tard (× 2 (t ÷ durée de l'époque − PIVOT), de −1 à 1)
  *   rythme     × le débit des éliminations de la partie, pour les deux équipes
@@ -74,8 +91,11 @@ const TOURS_MAX = 11, TOURS_LIGNE = 3, TOURS_NEXUS = 2;   // trois par ligne, de
  * Les trois derniers multiplient la partie entière : chaque équipe en porte
  * la racine, et la partie prend le produit des deux.
  */
-const NEUTRE = { ligne: 0, combat: 0, objectifs: 0, tardif: 0, rythme: 1, siege: 1, fin: 1 };
-const BORNES = { ligne: [-0.5, 0.5], combat: [-0.4, 0.4], objectifs: [-0.5, 0.5], tardif: [-0.8, 0.8], rythme: [0.7, 1.4], siege: [0.7, 1.4], fin: [0.7, 1.4], confort: [-1, 0] };
+const NEUTRE = { ligne: 0, combat: 0, objectifs: 0, dragons: 0, heraut: 0, nashor: 0, split: 0, tardif: 0, rythme: 1, siege: 1, fin: 1 };
+const BORNES = {
+  ligne: [-0.5, 0.5], combat: [-0.4, 0.4], objectifs: [-0.5, 0.5], dragons: [-2.5, 2.5], heraut: [-2.5, 2.5], nashor: [-2.5, 2.5], split: [-2.5, 2.5],
+  tardif: [-0.8, 0.8], rythme: [0.7, 1.4], siege: [0.7, 1.4], fin: [0.7, 1.4], confort: [-1, 0],
+};
 const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
 const PIVOT = 0.8;   // l'heure où le tardif ne compte ni pour ni contre, en part de la durée de l'époque
 
@@ -214,10 +234,16 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const donner = (camp, i, or) => { f.equipes[camp].joueurs[i].or += or; f.equipes[camp].or += or; };
   const partager = (camp, or) => ROLES.forEach((_, i) => donner(camp, i, or / ROLES.length));
   const avance = () => (f.equipes[0].or - f.equipes[1].or) / 1000;
-  // La chance du côté bleu de gagner un événement : la puissance, l'avance d'or, le côté.
-  const bleuGagne = (cle, t, ligne = null, boule = R.boule) => {
+  // Ce que portent les objectifs pris : les dragons (et l'âme), le Nashor tant que dure son buff.
+  const nashorJusqua = [-1, -1];
+  const buffs = (camp, t) => {
+    const d = f.equipes[camp].dragons;
+    return R.obj.dragon * Math.min(d, AME) + (d >= AME ? R.obj.ame : 0) + (t < nashorJusqua[camp] ? R.obj.nashor : 0);
+  };
+  // La chance du côté bleu de gagner un événement : la puissance, l'avance d'or, le côté ; `extra` : une priorité.
+  const bleuGagne = (cle, t, ligne = null, boule = R.boule, extra = 0) => {
     const heure = cle === 'combat' && !ligne ? (E[0].tardif - E[1].tardif) * Math.max(-1, Math.min(1, 2 * (t / T.duree - PIVOT))) : 0;
-    const ecart = (ligne ? P[0].ligne[ligne] - P[1].ligne[ligne] : P[0][cle] - P[1][cle]) + heure;
+    const ecart = (ligne ? P[0].ligne[ligne] - P[1].ligne[ligne] : P[0][cle] - P[1][cle] + buffs(0, t) - buffs(1, t)) + heure + extra;
     const cote = T.bleu > 0 && T.bleu < 1 ? R.cote * Math.log(T.bleu / (1 - T.bleu)) : 0;
     return de() < sigmoide(R.force * ecart + boule * avance() + cote) ? 0 : 1;
   };
@@ -235,17 +261,27 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     donner(camp, tueur, PRIME);
     f.fil.push({ t, quoi: 'elim', camp, tueur, victime, aides });
   };
-  const objectif = (t, quoi) => {
-    const camp = quoi === 'tour' ? bleuGagne('combat', t, null, R.boule * R.siege) : bleuGagne('objectifs', t);
+  const CANAL = { dragon: 'dragons', heraut: 'heraut', nashor: 'nashor', tour: 'split' };
+  const tour = (t, camp) => {
     const eq = f.equipes[camp];
-    if (quoi === 'tour') {
-      if (eq.tours >= TOURS_MAX - TOURS_NEXUS) return;     // celles du nexus attendent le combat final
-      eq.tours++; partager(camp, PRIME_TOUR);
-    } else if (quoi === 'nashor') {
+    if (eq.tours >= TOURS_MAX - TOURS_NEXUS) return;     // celles du nexus attendent le combat final
+    eq.tours++; partager(camp, PRIME_TOUR);
+    f.fil.push({ t, quoi: 'tour', camp });
+  };
+  const objectif = (t, quoi) => {
+    const extra = E[0][CANAL[quoi]] - E[1][CANAL[quoi]];
+    const boule = R.boule * (quoi === 'tour' ? R.siege : quoi === 'heraut' ? R.obj.bouleHeraut : R.obj.boule);
+    const camp = bleuGagne(quoi === 'tour' ? 'combat' : 'objectifs', t, null, boule, extra);
+    const eq = f.equipes[camp];
+    if (quoi === 'tour') { tour(t, camp); return; }
+    if (quoi === 'nashor') {
       eq.barons++; partager(camp, PRIME_NASHOR * ROLES.length);
+      nashorJusqua[camp] = t + NASHOR_BUFF;
     } else if (quoi === 'dragon') eq.dragons++;
     else eq.herauts++;
     f.fil.push({ t, quoi, camp });
+    // Le héraut lâché sur une tour : souvent, elle tombe.
+    if (quoi === 'heraut' && de() < R.obj.heraut) tour(t, camp);
   };
 
   // Les débits, par minute, pour retomber en moyenne sur le tempo de l'époque.

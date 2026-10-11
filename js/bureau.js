@@ -13,6 +13,7 @@ import { PLAFOND } from './cotes.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, mandatDe, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, GARDES } from './partie.js';
+import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
 import { jetonsDe, valeurDesGains, LIENS, liensDe, dire } from './rogue.js';
 import { iconeChampion } from './images.js';
 
@@ -26,11 +27,62 @@ export function phraseMandat(n) {
   return `Split ${n} de ta run : le proprio veut ${mot}.${suite} Un titre gagne la run.`;
 }
 
+/* ---- LA STRATÉGIE ---- */
+const AXES_MOTS = { objectifs: 'objectifs', vision: 'vision', ligne: 'ligne', pression: 'pression', implication: 'implication', survie: 'survie', degats: 'dégâts' };
+const CLASSE_FIT = { 'Sur mesure': 'fit-haut', 'Bon fit': 'fit-bon', 'Fit moyen': 'fit-moyen', 'À contre-emploi': 'fit-bas' };
+
+/* Ce qu'une stratégie demande, rôle par rôle, avec son signe (✓ ≈ ✗). */
+const demandes = (id, cinq) => {
+  const { demandes: d } = lireFit(id, cinq);
+  return `<span class="demandes">${d.map(([r, axe, signe]) => `<span class="demande">${ROLES[r]} · ${AXES_MOTS[axe]} <b>${signe}</b></span>`).join('')}</span>`;
+};
+
+/** L'identité d'une équipe de la ligue (sa vraie partie), en une phrase ; null si rien ne ressort. */
+function identite(P, ctx, i) {
+  const a = P.adversaires[i - 1];
+  if (!a) return null;
+  const { split } = ctx.splits.get(a.id);
+  const x = identiteDe(split, split.equipes.find(e => e.nom === a.e));
+  if (!x) return null;
+  const [ico, nom] = STRATEGIES[x.id];
+  return `${ico} ${nom[0].toLowerCase()}${nom.slice(1)} : ${x.sien.toFixed(1).replace('.', ',')} par partie, ${x.moyenne.toFixed(1).replace('.', ',')} en moyenne dans leur split`;
+}
+
+/** Le panneau du plan de match, sur l'écran du split. */
+export function panneauStrategie(P) {
+  const cinq = P.L.equipes[0].cinq;
+  if (!P.strategie) {
+    return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match</span><b>Aucune stratégie</b><small>Ton cinq joue sa partie. Choisis ce que tu priorises : les dragons, le Nashor, la pression de côté…</small></button>`;
+  }
+  const [ico, nom, texte] = STRATEGIES[P.strategie];
+  const { mot } = lireFit(P.strategie, cinq);
+  return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match · <span class="${CLASSE_FIT[mot]}">${mot}</span></span><b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>${demandes(P.strategie, cinq)}</button>`;
+}
+
+/** L'écran de la stratégie : chacune, son fit pour ton cinq, ce qu'elle demande, ce qu'elle fait. */
+export function ecranStrategie(P, ctx) {
+  const L = P.L;
+  const cinq = L.equipes[0].cinq;
+  const s = taSerie(L);
+  const enFace = s ? identite(P, ctx, s.a === 0 ? s.b : s.a) : null;
+  const items = Object.entries(STRATEGIES).map(([id, [ico, nom, texte, , gain, prix]]) => {
+    const { mot } = lireFit(id, cinq);
+    return `<li><button class="strategie${P.strategie === id ? ' active' : ''}" data-strategie="${id}">
+      <span class="plan-tete"><span class="${CLASSE_FIT[mot]}">${mot}</span></span><b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>
+      ${demandes(id, cinq)}
+      <small class="fait">Gagne selon le fit : ${dire(gain, 0.1).map(esc).join(' · ')}. Coûte toujours : ${dire(prix, 0.1).map(esc).join(' · ') || 'rien'}.</small></button></li>`;
+  }).join('');
+  return `<h2>La stratégie</h2>
+    <p class="sous">Ce que ton cinq priorise, à chaque partie. Son gain suit ce que tes joueurs savent faire (le fit) ; son prix se paie toujours. À contre-emploi, elle coûte plus qu'elle ne rapporte.</p>
+    ${enFace ? `<p class="mandat">En face, ${esc(L.equipes[s.a === 0 ? s.b : s.a].nom)} priorise ${esc(enFace)}.</p>` : ''}
+    <ul class="cartes-jeu">${items}<li><button class="strategie${P.strategie ? '' : ' active'}" data-strategie=""><b>Aucune stratégie</b><small>Ton cinq joue sa partie, sans rien prioriser.</small></button></li></ul>`;
+}
+
 /** Le nombre de messages qui attendent une décision. */
 export const aTraiter = P => (enAttente(P) ? 1 : 0);
 
 /** La boîte de réception. */
-export function ecranBoite(P) {
+export function ecranBoite(P, ctx) {
   const L = P.L;
   const out = [];
   const ev = enAttente(P);
@@ -70,7 +122,8 @@ export function ecranBoite(P) {
       const c = eux.cinq[r].bassin[0];
       return c ? `${esc(eux.cinq[r].n)} (${mot}) : ${esc(c[0])}, ${c[1]} partie${c[1] > 1 ? 's' : ''}` : null;
     }).filter(Boolean).join(' · ');
-    out.push(message('🔎', 'Le dépisteur', `Contre ${eux.nom}`, `Leurs plus joués — ${fetiches}. Ils bannissent tes plus joués.`));
+    const id = identite(P, ctx, s.a === 0 ? s.b : s.a);
+    out.push(message('🔎', 'Le dépisteur', `Contre ${eux.nom}`, `${id ? `Ils priorisent ${esc(id)}. ` : ''}Leurs plus joués — ${fetiches}. Ils bannissent tes plus joués.`));
   }
   return `<h2>La boîte</h2><ul class="boite">${out.join('')}</ul>`;
 }

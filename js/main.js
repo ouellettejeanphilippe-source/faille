@@ -32,13 +32,13 @@ import { jetonsDe, liensDe, LIENS } from './rogue.js';
 import { boutique, resumeRogue } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, signables, marcheOuvert, cleDe } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, VERSION } from './partie.js';
-import { phraseMandat, aTraiter, ecranBoite, ecranMarche, ecranBilan } from './bureau.js';
+import { phraseMandat, aTraiter, ecranBoite, ecranMarche, ecranBilan, panneauStrategie, ecranStrategie } from './bureau.js';
 
 const $ = s => document.querySelector(s);
 const CLE = 'faille-partie';
 
 const G = { index: null, champions: null, splits: new Map(), P: null, de: null, carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), entr: null };
-const COUCHES = ['#feuille', '#repechage', '#boutique', '#boite', '#marche', '#carte', '#vestiaire'];
+const COUCHES = ['#feuille', '#strategie', '#repechage', '#boutique', '#boite', '#marche', '#carte', '#vestiaire'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
 const rang = k => (k === 1 ? '1er' : `${k}e`);
 
@@ -132,7 +132,7 @@ function rendre() {
   if (e === 'bati') rendreBati();
   else if (e === 'split') rendreSplit();
   else rendreBilan();
-  for (const id of ['#boite', '#marche', '#boutique']) if (!$(id).hidden) RENDUS[id]();
+  for (const id of ['#boite', '#marche', '#boutique', '#strategie']) if (!$(id).hidden) RENDUS[id]();
   majTete();
 }
 
@@ -235,6 +235,7 @@ function rendreSplit() {
   const attend = !!enAttente(P);
   $('#split-titre').textContent = titreSplit(L);
   $('#split-mandat').textContent = phraseMandat(P.run.n);
+  $('#split-strategie').innerHTML = panneauStrategie(P);
   $('#split-jour').innerHTML = tableauJour(L);
   $('#split-classement').innerHTML = tableauClassement(L);
   $('#jetons').textContent = resumeRogue(L, P.R);
@@ -280,7 +281,8 @@ function toucherRepechage(ev) {
 
 /* ---- LA BOÎTE, LE MARCHÉ, LA BOUTIQUE : des couches sur le split ---- */
 const RENDUS = {
-  '#boite': () => { $('#boite').innerHTML = ecranBoite(G.P); },
+  '#boite': () => { $('#boite').innerHTML = ecranBoite(G.P, ctx()); },
+  '#strategie': () => { $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
   '#marche': () => rendreMarche(),
   '#boutique': () => { $('#boutique').innerHTML = boutique(G.P.L, G.P.R, G.ouvertes); },
 };
@@ -309,7 +311,10 @@ function ouvrir(id) {
 function toucherCouches(ev) {
   const b = ev.target.closest('button');
   if (!b || b.disabled) return;
-  if (b.dataset.choix) {
+  if (b.dataset.strategie !== undefined) {
+    faire({ t: 'strategie', id: b.dataset.strategie || null });
+    fermer('#strategie');
+  } else if (b.dataset.choix) {
     // Un pack offert s'ouvre à la boutique.
     const r = faire({ t: 'evenement', choix: b.dataset.choix });
     if (r) { fermer('#boite'); ouvrir('#boutique'); G.ouvertes = r; RENDUS['#boutique'](); }
@@ -394,7 +399,8 @@ async function demarrer() {
   $('#ouvrir-boite').addEventListener('click', () => ouvrir('#boite'));
   $('#ouvrir-marche').addEventListener('click', () => ouvrir('#marche'));
   $('#ouvrir-boutique').addEventListener('click', () => ouvrir('#boutique'));
-  for (const id of ['#boite', '#marche', '#boutique']) $(id).addEventListener('click', toucherCouches);
+  for (const id of ['#boite', '#marche', '#boutique', '#strategie']) $(id).addEventListener('click', toucherCouches);
+  $('#split-strategie').addEventListener('click', ev => { if (ev.target.closest('#ouvrir-strategie')) ouvrir('#strategie'); });
   $('#repechage').addEventListener('click', toucherRepechage);
   $('#bilan').addEventListener('click', toucherBilan);
   const voirSerie = ev => {

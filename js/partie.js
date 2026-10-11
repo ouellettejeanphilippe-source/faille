@@ -18,6 +18,7 @@
  */
 import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { repecher } from './repechage.js';
+import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe } from './rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine } from './gestion.js';
@@ -34,7 +35,7 @@ export const nouvellePartie = graine => ({
   R: nouveauRogue(graine),
   eff: { cinq: {}, banc: null },
   tirage: null, relances: relancesNeuves(),
-  L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null,
+  L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null, strategie: null,
 });
 
 /** Un contrat : le joueur d'un split, tel que l'effectif et le moteur le lisent. */
@@ -77,7 +78,7 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   const L = P.L;
   const s = taSerie(L);
   if (s && !s.repechage) repecher(L, s, ctx.classes, rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {});
-  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq));
+  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
   jouer(L);
   if (s) noterJoue(P.R, 1);
   finirEntrainement(P);
@@ -184,6 +185,10 @@ const ACTIONS = {
     const c = exiger(P.eff.cinq[a.r], 'personne à ce rôle');
     exiger(aTravailler(ctx.splits.get(c.ref.id).split, c).includes(a.champion), `${c.n} ne peut pas travailler ${a.champion}`);
     P.entrainement = { cle: cleDe(c.ref), n: c.n, champion: a.champion, debut: P.L.jour };
+  },
+  strategie(P, a) {
+    exiger(a.id === null || STRATEGIES[a.id], 'stratégie inconnue');
+    P.strategie = a.id;
   },
   relacher(P) {
     exiger(P.etape === 'split' && P.eff.banc, 'personne au banc');

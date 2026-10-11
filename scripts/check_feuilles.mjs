@@ -19,14 +19,12 @@
  *
  *   node scripts/check_feuilles.mjs
  */
-import { jouerPartie, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from '../js/sim.js';
-import { graineDe } from '../js/hasard.js';
+import { creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from '../js/sim.js';
+import { vraiesParties, reperes } from './lib/reperes.mjs';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
-import { exiger, borne, informer, verdict } from './verdict.mjs';
+import { exiger, borne, verdict } from './verdict.mjs';
 
 const splits = lireSplits();
-const moyenne = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
-const et = xs => { const m = moyenne(xs); return Math.sqrt(moyenne(xs.map(x => (x - m) ** 2))); };
 
 /* 1. Les égalités. */
 const fautes = {};
@@ -83,59 +81,9 @@ exiger('dans la ligue, chaque élimination est une mort', elims === morts, `${el
 exiger('chaque série finit à sa dernière victoire, chaque équipe joue ses 18', !seriesFautives, `${seriesFautives} écart(s)`);
 exiger('les séries couronnent un champion', champions === LIGUES, `${champions} sur ${LIGUES}`);
 
-/* 2. Les repères : les vraies parties, rejouées. */
-const REJOUER = 8;
-const vraies = splits.flatMap(({ split, tempo, equipes }) => split.matchs?.map((l, k) => ({ l, k, tempo, id: split.id, a: equipes.get(l[0]), b: equipes.get(l[1]) })) ?? [])
-  .filter(x => x.a && x.b && x.l[3] !== null && x.l[2] !== null);
+/* 2. Les repères : les vraies parties, rejouées (scripts/lib/reperes.mjs). */
+const vraies = vraiesParties(splits);
 exiger('les shards portent leurs parties (`matchs`)', vraies.length > 0, vraies.length ? `${vraies.length} parties` : 'relance l\'Action « Bâtir les splits »');
-
-if (vraies.length) {
-  const combat = e => moyenne(Object.values(e.cinq).map(j => j.valeur));
-  const PALIERS = [0, 0.1, 0.2, 0.4, Infinity];
-  const reel = { duree: [], k: [], bleu: [], fav: PALIERS.slice(1).map(() => []), toursG: [], toursP: [], ecartOr: [], dragons: [], nashor: [] };
-  const sim = structuredClone(reel);
-  const mesurer = (o, f, x) => {
-    // f : [durée, gagnant (0 bleu), k[2], or[2], tours[2], dragons[2], nashor[2]] ; null quand non mesuré.
-    const [duree, g, k, or, tours, dragons, nashor] = f;
-    o.duree.push(duree / x.tempo.duree);
-    o.bleu.push(g === 0 ? 1 : 0);
-    const ecart = combat(x.a) - combat(x.b);
-    if (ecart) o.fav[PALIERS.findIndex((p, i) => Math.abs(ecart) >= p && Math.abs(ecart) < PALIERS[i + 1])].push((ecart > 0) === (g === 0) ? 1 : 0);
-    if (k) o.k.push(k[0] + k[1]);
-    if (or && or[0] + or[1] > 0) o.ecartOr.push(Math.abs(or[0] - or[1]) / ((or[0] + or[1]) / 2));
-    if (tours) { o.toursG.push(tours[g]); o.toursP.push(tours[1 - g]); }
-    if (dragons) o.dragons.push(dragons[0] + dragons[1]);
-    if (nashor) o.nashor.push(nashor[0] + nashor[1]);
-  };
-  const paire = (l, i) => (l[i] === null || l[i + 1] === null ? null : [l[i], l[i + 1]]);
-  for (const x of vraies) {
-    const { l } = x;
-    const reelle = [l[2], l[3] === 1 ? 0 : 1, paire(l, 4), paire(l, 6), paire(l, 8), paire(l, 10), paire(l, 12)];
-    mesurer(reel, reelle, x);
-    for (let n = 0; n < REJOUER; n++) {
-      const f = jouerPartie(x.a, x.b, graineDe(n, `${x.id}-${x.k}`));
-      const E = f.equipes, deux = cle => [E[0][cle], E[1][cle]];
-      // Le moteur se mesure là où la vraie partie l'a été : mêmes colonnes absentes.
-      mesurer(sim, [f.duree, f.gagnant, reelle[2] && deux('k'), reelle[3] && deux('or'), reelle[4] && deux('tours'), reelle[5] && deux('dragons'), reelle[6] && deux('barons')], x);
-    }
-  }
-  const juger = (nom, r, s) => {
-    if (!r.length) { informer(nom, 'non mesuré'); return; }
-    const marge = 2 * et(r) / Math.sqrt(r.length);
-    borne(`${nom} (réel ${moyenne(r).toFixed(3)}, ${r.length} parties)`, moyenne(s), moyenne(r) - marge, moyenne(r) + marge);
-  };
-  juger('durée, sur celle de l\'époque', reel.duree, sim.duree);
-  // L'écart type d'un écart type mesuré sur n parties : σ / √(2n).
-  const margeEt = 2 * et(reel.duree) / Math.sqrt(2 * reel.duree.length);
-  borne('écart type de la durée, sur celle de l\'époque', et(sim.duree), et(reel.duree) - margeEt, et(reel.duree) + margeEt);
-  juger('éliminations par partie', reel.k, sim.k);
-  juger('victoires du côté bleu', reel.bleu, sim.bleu);
-  PALIERS.slice(1).forEach((p, i) => juger(`le favori des cotes gagne, écart de ${PALIERS[i]} à ${p}`, reel.fav[i], sim.fav[i]));
-  juger('tours du gagnant', reel.toursG, sim.toursG);
-  juger('tours du perdant', reel.toursP, sim.toursP);
-  juger('écart d\'or final, sur l\'or moyen', reel.ecartOr, sim.ecartOr);
-  juger('dragons par partie', reel.dragons, sim.dragons);
-  juger('Nashor par partie', reel.nashor, sim.nashor);
-}
+for (const r of vraies.length ? reperes(vraies) : []) borne(r.nom, r.sim, r.min, r.max);
 
 verdict('Les feuilles de match');

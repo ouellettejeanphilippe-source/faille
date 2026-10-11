@@ -30,6 +30,7 @@ import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js'
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
 import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
+import { STRATEGIES, effetDeStrategie, fitDe } from '../js/strategie.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
 import { exiger, borne, informer, verdict } from './verdict.mjs';
 
@@ -49,7 +50,9 @@ const ligues = Array.from({ length: LIGUES }, (_, l) => ligueDEssai(splits, EQUI
  * (L, s, traitees) → pose s.effets avant la journée (le repêchage).
  */
 function passe(l, traitee, { effet = null, serie = null }) {
-  const L = creerSplit(ligues[l].map((e, i) => (effet && traitee(i) ? { ...e, effets: effet } : e)), { graine: 7000 + l, rondes: 2, bo: 1 });
+  // `effet` : une source, ou une fonction de l'équipe (une stratégie, qui dépend de ses joueurs).
+  const sur = e => (typeof effet === 'function' ? effet(e) : effet);
+  const L = creerSplit(ligues[l].map((e, i) => (effet && traitee(i) ? { ...e, effets: sur(e) } : e)), { graine: 7000 + l, rondes: 2, bo: 1 });
   while (L.jour < L.journees.length) {
     if (serie) for (const s of L.journees[L.jour]) serie(L, s, traitee);
     jouerJournee(L);
@@ -62,16 +65,19 @@ const objectifs = e => e.dragons + e.barons + e.herauts;
 const profil = (f, nous) => ({
   duree: f.duree, k: f.equipes[0].k + f.equipes[1].k, tours: f.equipes[0].tours + f.equipes[1].tours,
   objectifs: objectifs(f.equipes[0]) + objectifs(f.equipes[1]), nosObjectifs: objectifs(f.equipes[nous]) - objectifs(f.equipes[1 - nous]),
+  // Ce que l'équipe prend de plus que l'autre, objectif par objectif (la signature d'une stratégie).
+  ...Object.fromEntries(['dragons', 'barons', 'herauts', 'tours'].map(o => [`nos_${o}`, f.equipes[nous][o] - f.equipes[1 - nous][o]])),
 });
+const SIGNATURES = ['nos_dragons', 'nos_barons', 'nos_herauts', 'nos_tours'];
 
 /** ΔV moyen (par saison de 18), et l'écart de forme contre les équipes non traitées. */
 function mesurer(opts) {
-  const dv = [], forme = Object.fromEntries(Object.keys(VISIBLE).map(c => [c, []]));
+  const dv = [], parEquipe = [], forme = Object.fromEntries([...Object.keys(VISIBLE), ...SIGNATURES].map(c => [c, []]));
   for (let l = 0; l < LIGUES; l++) {
     const pair = i => i % 2 === 0, impair = i => i % 2 === 1;
     const A = passe(l, pair, opts), B = passe(l, impair, opts), O = passe(l, () => false, {});
     const vA = victoires(A), vB = victoires(B);
-    vA.forEach((_, i) => dv.push(pair(i) ? vA[i] - vB[i] : vB[i] - vA[i]));
+    vA.forEach((_, i) => { const d = pair(i) ? vA[i] - vB[i] : vB[i] - vA[i]; dv.push(d); parEquipe.push([ligues[l][i], d]); });
     // La forme : passe A, une équipe paire contre une impaire, partie pour partie contre la passe neutre.
     A.journees.flat().forEach((s, k) => {
       if (pair(s.a) === pair(s.b)) return;
@@ -83,7 +89,7 @@ function mesurer(opts) {
       });
     });
   }
-  return { dv: moyenne(dv), forme: Object.fromEntries(Object.entries(forme).map(([c, xs]) => [c, moyenne(xs)])) };
+  return { dv: moyenne(dv), parEquipe, forme: Object.fromEntries(Object.entries(forme).map(([c, xs]) => [c, moyenne(xs)])) };
 }
 const voit = f => Object.entries(VISIBLE).some(([c, s]) => Math.abs(f[c]) >= s);
 const ecrire = f => `durée ${f.duree.toFixed(2)} min, élim. ${f.k.toFixed(2)}, tours ${f.tours.toFixed(2)}, objectifs ${f.objectifs.toFixed(2)} (les siens ${f.nosObjectifs.toFixed(2)})`;
@@ -106,6 +112,25 @@ if (splits.length) {
     const m = mesurer({ effet: eff });
     borne(`${ico} ${nom} (${rarete}) : victoires de plus par saison`, m.dv, -MAX_V[rarete], MAX_V[rarete]);
     informer(`${ico} ${nom} : la forme`, ecrire(m.forme));
+  }
+
+  /*
+   * LES STRATÉGIES : chaque équipe traitée joue la stratégie avec SES joueurs.
+   * Elle doit compter, et selon le fit : le tiers le mieux ajusté y gagne, le
+   * tiers le moins bien ajusté y perd.
+   */
+  // Ce qui doit se voir de chaque stratégie, par partie, contre une équipe qui ne la joue pas.
+  const SIGNE = { dragons: ['nos_dragons', 0.3], nashor: ['nos_barons', 0.1], heraut: ['nos_herauts', 0.1], split: ['nos_tours', 0.3], combats: ['nosObjectifs', 0.2], agression: ['duree', -0.3], tardif: ['nos_barons', 0.1] };
+  for (const [id, [ico, nom]] of Object.entries(STRATEGIES)) {
+    const m = mesurer({ effet: e => effetDeStrategie(id, e.cinq) });
+    const tri = m.parEquipe.map(([e, d]) => [fitDe(id, e.cinq), d]).sort((a, b) => a[0] - b[0]);
+    const tiers = Math.floor(tri.length / 3);
+    const bas = moyenne(tri.slice(0, tiers).map(x => x[1])), haut = moyenne(tri.slice(-tiers).map(x => x[1]));
+    borne(`${ico} ${nom}, le tiers le mieux ajusté : victoires de plus`, haut, 0.5, MAX_V.legendaire);
+    borne(`${ico} ${nom}, le tiers le moins bien ajusté : victoires de plus`, bas, -MAX_V.legendaire, 0);
+    const [cle, seuil] = SIGNE[id];
+    exiger(`${ico} ${nom} se voit sur la feuille : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
+    informer(`${ico} ${nom} : en moyenne`, `${m.dv.toFixed(2)} victoire par saison · ${ecrire(m.forme)}`);
   }
 
   /* Les coachs, au palier III, sans carte. */

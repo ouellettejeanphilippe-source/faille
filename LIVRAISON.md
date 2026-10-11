@@ -81,6 +81,16 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [ ] Les échanges avec les équipes de la ligue (un joueur contre un joueur), en plus des agents libres.
 - [ ] Le banc qui joue une série au lieu d'une saison : choisir ton cinq au repêchage des champions selon les bassins.
 
+## Jalon 5 — la stratégie au centre
+
+- [x] `js/sim.js` : les objectifs comptent — un dragon et l'âme renforcent le camp, le Nashor aussi trois minutes, le héraut fait tomber une tour ; nouveaux canaux `dragons`, `heraut`, `nashor`, `split`. Calibré sur trois nouveaux repères des vraies parties (le camp qui prend plus de dragons, de Nashor, de hérauts gagne 83 %, 92,5 %, 66 %) — `check_feuilles`, `scripts/calibrer.mjs`, MOTEUR.md §4.
+- [x] `js/strategie.js` : sept stratégies (dragons, Nashor, héraut et tours, pousser en solitaire, combats à cinq, agression précoce, tardif) ; chacune demande des joueurs, son gain et son exécution suivent le fit, son prix se paie toujours — MOTEUR.md §10.
+- [x] `check_rogue` : chaque stratégie en paires, avec les joueurs de chaque équipe — le tiers le mieux ajusté y gagne (+0,5 à +1,1 victoire par saison), le moins bien ajusté y perd ; chacune se voit sur sa signature.
+- [x] L'écran : le plan de match en tête du split, l'écran de la stratégie (le fit en mots, ✓ ≈ ✗ par demande, ce qu'elle gagne et coûte) ; le dépisteur dit l'identité réelle de l'adversaire.
+- [ ] Une stratégie par série au repêchage des champions, et ce que la composition des champions lui apporte (une composition de siège pour pousser en solitaire…).
+- [ ] Contrer l'identité de l'adversaire : contester son objectif favori.
+- [ ] La maîtrise d'une stratégie qui monte avec les parties jouées (Cap 82-0).
+
 ## Journal
 
 - 2026-10-10 — Jalon 0 : le dépôt, la coquille, le script Leaguepedia, les vérifications rapides et la CI.
@@ -92,3 +102,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-10 — Le plafond (le coût suit le niveau, `check_plafond`) et l'interface rapprochée de Cap 82-0 : ses jetons, sa condensée, son tableau indicateur, sa barre d'action.
 - 2026-10-11 — Jalon 4, la gestion de Cap 82-0 : la run sur plusieurs splits et son mandat, la sauvegarde par journal d'actions, la roulette à relances, le marché et le banc, la boîte de réception ; `check_gestion` joue des runs entières et les rejoue.
 - 2026-10-11 — Ce que font les jeux de gestion de LoL, à la manière de Faille : les commanditaires (Teamfight Manager), les liens d'origine (LoL Esports Manager), l'entraînement des champions.
+- 2026-10-11 — Jalon 5 : la stratégie au centre. Les objectifs comptent dans le moteur (recalibré sur ce que valent dragons, Nashor et hérauts dans les vraies parties) ; sept stratégies dont le gain suit le fit des joueurs, mesurées en paires.

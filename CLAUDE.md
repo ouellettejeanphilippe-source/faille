@@ -33,6 +33,7 @@ js/fiche.js           la carte d'un joueur, habillée selon l'époque de son spl
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
 js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
+js/strategie.js       la stratégie : sept plans de match, leur fit sur les joueurs, l'identité des vraies équipes (MOTEUR.md §10)
 js/split.js           l'écran du split : la journée, le classement, les séries, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
@@ -50,6 +51,7 @@ scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
+scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
 scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, feuilles, rogue)
 ```
 
@@ -72,6 +74,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **Le moteur (jalon 2)**
 - Tout le hasard passe par `hasard()` (js/hasard.js) ; la même graine rejoue le même split — `check_graine`.
 - Aucun chiffre de calibration inventé : chaque repère vient des vraies parties (durée, éliminations, or, tours, dragons, Nashor, côté bleu), et chaque partie rejouée retombe dans l'intervalle de la mesure — `check_feuilles`.
+- Un objectif vaut ce qu'il vaut dans les vraies parties : le camp qui en prend le plus gagne aussi souvent qu'en vrai — `check_feuilles`.
 - La feuille de match se ferme par construction (les éliminations des joueurs font celles de l'équipe et les morts de l'autre…) — `check_feuilles`.
 
 **Le rogue (jalon 3)**
@@ -79,6 +82,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
 - Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
 - Ce qu'un effet fait s'écrit en mots (`dire`), jamais en cote.
+- Une stratégie : son gain suit le fit des joueurs, son prix se paie toujours ; le tiers le mieux ajusté y gagne, le moins bien ajusté y perd — `check_rogue`. Le fit se dit en mots, comme un badge.
 
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
@@ -124,6 +128,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
+- **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
 
 ## Tester

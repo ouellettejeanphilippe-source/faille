@@ -28,6 +28,7 @@ import { jetonsDe } from '../js/rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli } from '../js/gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, GARDES } from '../js/partie.js';
 import { confort } from '../js/repechage.js';
+import { STRATEGIES } from '../js/strategie.js';
 import { exiger, informer, verdict } from './verdict.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -46,7 +47,7 @@ exiger('des splits à lire', ids.length > 0, `${ids.length} splits`);
 
 /* L'empreinte d'une partie : ce qu'un joueur verrait. */
 const empreinte = P => JSON.stringify({
-  etape: P.etape, run: P.run, jetons: jetonsDe(P.L, P.R), cartes: P.R.cartes, plan: P.R.plan, coach: P.R.coach,
+  etape: P.etape, strategie: P.strategie, run: P.run, jetons: jetonsDe(P.L, P.R), cartes: P.R.cartes, plan: P.R.plan, coach: P.R.coach,
   eff: [...Object.values(P.eff.cinq), P.eff.banc].map(c => c && cleDe(c.ref)), relances: P.relances, bons: P.bons,
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
@@ -127,6 +128,7 @@ async function unRun(graine) {
         const pl = ref && placements(P.eff, contratDe(ctx, ref));
         if (pl && pl.length && (P.bons || jetonsDe(P.L, P.R) >= MARCHE.prix)) { agir(P, { t: 'marche', ref, place: piger(pl, de).place }); bilan.marche++; }
       }
+      if (de() < 0.15) agir(P, { t: 'strategie', id: piger([null, ...Object.keys(STRATEGIES)], de) });
       if (!P.entrainement && de() < 0.3) {
         const r = piger(Object.keys(P.eff.cinq), de);
         const c = P.eff.cinq[r];
