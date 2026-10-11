@@ -25,8 +25,9 @@ import { profilsDuSplit, PLAFOND } from '../js/cotes.js';
 import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
-import { RELANCES, MARCHE, tirer, tirerAdversaires, agentsLibres, placements, masseDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli } from '../js/gestion.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli } from '../js/gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, GARDES } from '../js/partie.js';
+import { confort } from '../js/repechage.js';
 import { exiger, informer, verdict } from './verdict.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -50,7 +51,7 @@ const empreinte = P => JSON.stringify({
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -126,10 +127,31 @@ async function unRun(graine) {
         const pl = ref && placements(P.eff, contratDe(ctx, ref));
         if (pl && pl.length && (P.bons || jetonsDe(P.L, P.R) >= MARCHE.prix)) { agir(P, { t: 'marche', ref, place: piger(pl, de).place }); bilan.marche++; }
       }
+      if (!P.entrainement && de() < 0.3) {
+        const r = piger(Object.keys(P.eff.cinq), de);
+        const c = P.eff.cinq[r];
+        const champs = aTravailler(splits.get(c.ref.id).split, c);
+        if (champs.length) {
+          agir(P, { t: 'entrainer', r, champion: piger(champs, de) });
+          exigerRefus('un seul entraînement à la fois', refuse(P, { t: 'entrainer', r, champion: champs[0] }));
+        }
+      }
       if (P.eff.banc && de() < 0.15) { agir(P, { t: de() < 0.7 ? 'permuter' : 'relacher' }); bilan.banc++; }
       if (de() < 0.1 && tenter(P, { t: 'pack', id: 'bronze' })) surveiller(P);
       if (P.R.cartes.length && de() < 0.2) tenter(P, { t: 'plan', carte: piger(P.R.cartes, de) });
+      const E = P.entrainement;
       agir(P, { t: de() < 0.1 ? 'jusqua' : 'journee' });
+      // L'entraînement fini : le champion est au bassin, marqué, et coûte moins de confort qu'hors du bassin.
+      if (E && !P.entrainement) {
+        const c = [...Object.values(P.eff.cinq), P.eff.banc].find(x => x && cleDe(x.ref) === E.cle);
+        if (c) {
+          bilan.entraines++;
+          const b = c.moteur.bassin.find(([x]) => x === E.champion);
+          if (!b || !b[3]) faute(`${E.champion} n'est pas entré au bassin de ${c.n}`);
+          else if (!(confort(c.moteur, E.champion) > confort(c.moteur, null) && confort(c.moteur, E.champion) < 0)) faute('le confort d\'un champion entraîné');
+          if (P.L.jour - E.debut < ENTRAINEMENT.journees) faute('entraînement fini trop tôt');
+        }
+      }
       if (!milieu && P.L.jour > P.L.journees.length / 2) milieu = { sv: JSON.parse(JSON.stringify(sauvegarde(P))), e: empreinte(P) };
     }
     if (marcheOuvert(P.L)) faute('le marché ouvert après la saison');
@@ -143,6 +165,9 @@ async function unRun(graine) {
     while (P.L.series.champion === null) agir(P, { t: 'ronde' });
     const L = P.L;
     agir(P, { t: 'bilan' });
+    // Le commanditaire a été choisi avant la première journée, et il a payé ses parties réussies.
+    if (!L.commanditaire) faute('un split sans commanditaire');
+    bilan.commandite += P.R.reports[P.R.reports.length - 1].commandite;
     const pass = P.run.passes[P.run.passes.length - 1];
     if (pass.rempli !== mandatRempli(L, pass.mandat)) faute('le bilan ne suit pas le mandat');
     if (P.etape === 'gardes') {
@@ -171,6 +196,8 @@ for (const [nom, ok] of refusVus) exiger(nom, ok);
 exiger('aucune faute au fil des runs', !fautes.size, [...fautes].slice(0, 4).join(' · ') || `${RUNS} runs, ${bilan.splits} splits, ${bilan.actions} actions`);
 exiger('le marché et le banc ont servi', bilan.marche > 0 && bilan.banc > 0, `${bilan.marche} signatures, ${bilan.banc} gestes au banc`);
 exiger('les événements ont servi', bilan.evenements > 0, `${bilan.evenements} décisions`);
+exiger('les commanditaires ont payé', bilan.commandite > 0, `${bilan.commandite} 🪙 sur ${bilan.splits} splits`);
+exiger('des entraînements sont entrés au bassin', bilan.entraines > 0, `${bilan.entraines} champions entraînés`);
 exiger('chaque run rejoue depuis sa sauvegarde', !pasRejouees.length, pasRejouees.join(', ') || 'au bout et à mi-split, passée par JSON');
 informer('les runs', `${bilan.gagnees} gagnées, ${bilan.perdues} perdues, ${bilan.objectifs} objectifs jugés, ${bilan.refusAttendus} refus attendus`);
 

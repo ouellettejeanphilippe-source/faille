@@ -13,6 +13,13 @@
  *   le proprio      un mandat par split (les séries, puis la demie, la finale,
  *                   le titre) ; des objectifs de six journées, payés en jetons ;
  *   l'entraîneur    trois défaites de suite : un événement à trancher ;
+ *   le commanditaire  un sur trois, choisi avant la première journée (repris
+ *                   de Teamfight Manager) : il paie chaque partie qui remplit
+ *                   son objectif, lu sur la vraie feuille et jugé contre le
+ *                   tempo réel de tes splits ;
+ *   l'entraînement  un joueur travaille un champion que les autres jouaient
+ *                   à son rôle dans son split ; quatre journées plus tard, le
+ *                   champion entre dans son bassin, « entraîné » ;
  *   la boîte        tout ça en messages, déduits de l'état, jamais gardés.
  *
  * Tout le hasard passe par hasard() ; aucune cote ne sort d'ici : un agent
@@ -184,9 +191,43 @@ function plusLongue(res, quoi) {
   return max;
 }
 
+/*
+ * LES COMMANDITAIRES : [icône, nom, objectif, jetons par partie réussie, juge].
+ * Le juge lit la feuille d'une de tes parties (`nous` : ton côté) contre le
+ * tempo de ton cinq — la moyenne des vraies parties de ses splits.
+ */
+export const COMMANDITAIRES = {
+  prudent: ['🛡️', 'Le Prudent', 'mourir moins que la moyenne de tes splits', 2, (f, nous, t) => f.equipes[1 - nous].k <= t.k],
+  eclair: ['⚡', 'L\'Éclair', 'gagner plus vite que la durée moyenne de tes splits', 3, (f, nous, t) => f.gagnant === nous && f.duree < t.duree],
+  chasseur: ['🐉', 'Le Chasseur', 'prendre plus de dragons que l\'adversaire', 2, (f, nous) => f.equipes[nous].dragons > f.equipes[1 - nous].dragons],
+  demolisseur: ['🏰', 'Le Démolisseur', 'faire tomber plus de tours que l\'adversaire', 2, (f, nous) => f.equipes[nous].tours > f.equipes[1 - nous].tours],
+  nashor: ['🟣', 'Le Nashor', 'prendre au moins un Nashor', 3, (f, nous) => f.equipes[nous].barons > 0],
+};
+const OFFERTS = 3;
+
+/** Les trois commanditaires offerts au début d'un split, tirés du dé du split. */
+function commanditairesOfferts(L) {
+  const de = hasard(graineDe(L.graine, 'commanditaires'));
+  const ids = Object.keys(COMMANDITAIRES);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const k = Math.floor(de() * (i + 1));
+    [ids[i], ids[k]] = [ids[k], ids[i]];
+  }
+  return ids.slice(0, OFFERTS);
+}
+
+/** Tes parties du split et, pour chacune, si le commanditaire est content. */
+export function partiesCommanditees(L) {
+  const C = COMMANDITAIRES[L.commanditaire];
+  if (!C) return [];
+  const tes = [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => s.a === 0 || s.b === 0);
+  return tes.flatMap(s => s.parties.map(p => C[4](p.feuille, p.bleu === 0 ? 0 : 1, L.equipes[0].tempo)));
+}
+
 /**
  * CE QUE TE RAPPORTE UN SPLIT, compté de ses résultats seulement : tes séries
- * gagnées et perdues, tes rondes de séries gagnées, les objectifs atteints, l'élan.
+ * gagnées et perdues, tes rondes de séries gagnées, les objectifs atteints,
+ * l'élan, et ce que paie ton commanditaire.
  */
 export function gainsDe(L) {
   const tes = [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => s.gagnant !== null && (s.a === 0 || s.b === 0));
@@ -196,11 +237,47 @@ export function gainsDe(L) {
     rondes: L.series ? L.series.rondes.flat().filter(s => s.gagnant === 0).length : 0,
     objectifs: objectifsDe(L).filter(o => o.etat === 'atteint').length,
     elan: plusLongue(tesResultats(L), true) >= ELAN.suite ? 1 : 0,
+    commandite: L.commanditaire ? partiesCommanditees(L).filter(Boolean).length * COMMANDITAIRES[L.commanditaire][3] : 0,
   };
 }
 
-/* ---- L'ENTRAÎNEUR : les événements à trancher ---- */
+/* ---- L'ENTRAÎNEMENT DES CHAMPIONS ---- */
+export const ENTRAINEMENT = { journees: 4, part: 0.25, offre: 6 };
+
+/**
+ * Ce qu'un joueur peut travailler : les champions que les AUTRES joueaient à
+ * son rôle dans son split (la vraie méta de son temps), absents de son
+ * bassin, du plus joué au moins joué.
+ */
+export function aTravailler(split, c) {
+  const siens = new Set(c.moteur.bassin.map(([x]) => x));
+  const n = new Map();
+  for (const e of split.equipes) {
+    for (const j of e.joueurs) {
+      if (j.r !== c.r || j.n === c.n) continue;
+      for (const [x, pj] of j.champs) if (!siens.has(x)) n.set(x, (n.get(x) || 0) + pj);
+    }
+  }
+  return [...n].sort((a, b) => b[1] - a[1]).slice(0, ENTRAINEMENT.offre).map(([x]) => x);
+}
+
+/**
+ * Le joueur qui a fini son entraînement : le champion entre au bout de son
+ * bassin, compté pour une part de son plus joué (ENTRAINEMENT.part) et marqué
+ * « entraîné » — l'écran ne le montre jamais comme de vraies parties.
+ */
+export function entraine(c, champion) {
+  const top = c.moteur.bassin[0] ? c.moteur.bassin[0][1] : 1;
+  return { ...c, moteur: { ...c.moteur, bassin: [...c.moteur.bassin, [champion, top * ENTRAINEMENT.part, 0, 'entraine']] } };
+}
+
+/* ---- L'ENTRAÎNEUR ET LE COMMANDITAIRE : les décisions à trancher ---- */
 export const EVENEMENTS = {
+  commanditaire: {
+    ico: '💼', qui: 'Le DG', titre: 'Trois commanditaires',
+    texte: 'Choisis celui qui paiera ce split. Il paie chaque partie qui remplit son objectif, séries comprises.',
+    choix: Object.fromEntries(Object.entries(COMMANDITAIRES).map(([id, [ico, nom, objectif, jetons]]) => [id, [`${ico} ${nom}`, `Objectif : ${objectif}. +${jetons} 🪙 par partie réussie.`, { commanditaire: id }]])),
+  },
   sequence: {
     ico: '🧑‍🏫', qui: 'L\'entraîneur', titre: 'Trois défaites de suite',
     texte: 'Le vestiaire doute. Qu\'est-ce qu\'on fait ?',
@@ -215,6 +292,7 @@ export const EVENEMENTS = {
 /** L'événement en attente d'une décision, ou null. `decisions` : { cle: choix } de la partie ; `n` : le split de la run. */
 export function evenementEnAttente(L, decisions, n) {
   if (!L || L.series) return null;
+  if (!L.commanditaire) return { cle: `${n}-commanditaire`, id: 'commanditaire', choix: commanditairesOfferts(L) };
   const cle = `${n}-sequence`;
   if (cle in decisions) return null;
   return plusLongue(tesResultats(L), false) >= 3 ? { cle, id: 'sequence', choix: Object.keys(EVENEMENTS.sequence.choix).filter(c => c !== 'agent' || marcheOuvert(L)) } : null;

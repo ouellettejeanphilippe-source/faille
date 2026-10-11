@@ -426,3 +426,13 @@ button:disabled { opacity: 0.45; cursor: default; }
 /* Le bilan : ceux qu'on garde s'allument. */
 .case.garde { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--fond-1)); }
 .case.garde .garder { border-color: var(--or); color: var(--or); }
+/* Les liens d'origine : ceux de ton cinq s'allument. */
+.liens { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-1); }
+.liens li { display: grid; gap: 2px; padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--filet); color: var(--encre-3); }
+.liens li.actif { border-left-color: var(--bon); color: var(--encre); background: color-mix(in srgb, var(--bon) 8%, transparent); }
+.liens b { font: 800 var(--t-3)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.liens small { font-size: var(--t-1); color: var(--encre-2); }
+/* L'entraînement : le rôle, puis ses champions possibles. */
+.entr-roles { display: flex; gap: var(--esp-1); flex-wrap: wrap; margin-bottom: var(--esp-2); }
+.entr-roles button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 var(--esp-1); font-size: var(--t-1); }
+.entr-roles button.actif { border-color: var(--bon); color: var(--bon); }

@@ -26,7 +26,7 @@ img/lp/               les photos des joueurs et les logos des équipes, HORS DU 
 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde
-js/gestion.js         les règles du DG : relances, marché et banc, mandats, objectifs, événements
+js/gestion.js         les règles du DG : relances, marché et banc, mandats, objectifs, événements, commanditaires, entraînement
 js/bureau.js          la boîte de réception, le marché et l'effectif, le bilan d'un split
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
 js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
@@ -36,7 +36,7 @@ js/sim.js             le moteur : une partie par événements, le split au jour 
 js/split.js           l'écran du split : la journée, le classement, les séries, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
-js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs (MOTEUR.md §8)
+js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs, les liens d'origine (MOTEUR.md §8, §9)
 js/boutique.js        l'écran de la boutique
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
@@ -83,6 +83,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
 - Le plafond tient après chaque action, le marché ferme à la date limite, les relances restent dans leur nombre — `check_gestion`.
+- Un lien d'origine passe par les canaux et se mesure en paires, comme une carte — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
 - La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.
 
 **Les images**
@@ -122,6 +123,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et ceux qu'on **garde**.
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
+- **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
 
 ## Tester

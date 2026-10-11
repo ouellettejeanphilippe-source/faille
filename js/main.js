@@ -28,7 +28,7 @@ import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement } from './sim.js';
 import { titreSplit, tableauJour, tableauClassement, serieDe, feuilleSerie } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
-import { jetonsDe } from './rogue.js';
+import { jetonsDe, liensDe, LIENS } from './rogue.js';
 import { boutique, resumeRogue } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, signables, marcheOuvert, cleDe } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, VERSION } from './partie.js';
@@ -37,9 +37,9 @@ import { phraseMandat, aTraiter, ecranBoite, ecranMarche, ecranBilan } from './b
 const $ = s => document.querySelector(s);
 const CLE = 'faille-partie';
 
-const G = { index: null, champions: null, splits: new Map(), P: null, de: null, carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set() };
+const G = { index: null, champions: null, splits: new Map(), P: null, de: null, carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), entr: null };
 const COUCHES = ['#feuille', '#repechage', '#boutique', '#boite', '#marche', '#carte', '#vestiaire'];
-const ctx = () => ({ splits: G.splits, classes: G.champions.classes });
+const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
 const rang = k => (k === 1 ? '1er' : `${k}e`);
 
 /* Un split chargé, avec ses profils et son tempo, gardé pour la suite. */
@@ -151,7 +151,8 @@ function rendreBati() {
   $('#jouer').hidden = !complet;
   $('#recommencer').hidden = P.run.n === 1 && !P.log.length;
   $('#recommencer').textContent = P.run.n > 1 ? 'Abandonner la run' : 'Recommencer';
-  $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${PLAFOND}.` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
+  const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);
+  $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${PLAFOND}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
   if (!$('#vestiaire').hidden) rendreVestiaire();
 }
 
@@ -291,12 +292,12 @@ async function rendreMarche() {
   const cle = `${P.run.n}-${L.jour}-${P.log.length}`;
   if (marcheOuvert(L) && (!G.offre || G.offre.cle !== cle)) {
     G.offre = { cle, contrats: null };
-    $('#marche').innerHTML = ecranMarche(P, null);
+    $('#marche').innerHTML = ecranMarche(P, null, ctx(), G.entr);
     const refs = await agentsLibres(L, ids(), lireSplit, P.eff, P.adversaires);
     if (G.offre.cle !== cle) return;
     G.offre.contrats = refs.map(ref => contratDe(ctx(), ref));
   }
-  $('#marche').innerHTML = ecranMarche(P, G.offre && G.offre.cle === cle ? G.offre.contrats : null);
+  $('#marche').innerHTML = ecranMarche(P, G.offre && G.offre.cle === cle ? G.offre.contrats : null, ctx(), G.entr);
 }
 
 function ouvrir(id) {
@@ -313,6 +314,8 @@ function toucherCouches(ev) {
     const r = faire({ t: 'evenement', choix: b.dataset.choix });
     if (r) { fermer('#boite'); ouvrir('#boutique'); G.ouvertes = r; RENDUS['#boutique'](); }
   } else if (b.dataset.geste) faire({ t: b.dataset.geste });
+  else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreMarche(); }
+  else if (b.dataset.entrChamp) { faire({ t: 'entrainer', r: G.entr, champion: b.dataset.entrChamp }); G.entr = null; }
   else if (b.dataset.agent) {
     const c = G.offre.contrats.find(x => cleDe(x.ref) === b.dataset.agent);
     faire({ t: 'marche', ref: c.ref, place: b.dataset.place });

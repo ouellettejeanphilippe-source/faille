@@ -19,8 +19,8 @@
 import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { repecher } from './repechage.js';
 import { PLAFOND, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, noterJoue, jetonsDe } from './rogue.js';
-import { RELANCES, MARCHE, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente } from './gestion.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe } from './rogue.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine } from './gestion.js';
 
 export const GARDES = 2;
 export const VERSION = 1;
@@ -34,7 +34,7 @@ export const nouvellePartie = graine => ({
   R: nouveauRogue(graine),
   eff: { cinq: {}, banc: null },
   tirage: null, relances: relancesNeuves(),
-  L: null, dernier: null, adversaires: [], decisions: {}, bons: 0,
+  L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null,
 });
 
 /** Un contrat : le joueur d'un split, tel que l'effectif et le moteur le lisent. */
@@ -77,9 +77,25 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   const L = P.L;
   const s = taSerie(L);
   if (s && !s.repechage) repecher(L, s, ctx.classes, rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {});
-  L.equipes[0].effets = effetsDeToi(P.R);
+  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq));
   jouer(L);
   if (s) noterJoue(P.R, 1);
+  finirEntrainement(P);
+}
+
+/* L'entraînement fini entre au bassin du joueur, s'il est encore chez toi. */
+function finirEntrainement(P) {
+  const E = P.entrainement;
+  if (!E || P.L.jour - E.debut < ENTRAINEMENT.journees) return;
+  P.entrainement = null;
+  const ici = [...ROLES.map(r => ['cinq', r]), ['banc']].find(([o, r]) => {
+    const c = o === 'cinq' ? P.eff.cinq[r] : P.eff.banc;
+    return c && cleDe(c.ref) === E.cle;
+  });
+  if (!ici) return;
+  if (ici[0] === 'cinq') P.eff.cinq[ici[1]] = entraine(P.eff.cinq[ici[1]], E.champion);
+  else P.eff.banc = entraine(P.eff.banc, E.champion);
+  majToi(P);
 }
 
 const refuser = pourquoi => { throw new Error(pourquoi); };
@@ -162,6 +178,13 @@ const ACTIONS = {
     P.eff.cinq[b.r] = b;
     majToi(P);
   },
+  entrainer(P, a, ctx) {
+    exiger(P.etape === 'split' && P.L.jour < P.L.journees.length, 'on s\'entraîne pendant la saison');
+    exiger(!P.entrainement, 'un entraînement est déjà en cours');
+    const c = exiger(P.eff.cinq[a.r], 'personne à ce rôle');
+    exiger(aTravailler(ctx.splits.get(c.ref.id).split, c).includes(a.champion), `${c.n} ne peut pas travailler ${a.champion}`);
+    P.entrainement = { cle: cleDe(c.ref), n: c.n, champion: a.champion, debut: P.L.jour };
+  },
   relacher(P) {
     exiger(P.etape === 'split' && P.eff.banc, 'personne au banc');
     P.eff.banc = null;
@@ -171,6 +194,7 @@ const ACTIONS = {
     exiger(e.choix.includes(a.choix), 'ce choix n\'est pas offert');
     P.decisions[e.cle] = a.choix;
     const fait = EVENEMENTS[e.id].choix[a.choix][2];
+    if (fait.commanditaire) P.L.commanditaire = fait.commanditaire;
     if (fait.jetons) P.R.primes.push({ cle: e.cle, jetons: fait.jetons });
     if (fait.bon) P.bons += fait.bon;
     if (fait.pack) return ouvrirPack(P.L, P.R, fait.pack, { gratuit: true });
@@ -188,6 +212,7 @@ const ACTIONS = {
     P.R.reports.push(gainsDe(L));
     P.dernier = L;
     P.L = null;
+    P.entrainement = null;
     P.run.fin = champion ? 'gagnee' : rempli ? null : 'perdue';
     P.etape = P.run.fin ? 'fin' : 'gardes';
   },

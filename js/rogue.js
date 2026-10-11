@@ -93,7 +93,7 @@ export function couleurDe(id) {
 export const nouveauRogue = graine => ({ graine, achats: [], cartes: [], plan: [], coach: null, joue: [], reports: [], primes: [] });
 
 /** Ce que valent en jetons les gains d'un split (gainsDe). */
-export const valeurDesGains = g => g.v * JETONS.victoire + g.d * JETONS.defaite + g.rondes * JETONS.ronde + g.objectifs * OBJECTIF.jetons + g.elan * ELAN.jetons;
+export const valeurDesGains = g => g.v * JETONS.victoire + g.d * JETONS.defaite + g.rondes * JETONS.ronde + g.objectifs * OBJECTIF.jetons + g.elan * ELAN.jetons + g.commandite;
 
 /** Les jetons : le départ, les splits finis de la run, le split en cours, les primes, moins tes achats. */
 export function jetonsDe(L, R) {
@@ -157,10 +157,30 @@ export function confiance(R) {
   return { series, palier: SEUILS.filter(s => series >= s).length, prochain: SEUILS.find(s => series < s) || null };
 }
 
-/** Les effets de ton cinq : les cartes du plan et le palier du coach, sommés par le moteur. */
-export function effetsDeToi(R) {
+/*
+ * LES LIENS D'ORIGINE (repris des « liens » de LoL Esports Manager) : des
+ * joueurs de ton cinq qui ont joué ensemble pour vrai. Une vraie équipe a
+ * déjà les siens dans la partie calibrée ; un lien rend à ton cinq, fait de
+ * plusieurs vestiaires, une part de ce qu'elle a. Chacun passe par les
+ * canaux et se mesure en paires comme une carte, à sa rareté (check_rogue).
+ *   [icône, nom, rareté, effets, condition sur les contrats du cinq]
+ */
+const memeVestiaire = (a, b) => a && b && a.ref.id === b.ref.id && a.ref.e === b.ref.e;
+const plusGrand = (cinq, cle) => Math.max(0, ...Object.values([...cinq].reduce((n, c) => ({ ...n, [cle(c)]: (n[cle(c)] || 0) + 1 }), {})));
+export const LIENS = {
+  duoBas: ['🤝', 'Duo d\'origine au bas', 'peu', { ligne: 0.05 }, c => memeVestiaire(c.bas, c.soutien)],
+  duoCentre: ['🧭', 'Duo d\'origine milieu-jungle', 'peu', { ligne: 0.03, rythme: 1.06 }, c => memeVestiaire(c.milieu, c.jungle)],
+  vestiaire: ['🏠', 'Vestiaire d\'origine', 'peu', { combat: 0.04 }, c => plusGrand(Object.values(c), x => `${x.ref.id}|${x.ref.e}`) >= 3],
+  couleurs: ['🎽', 'Les couleurs du club', 'commune', { objectifs: 0.06 }, c => plusGrand(Object.values(c), x => x.ref.e) >= 3],
+};
+
+/** Les liens actifs d'un cinq ({ rôle : contrat }). */
+export const liensDe = cinq => Object.keys(LIENS).filter(id => LIENS[id][4](cinq));
+
+/** Les effets de ton cinq : les cartes du plan, le palier du coach et les liens d'origine, sommés par le moteur. */
+export function effetsDeToi(R, liens = []) {
   const { palier } = confiance(R);
-  return sommerEffets([...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null]);
+  return sommerEffets([...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null, ...liens.map(id => LIENS[id][3])]);
 }
 
 /** Note les séries que ton cinq vient de jouer, avec le plan qui les a jouées. */

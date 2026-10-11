@@ -28,7 +28,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
-import { CARTES, COACHS, PACKS, JETONS, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
 import { exiger, borne, informer, verdict } from './verdict.mjs';
@@ -101,6 +101,13 @@ if (splits.length) {
     else informer(`${ico} ${nom} : la forme`, `${ecrire(m.forme)} · coach : ${couleurDe(id) || 'neutre'}`);
   }
 
+  /* Les liens d'origine, comme des cartes de leur rareté. */
+  for (const [ico, nom, rarete, eff] of Object.values(LIENS)) {
+    const m = mesurer({ effet: eff });
+    borne(`${ico} ${nom} (${rarete}) : victoires de plus par saison`, m.dv, -MAX_V[rarete], MAX_V[rarete]);
+    informer(`${ico} ${nom} : la forme`, ecrire(m.forme));
+  }
+
   /* Les coachs, au palier III, sans carte. */
   for (const [id, co] of Object.entries(COACHS)) {
     const m = mesurer({ effet: co.paliers[2] });
@@ -148,6 +155,15 @@ if (splits.length) {
   const b = mesurer({ serie: bansSeuls });
   borne('trois bannissements valent quelque chose, sans tout décider', b.dv, 0.2, MAX_V.rare);
   informer('les bannissements seuls : la forme', ecrire(b.forme));
+}
+
+/* Les liens se lisent sur les contrats : le même vestiaire (split et équipe), la même équipe d'un split à l'autre. */
+{
+  const c = (id, e) => ({ ref: { id, e } });
+  const cinq = { haut: c('m1', 'A'), jungle: c('m1', 'A'), milieu: c('m1', 'A'), bas: c('m2', 'A'), soutien: c('m2', 'A') };
+  exiger('les liens se lisent sur les vestiaires d\'origine', JSON.stringify(liensDe(cinq)) === JSON.stringify(['duoBas', 'duoCentre', 'vestiaire', 'couleurs']), liensDe(cinq).join(', '));
+  const epars = { haut: c('m1', 'A'), jungle: c('m2', 'B'), milieu: c('m3', 'C'), bas: c('m4', 'D'), soutien: c('m4', 'E') };
+  exiger('un cinq de cinq vestiaires n\'a aucun lien', !liensDe(epars).length);
 }
 
 /* Les packs et les jetons. */

@@ -73,6 +73,10 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] La roulette à relances : Autre split, Autre équipe, Passer, deux de chaque par repêchage — `check_gestion`.
 - [x] Le marché en cours de split, jusqu'à la date limite (mi-split) : trois agents libres par journée (Pilier au plus, tirés du dé du split), « qui sort ? » (titulaire ou banc), 8 🪙 la signature ; le banc, un sixième joueur sous le plafond, qu'on fait jouer ou qu'on relâche.
 - [x] La boîte de réception : le proprio (le mandat, les objectifs de six journées payés 10 🪙, l'élan à quatre victoires de suite), l'entraîneur (trois défaites de suite : un événement à trancher, qui bloque la journée), le DG (le marché), le dépisteur (les plus joués de ton prochain adversaire).
+- [x] Les commanditaires (repris de Teamfight Manager) : un sur trois, choisi avant la première journée ; chacun paie les parties qui remplissent son objectif, lu sur la vraie feuille contre le tempo réel de tes splits — `check_gestion`.
+- [x] Les liens d'origine (repris de LoL Esports Manager) : duos et vestiaires qui ont joué ensemble pour vrai, par les canaux, mesurés en paires — `check_rogue`, MOTEUR.md §9.
+- [x] L'entraînement des champions (repris de Teamfight Manager) : un joueur travaille un champion que les autres jouaient à son rôle dans son split ; quatre journées plus tard, il entre au bassin, « entraîné » — `check_gestion`.
+- [ ] Le joueur qui vieillit : un gardé devient sa version du split réel suivant où il a joué.
 - [ ] Les objectifs du proprio avec leurs chances (« Probable · Jouable · Coriace », Cap 82-0) et d'autres événements (dilemmes en cours de split).
 - [ ] Les échanges avec les équipes de la ligue (un joueur contre un joueur), en plus des agents libres.
 - [ ] Le banc qui joue une série au lieu d'une saison : choisir ton cinq au repêchage des champions selon les bassins.
@@ -87,3 +91,4 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-10 — Jalon 3 : les canaux du moteur, le repêchage des champions comme deck de série (bannissements, bassins, confort, composition), les jetons, la boutique, les packs, le plan de jeu et les coachs ; `check_rogue` les mesure en paires.
 - 2026-10-10 — Le plafond (le coût suit le niveau, `check_plafond`) et l'interface rapprochée de Cap 82-0 : ses jetons, sa condensée, son tableau indicateur, sa barre d'action.
 - 2026-10-11 — Jalon 4, la gestion de Cap 82-0 : la run sur plusieurs splits et son mandat, la sauvegarde par journal d'actions, la roulette à relances, le marché et le banc, la boîte de réception ; `check_gestion` joue des runs entières et les rejoue.
+- 2026-10-11 — Ce que font les jeux de gestion de LoL, à la manière de Faille : les commanditaires (Teamfight Manager), les liens d'origine (LoL Esports Manager), l'entraînement des champions.

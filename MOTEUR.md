@@ -156,3 +156,9 @@ Les trois multiplicatifs touchent la partie entière : chacune des deux équipes
 Le reste (les communes, les peu communes, une classe de plus au repêchage) est dans la sortie de `check_rogue`. Une lecture a un bruit d'environ ± 0,1 victoire : on ne retouche pas une carte sur une seule lecture.
 
 **Ce que ça dit.** Une carte change la forme de la partie bien plus que sa force : la plus forte rapporte à peine plus d'une demi-victoire par saison. Ce qui pèse le plus, ce sont les bannissements, à jeu égal avec l'adversaire. Le tardif coûte encore un peu (−0,18 et −0,37 pour ses deux cartes) : son pivot, 0,8 de la durée, se calibrera quand on aura la ligne du temps des parties (Oracle's Elixir).
+
+## 9. Les liens d'origine et l'entraînement (jalon 4)
+
+Les **liens d'origine** (`LIENS`, js/rogue.js, repris des « liens » de LoL Esports Manager) récompensent les joueurs de ton cinq qui ont joué ensemble pour vrai : le duo bas-soutien ou milieu-jungle d'un même vestiaire, trois d'un même vestiaire, trois aux couleurs d'un même club. Une vraie équipe a déjà les siens dans la partie calibrée ; un lien rend à ton cinq une part de ce qu'elle a. Chacun passe par les canaux, comme une carte, et `check_rogue` le mesure en paires à sa rareté : de +0,03 à +0,13 victoire par saison, l'ordre de grandeur des cartes peu communes.
+
+L'**entraînement** (js/gestion.js) ne crée aucun canal : un champion entraîné entre au bout du bassin du joueur, compté pour le quart de son plus joué (`ENTRAINEMENT.part`). Le confort le lit comme les autres : il coûte −0,3 écart type, entre ses vrais champions et le hors-bassin (−0,6). `check_gestion` vérifie qu'il tombe là. L'écran le dit « entraîné », jamais en parties.

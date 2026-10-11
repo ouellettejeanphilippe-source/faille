@@ -11,9 +11,10 @@
 import { esc } from './util.js';
 import { PLAFOND } from './cotes.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
-import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, mandatDe, objectifsDe, gainsDe, dateLimite, marcheOuvert, masseDe, placements, cleDe } from './gestion.js';
+import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, mandatDe, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, GARDES } from './partie.js';
-import { jetonsDe, valeurDesGains } from './rogue.js';
+import { jetonsDe, valeurDesGains, LIENS, liensDe, dire } from './rogue.js';
+import { iconeChampion } from './images.js';
 
 const victoires = n => `${n} victoire${n > 1 ? 's' : ''}`;
 const message = (ico, qui, titre, texte, extra = '') => `<li class="message"><span class="message-de">${ico} ${esc(qui)}</span><b>${esc(titre)}</b><p>${texte}</p>${extra}</li>`;
@@ -39,6 +40,12 @@ export function ecranBoite(P) {
       `<div class="choix">${ev.choix.map(c => `<button data-choix="${c}"><b>${esc(E.choix[c][0])}</b><small>${esc(E.choix[c][1])}</small></button>`).join('')}</div>`));
   }
   out.push(message('🏢', 'Le proprio', 'Ton mandat', esc(phraseMandat(P.run.n))));
+  if (L.commanditaire) {
+    const [ico, nom, objectif, jetons] = COMMANDITAIRES[L.commanditaire];
+    const parties = partiesCommanditees(L);
+    const ok = parties.filter(Boolean).length;
+    out.push(message('💼', nom, `${ico} Ton commanditaire`, esc(`Objectif : ${objectif}. ${ok} partie${ok > 1 ? 's' : ''} réussie${ok > 1 ? 's' : ''} sur ${parties.length} : +${ok * jetons} 🪙 jusqu'ici.`)));
+  }
   for (const o of objectifsDe(L).filter(x => x.etat !== 'avenir').reverse()) {
     const sur = `${o.fin - o.debut} séries`;
     const texte = {
@@ -74,8 +81,41 @@ function caseEffectif(etiquette, c, extra = '') {
     ? `<b>${esc(c.n)}</b><small>${esc(c.niveau)} · ${esc(c.equipe)} · ${esc(c.split)}</small>` : '<small>Personne</small>'}</span>${c ? coutHtml(c.cout) : ''}${extra}</li>`;
 }
 
-/** Le marché : ton effectif (le cinq et le banc), puis les agents libres de la journée. `offre` : les contrats offerts. */
-export function ecranMarche(P, offre) {
+/* Les liens d'origine de ton cinq, et ce qu'ils font, en mots. */
+function lesLiens(P) {
+  const actifs = liensDe(P.eff.cinq);
+  const tous = Object.entries(LIENS).map(([id, [ico, nom, , eff]]) => `<li class="${actifs.includes(id) ? 'actif' : ''}"><b>${ico} ${esc(nom)}</b><small>${dire(eff, 0.1).map(esc).join(' · ')}</small></li>`).join('');
+  return `<h3>Les liens d'origine · ${actifs.length}</h3>
+    <p class="sous">Des joueurs qui ont joué ensemble pour vrai : le duo du bas ou du centre d'un même vestiaire, trois d'un même vestiaire, trois aux couleurs d'un même club.</p>
+    <ul class="liens">${tous}</ul>`;
+}
+
+/* L'entraînement : un joueur à la fois travaille un champion que les autres jouaient à son rôle. `qui` : le rôle ouvert. */
+function lEntrainement(P, ctx, qui) {
+  const E = P.entrainement;
+  const L = P.L;
+  let corps;
+  if (E) corps = `<p class="etat">${esc(E.n)} travaille ${esc(E.champion)} : prêt après la journée ${E.debut + ENTRAINEMENT.journees}.</p>`;
+  else if (L.jour >= L.journees.length) corps = '<p class="sous">On s\'entraîne pendant la saison.</p>';
+  else {
+    corps = `<div class="entr-roles">${Object.entries(ROLES).map(([r, mot]) => `<button data-entr-role="${r}"${qui === r ? ' class="actif"' : ''}>${mot}</button>`).join('')}</div>`;
+    const c = qui && P.eff.cinq[qui];
+    if (c) {
+      const champs = aTravailler(ctx.splits.get(c.ref.id).split, c);
+      corps += `<p class="sous">${esc(c.n)} peut travailler ce que les autres jouaient à son rôle en ${esc(c.split)} :</p><div class="repe-puces">${champs.map(x => {
+        const src = iconeChampion(ctx.champions, x);
+        return `<button class="champ" data-entr-champ="${esc(x)}">${src ? `<img src="${src}" alt="" loading="lazy">` : '<span class="ico-vide"></span>'}<small>${esc(x)}</small></button>`;
+      }).join('') || '<small>Rien de neuf à son rôle.</small>'}</div>`;
+    }
+  }
+  const faits = Object.values(P.eff.cinq).flatMap(c => c.moteur.bassin.filter(b => b[3]).map(b => `${esc(c.n)} : ${esc(b[0])}`));
+  return `<h3>L'entraînement</h3>
+    <p class="sous">Un joueur à la fois, ${ENTRAINEMENT.journees} journées : le champion entre dans son bassin, « entraîné ». Au repêchage, il lui coûte moins de confort que hors de son bassin, mais plus que ses vrais champions.</p>
+    ${corps}${faits.length ? `<p class="sous">Déjà entraînés : ${faits.join(' · ')}.</p>` : ''}`;
+}
+
+/** Le marché : ton effectif (le cinq et le banc), ses liens, l'entraînement, puis les agents libres de la journée. `offre` : les contrats offerts. */
+export function ecranMarche(P, offre, ctx, qui) {
   const L = P.L;
   const b = P.eff.banc;
   const cinq = Object.entries(ROLES).map(([r, mot]) => caseEffectif(mot, P.eff.cinq[r])).join('');
@@ -103,6 +143,8 @@ export function ecranMarche(P, offre) {
     <h3>Ton effectif</h3>
     <p class="sous">Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.</p>
     <ol class="alignement">${cinq}${banc}</ol>
+    ${lesLiens(P)}
+    ${lEntrainement(P, ctx, qui)}
     <h3>Les agents libres · journée ${L.jour + 1}</h3>
     ${agents}`;
 }

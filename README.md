@@ -24,6 +24,8 @@ Ton cinq tient sous 15 points ; un joueur coûte selon son niveau (Remplaçant 1
 
 Une run se joue sur plusieurs splits : le proprio fixe un mandat (les séries, puis la demie, la finale, le titre) ; rempli, tu gardes jusqu'à deux joueurs et la roulette comble le reste. Entre deux journées, la boîte de réception, le marché des agents libres jusqu'à la date limite, ton banc. La partie est un journal d'actions, gardé dans le navigateur : rejoué, il redonne la même partie. `node scripts/check_gestion.mjs` joue des runs entières et les rejoue.
 
+Des autres jeux de gestion de LoL : les commanditaires et leurs objectifs (Teamfight Manager), les liens d'origine entre joueurs qui ont joué ensemble (LoL Esports Manager), l'entraînement d'un champion que les autres jouaient au même rôle.
+
 ## Le moteur
 
 `js/sim.js` joue chaque partie par événements, un tour de 30 secondes à la fois, de 15 à 80 minutes, calibré sur les vraies parties des shards. `MOTEUR.md` en est la spécification ; `node scripts/check_feuilles.mjs` vérifie la feuille de match et rejoue chaque vraie partie contre ce qui s'est passé.
