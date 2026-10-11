@@ -16,6 +16,8 @@
     <symbol id="i-des" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-marche" viewBox="0 0 24 24"><path d="M3 4h2.5l2.2 10.5h10.6L20.5 7H7"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol>
     <symbol id="i-saut" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7V5z" fill="currentColor" stroke="none"/><path d="M18 5v14"/></symbol>
+    <symbol id="i-boite" viewBox="0 0 24 24"><path d="M4 13l2.2-7h11.6L20 13v6H4z"/><path d="M4 13h4.5l1.5 2.5h4L15.5 13H20"/></symbol>
+    <symbol id="i-maillot" viewBox="0 0 24 24"><path d="M9 3h6l5 3-2 4-2-1v12H8V9L6 10 4 6z"/><path d="M9 3a3 3 0 0 0 6 0"/></symbol>
   </svg>
 
   <!-- LE TABLEAU INDICATEUR, comme dans Cap 82-0 : toujours là. À gauche le retour et où en est la partie ; à droite les chiffres — le plafond pendant qu'on bâtit, la fiche, le rang et les jetons pendant le split. -->
@@ -34,25 +36,30 @@
 
   <main>
     <section id="bati" class="ecran">
-      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p></div>
+      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p><p id="bati-mandat" class="mandat"></p></div>
       <ol id="alignement" class="alignement"></ol>
       <p id="etat" class="etat"></p>
       <div class="actionbar">
-        <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg>Tourner la roulette</button>
+        <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg><span>Tourner la roulette</span></button>
         <button id="jouer" class="go" hidden>Jouer le split</button>
         <button id="recommencer" hidden>Recommencer</button>
       </div>
     </section>
 
     <section id="split" class="ecran" hidden>
-      <div class="ecran-tete"><h1 id="split-titre"></h1><p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties). Avant chacune de tes séries, le repêchage des champions.</p></div>
+      <div class="ecran-tete"><h1 id="split-titre"></h1><p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties). Avant chacune de tes séries, le repêchage des champions.</p><p id="split-mandat" class="mandat"></p></div>
+      <div id="split-strategie"></div>
       <div id="split-jour"></div>
       <div id="split-classement"></div>
       <div class="actionbar">
+        <button id="decision" class="go" hidden>Une décision t'attend</button>
         <button id="journee" class="go">Journée suivante</button>
+        <button id="series" class="go" hidden>Lancer les séries</button>
         <button id="ronde" class="go" hidden>Ronde suivante</button>
-        <button id="nouveau" class="go" hidden>Un nouveau cinq</button>
-        <button id="jusqua"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Aux séries</button>
+        <button id="bilan-ouvrir" class="go" hidden>Le bilan du split</button>
+        <button id="jusqua" title="Jusqu'aux séries, ou jusqu'à la prochaine décision"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Séries</button>
+        <button id="ouvrir-boite"><svg class="ico" aria-hidden="true"><use href="#i-boite"/></svg><span>Boîte</span></button>
+        <button id="ouvrir-marche"><svg class="ico" aria-hidden="true"><use href="#i-maillot"/></svg><span>Marché</span></button>
         <button id="ouvrir-boutique"><svg class="ico" aria-hidden="true"><use href="#i-marche"/></svg>Boutique</button>
       </div>
       <p id="jetons" class="etat"></p>
@@ -62,13 +69,19 @@
       <header class="bandeau" id="vestiaire-bandeau"></header>
       <div class="combler"><span>À combler <b id="vestiaire-libres"></b></span><span>Ce choix <b id="vestiaire-max"></b></span></div>
       <ul id="vestiaire-liste" class="liste-joueurs"></ul>
-      <div class="actionbar"><button id="relancer"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg>Un autre vestiaire</button></div>
+      <div class="actionbar" id="relances"></div>
     </section>
+    <section id="bilan" class="ecran" hidden></section>
+
     <section id="carte" class="couche" hidden></section>
+    <section id="boite" class="couche" hidden></section>
+    <section id="strategie" class="couche" hidden></section>
+    <section id="marche" class="couche" hidden></section>
     <section id="repechage" class="couche" hidden></section>
     <section id="boutique" class="couche" hidden></section>
     <section id="feuille" class="couche" hidden></section>
   </main>
+  <p id="avis" class="avis" role="status" hidden></p>
   <footer>
     <p id="source"></p>
     <p>Faille n'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.</p>

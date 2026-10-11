@@ -120,8 +120,9 @@ img.absente { display: none; }
 .tete-nom { font: 800 var(--t-4)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
 .tete-etat { font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tete-chiffres { flex: none; display: flex; align-items: stretch; margin-left: auto; }
-.tete-ch { display: grid; align-content: center; justify-items: end; gap: 2px; padding: 0 var(--esp-3); border-left: 1px solid var(--filet); }
-.tete-ch:first-child { border-left: 0; }
+.tete-ch { display: grid; align-content: center; justify-items: end; gap: 2px; padding: 0 var(--esp-3); }
+/* Un filet entre deux chiffres affichés, jamais devant le premier. */
+.tete-ch:not([hidden]) ~ .tete-ch { border-left: 1px solid var(--filet); }
 .tete-ch:last-child { padding-right: 0; }
 .tete-ch-l { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-3); white-space: nowrap; }
 .tete-ch-v { font: 800 var(--t-5)/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -178,7 +179,7 @@ h3 { margin: var(--esp-5) 0 var(--esp-2); padding-bottom: var(--esp-1); border-b
   margin-top: var(--esp-4); padding: var(--esp-3) 0 calc(var(--esp-3) + var(--safe-bas));
   background: linear-gradient(transparent, var(--noir) 30%);
 }
-.actionbar > button { flex: 1 1 0; }
+.actionbar > button { flex: 1 1 0; min-width: 0; padding: 0 var(--esp-2); font-size: var(--t-2); }
 .actionbar > .go { flex: 1 1 100%; min-height: 52px; font-size: var(--t-4); }
 
 footer { max-width: var(--large); margin: var(--esp-5) auto 0; padding: var(--esp-4); border-top: 1px solid var(--filet); color: var(--encre-3); font-size: var(--t-1); }
@@ -392,3 +393,68 @@ button:disabled { opacity: 0.45; cursor: default; }
 .champ.prevu { border-color: var(--bleu); }
 .champ.banni { opacity: .35; text-decoration: line-through; }
 .champ.ailleurs { opacity: .6; }
+
+/* =====================================================================
+   8. LE BUREAU DU DG — le mandat, la boîte, le marché, le bilan, les relances
+   ===================================================================== */
+.mandat { margin: var(--esp-2) 0 0; padding-left: var(--esp-3); border-left: 3px solid var(--or); color: var(--encre); font-size: var(--t-2); }
+/* Les relances : le mot, et ce qui en reste en gros chiffre. */
+.compte { font: 800 var(--t-4)/1 var(--display); color: var(--or); }
+.avis {
+  position: fixed; left: 50%; bottom: calc(var(--esp-5) + var(--safe-bas)); z-index: 70; transform: translateX(-50%);
+  max-width: calc(100% - 2 * var(--esp-4)); margin: 0; padding: var(--esp-3) var(--esp-4);
+  background: var(--fond-3); border: 1px solid var(--mauvais); border-radius: var(--r-2); box-shadow: var(--ombre);
+  color: var(--encre); font-size: var(--t-2);
+}
+/* La boîte : un message par bande, l'expéditeur en étiquette. */
+.boite { list-style: none; margin: 0; padding: 0; }
+.message { display: grid; gap: var(--esp-1); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); }
+.message-de { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-3); }
+.message b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.message p { margin: 0; color: var(--encre-2); font-size: var(--t-2); }
+.choix { display: grid; gap: var(--esp-2); margin-top: var(--esp-2); }
+.choix button { display: grid; justify-items: start; gap: 2px; padding: var(--esp-2) var(--esp-3); text-align: left; background: var(--panneau); box-shadow: var(--relief); }
+.choix small { font: 400 var(--t-1)/1.3 var(--corps); letter-spacing: 0; text-transform: none; color: var(--encre-2); }
+/* Le banc et ce qu'on en fait ; les agents libres et où ils jouent. */
+.case-gestes, .places { display: flex; gap: var(--esp-1); flex-wrap: wrap; }
+/* Les gestes du banc passent sous le joueur : son nom garde sa place. */
+.case:has(.case-gestes) { flex-wrap: wrap; }
+.case-gestes { flex: 1 1 100%; padding-left: calc(64px + 44px + 2 * var(--esp-3)); }
+.case-gestes button, .places button, .garder { min-height: 36px; padding: 0 var(--esp-2); font-size: var(--t-1); }
+.agent { flex-wrap: wrap; }
+.places { flex: 1 1 100%; padding-left: calc(44px + var(--esp-3)); }
+/* Le bilan : ceux qu'on garde s'allument. */
+.case.garde { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--fond-1)); }
+.case.garde .garder { border-color: var(--or); color: var(--or); }
+/* Les liens d'origine : ceux de ton cinq s'allument. */
+.liens { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-1); }
+.liens li { display: grid; gap: 2px; padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--filet); color: var(--encre-3); }
+.liens li.actif { border-left-color: var(--bon); color: var(--encre); background: color-mix(in srgb, var(--bon) 8%, transparent); }
+.liens b { font: 800 var(--t-3)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.liens small { font-size: var(--t-1); color: var(--encre-2); }
+/* L'entraînement : le rôle, puis ses champions possibles. */
+.entr-roles { display: flex; gap: var(--esp-1); flex-wrap: wrap; margin-bottom: var(--esp-2); }
+.entr-roles button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 0 var(--esp-1); font-size: var(--t-1); }
+.entr-roles button.actif { border-color: var(--bon); color: var(--bon); }
+
+/* =====================================================================
+   9. LA STRATÉGIE — le plan de match, au centre du split
+   ===================================================================== */
+.plan-match, .strategie {
+  width: 100%; display: grid; justify-items: start; gap: var(--esp-1); padding: var(--esp-3) var(--esp-4); text-align: left;
+  background: var(--panneau); border: 1px solid var(--filet); border-left: 3px solid var(--club-vif); border-radius: var(--r-2); box-shadow: var(--relief);
+  font: 400 var(--t-2)/1.35 var(--corps); letter-spacing: 0; text-transform: none;
+}
+.plan-match { margin-bottom: var(--esp-2); }
+.plan-match b, .strategie b { font: 800 var(--t-5)/1.05 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.plan-match small, .strategie small { color: var(--encre-2); font-size: var(--t-2); }
+.strategie.active { border-color: var(--bon); background: color-mix(in srgb, var(--bon) 10%, var(--fond-1)); }
+.plan-tete { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-3); }
+.fit-haut { color: var(--bon); }
+.fit-bon { color: color-mix(in srgb, var(--bon) 60%, var(--encre)); }
+.fit-moyen { color: var(--encre-2); }
+.fit-bas { color: var(--mauvais); }
+.demandes { display: flex; flex-wrap: wrap; gap: var(--esp-1) var(--esp-3); }
+.demande { font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); }
+.demande b { font-size: var(--t-3); color: var(--encre); }
+.strategie .fait { font-size: var(--t-1); }

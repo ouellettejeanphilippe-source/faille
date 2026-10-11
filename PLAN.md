@@ -2,7 +2,7 @@
 
 ## Où on en est
 
-Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Ton cinq tient sous un plafond de 15 points (le coût suit le niveau). L'interface suit celle de Cap 82-0 : son tableau indicateur, sa condensée, une action principale par écran. Pas encore de partie de rogue sur plusieurs splits.
+Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Ton cinq tient sous un plafond de 15 points (le coût suit le niveau). L'interface suit celle de Cap 82-0 : son tableau indicateur, sa condensée, une action principale par écran. Jalon 4 livré : une run de plusieurs splits sous le mandat du proprio, sauvegardée ; la roulette à relances ; le marché et le banc ; la boîte de réception. Les jeux de gestion de LoL y ont mis leur part : les commanditaires de Teamfight Manager, les liens de LoL Esports Manager, l'entraînement des champions. Jalon 5 : la stratégie est au centre — prioriser les dragons, le Nashor, pousser en solitaire… selon ce que tes joueurs savent faire. Pas encore de médailles ni de déblocages entre deux runs.
 
 ## Décisions prises
 
@@ -20,6 +20,13 @@ Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre l
 
 - **Le coût suit le niveau, et rien d'autre** : il n'y a pas de salaires publics, et un coût tiré finement de la cote la laisserait lire à l'écran. Cinq paliers, le même qu'affiche le niveau.
 - **La peau de Cap 82-0** : mêmes jetons, même condensée (Barlow Condensed, OFL), même coquille ; la carte d'un joueur garde ses habillages d'époque.
+
+- **La partie est un journal d'actions** : chaque geste du DG s'inscrit, et rejouer le journal sous la même graine redonne la même partie. La sauvegarde ne garde rien de compté, comme les jetons ; le hasard de la roulette et du marché se tire hors du moteur et le journal garde ce qui est sorti.
+- **Les événements ne touchent pas au moteur** : ils jouent sur la gestion (jetons, un pack, une signature payée), pour ne pas ajouter d'effet non mesuré en paires. Un événement qui changerait une partie passera par les canaux et par `check_rogue`.
+
+- **Les idées des autres jeux de gestion de LoL passent par nos règles** : un commanditaire juge la vraie feuille contre le tempo réel ; un lien passe par les canaux et se mesure en paires ; un champion entraîné se lit par le confort et ne se montre jamais comme de vraies parties.
+
+- **La stratégie suit les joueurs, comme les systèmes de Cap 82-0** : son gain et son exécution suivent le fit (les sous-cotes demandées), son prix se paie toujours. À contre-emploi, elle coûte. Pour qu'elle compte, les objectifs devaient compter : le moteur a été recalibré sur ce qu'ils valent dans les vraies parties, pas sur une envie.
 
 ## Dépendances
 

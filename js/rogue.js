@@ -5,7 +5,9 @@
  * (check_rogue) : la même ligue jouée deux fois sous la même graine, la carte
  * donnée à la moitié des équipes puis à l'autre.
  *
- *   les jetons   jamais gardés : recomptés des résultats et des achats (jetonsDe) ;
+ *   les jetons   jamais gardés : recomptés des résultats, des primes et des
+ *                achats (jetonsDe), sur toute la run (les splits finis dans
+ *                `reports`, comptés de leurs résultats par gainsDe) ;
  *   les packs    tirés du dé de la ligue et du numéro de l'achat : une même
  *                partie ouvre les mêmes packs ; une carte ne se tire qu'une fois ;
  *   le plan      trois cartes actives au plus, changées entre deux journées ;
@@ -19,6 +21,7 @@
  */
 import { hasard, graineDe } from './hasard.js';
 import { sommerEffets } from './sim.js';
+import { gainsDe, OBJECTIF, ELAN } from './gestion.js';
 
 export const JETONS = { depart: 20, victoire: 4, defaite: 1, ronde: 20 };
 export const PLAN = 3;
@@ -69,7 +72,7 @@ export const COACHS = {
 };
 
 /* L'ampleur d'un canal : ce qui compte pour « un » dans la couleur d'une carte. Les multiplicatifs se lisent en logarithme. */
-const AMPLEUR = { ligne: 0.1, combat: 0.06, objectifs: 0.1, tardif: 0.2, rythme: 0.1, siege: 0.1, fin: 0.1 };
+const AMPLEUR = { ligne: 0.1, combat: 0.06, objectifs: 0.1, dragons: 0.2, heraut: 0.2, nashor: 0.2, split: 0.2, tardif: 0.2, rythme: 0.1, siege: 0.1, fin: 0.1 };
 const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
 const lu = (c, v) => (MULTIPLIE.has(c) ? Math.log(v) : v) / AMPLEUR[c];
 
@@ -87,22 +90,20 @@ export function couleurDe(id) {
  * L'ÉTAT D'UNE PARTIE DE ROGUE : des décisions, rien de compté. `joue` garde,
  * pour chacune de tes séries, le plan et le coach qui l'ont jouée.
  */
-export const nouveauRogue = graine => ({ graine, achats: [], cartes: [], plan: [], coach: null, joue: [] });
+export const nouveauRogue = graine => ({ graine, achats: [], cartes: [], plan: [], coach: null, joue: [], reports: [], primes: [] });
 
-/** Tes séries (équipe 0) jouées dans la ligue : saison et séries. */
-const tesSeries = L => [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => s.gagnant !== null && (s.a === 0 || s.b === 0));
+/** Ce que valent en jetons les gains d'un split (gainsDe). */
+export const valeurDesGains = g => g.v * JETONS.victoire + g.d * JETONS.defaite + g.rondes * JETONS.ronde + g.objectifs * OBJECTIF.jetons + g.elan * ELAN.jetons + g.commandite;
 
-/** Les jetons : le départ, tes séries gagnées et perdues, tes rondes de séries gagnées, moins tes achats. */
+/** Les jetons : le départ, les splits finis de la run, le split en cours, les primes, moins tes achats. */
 export function jetonsDe(L, R) {
-  const tes = L ? tesSeries(L) : [];
-  const v = tes.filter(s => s.gagnant === 0).length;
-  const rondes = L && L.series ? L.series.rondes.flat().filter(s => s.gagnant === 0).length : 0;
-  return JETONS.depart + v * JETONS.victoire + (tes.length - v) * JETONS.defaite + rondes * JETONS.ronde - R.achats.reduce((s, a) => s + a.prix, 0);
+  const gagnes = [...R.reports, ...(L ? [gainsDe(L)] : [])].reduce((s, g) => s + valeurDesGains(g), 0);
+  return JETONS.depart + gagnes + R.primes.reduce((s, p) => s + p.jetons, 0) - R.achats.reduce((s, a) => s + a.prix, 0);
 }
 
-const packsAchetes = R => R.achats.filter(a => a.quoi === 'pack').length;
-/** Le prix d'un pack, haussé par ceux déjà achetés. */
-export const prixDuPack = (R, id) => Math.round(PACKS[id].prix * (1 + HAUSSE * packsAchetes(R)));
+const packsOuverts = R => R.achats.filter(a => a.quoi === 'pack').length;
+/** Le prix d'un pack, haussé par ceux déjà achetés (un pack offert ne hausse rien). */
+export const prixDuPack = (R, id) => Math.round(PACKS[id].prix * (1 + HAUSSE * R.achats.filter(a => a.quoi === 'pack' && a.prix).length));
 
 /** « 1 pack sur N » pour chaque rareté qu'un pack peut donner, au moins une fois. */
 export function chances(id) {
@@ -110,11 +111,11 @@ export function chances(id) {
   return Object.entries(P.cotes).filter(([, p]) => p > 0).map(([r, p]) => [r, Math.max(1, Math.round(1 / (1 - (1 - p / 100) ** P.n)))]);
 }
 
-/** Achète et ouvre un pack : les cartes tirées (jamais une carte déjà à toi), ou null s'il manque des jetons. */
-export function ouvrirPack(L, R, id) {
-  const prix = prixDuPack(R, id);
+/** Achète (ou reçoit, `gratuit`) et ouvre un pack : les cartes tirées (jamais une carte déjà à toi), ou null s'il manque des jetons. */
+export function ouvrirPack(L, R, id, { gratuit = false } = {}) {
+  const prix = gratuit ? 0 : prixDuPack(R, id);
   if (jetonsDe(L, R) < prix) return null;
-  const de = hasard(graineDe(R.graine, `pack-${packsAchetes(R)}`));
+  const de = hasard(graineDe(R.graine, `pack-${packsOuverts(R)}`));
   R.achats.push({ quoi: 'pack', id, prix });
   const ordre = Object.keys(RARETES);
   const tirees = [];
@@ -156,10 +157,30 @@ export function confiance(R) {
   return { series, palier: SEUILS.filter(s => series >= s).length, prochain: SEUILS.find(s => series < s) || null };
 }
 
-/** Les effets de ton cinq : les cartes du plan et le palier du coach, sommés par le moteur. */
-export function effetsDeToi(R) {
+/*
+ * LES LIENS D'ORIGINE (repris des « liens » de LoL Esports Manager) : des
+ * joueurs de ton cinq qui ont joué ensemble pour vrai. Une vraie équipe a
+ * déjà les siens dans la partie calibrée ; un lien rend à ton cinq, fait de
+ * plusieurs vestiaires, une part de ce qu'elle a. Chacun passe par les
+ * canaux et se mesure en paires comme une carte, à sa rareté (check_rogue).
+ *   [icône, nom, rareté, effets, condition sur les contrats du cinq]
+ */
+const memeVestiaire = (a, b) => a && b && a.ref.id === b.ref.id && a.ref.e === b.ref.e;
+const plusGrand = (cinq, cle) => Math.max(0, ...Object.values([...cinq].reduce((n, c) => ({ ...n, [cle(c)]: (n[cle(c)] || 0) + 1 }), {})));
+export const LIENS = {
+  duoBas: ['🤝', 'Duo d\'origine au bas', 'peu', { ligne: 0.05 }, c => memeVestiaire(c.bas, c.soutien)],
+  duoCentre: ['🧭', 'Duo d\'origine milieu-jungle', 'peu', { ligne: 0.03, rythme: 1.06 }, c => memeVestiaire(c.milieu, c.jungle)],
+  vestiaire: ['🏠', 'Vestiaire d\'origine', 'peu', { combat: 0.04 }, c => plusGrand(Object.values(c), x => `${x.ref.id}|${x.ref.e}`) >= 3],
+  couleurs: ['🎽', 'Les couleurs du club', 'commune', { objectifs: 0.06 }, c => plusGrand(Object.values(c), x => x.ref.e) >= 3],
+};
+
+/** Les liens actifs d'un cinq ({ rôle : contrat }). */
+export const liensDe = cinq => Object.keys(LIENS).filter(id => LIENS[id][4](cinq));
+
+/** Les effets de ton cinq : ta stratégie (js/strategie.js), les cartes du plan, le palier du coach et les liens d'origine, sommés par le moteur. */
+export function effetsDeToi(R, liens = [], strategie = null) {
   const { palier } = confiance(R);
-  return sommerEffets([...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null]);
+  return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), palier ? COACHS[R.coach.id].paliers[palier - 1] : null, ...liens.map(id => LIENS[id][3])]);
 }
 
 /** Note les séries que ton cinq vient de jouer, avec le plan qui les a jouées. */
@@ -173,6 +194,7 @@ export function noterJoue(R, n) {
  */
 const MOTS = {
   ligne: ['la phase de lignes'], combat: ['les combats'], objectifs: ['les objectifs neutres'],
+  dragons: ['les dragons'], heraut: ['le héraut'], nashor: ['le Nashor'], split: ['la pression de côté'],
   tardif: ['plus fort tard, plus faible tôt', 'plus fort tôt, plus faible tard'],
   rythme: ['plus d\'éliminations', 'moins d\'éliminations'], siege: ['les tours tombent plus vite', 'les tours tiennent plus longtemps'],
   fin: ['on ferme plus tôt', 'des parties plus longues'],

@@ -68,8 +68,9 @@ export function ecranRepechage(L, d, champions) {
   const lignesMoi = R5.map(r => {
     const j = moi.cinq[r];
     const ailleurs = new Set(R5.filter(x => x !== r).map(x => d.choix[x]));
-    const puces = j.bassin.map(([c, pj, v]) => puce(champions, c, `data-role="${r}" data-champ="${esc(c)}"${interdits.has(c) ? ' disabled' : ''}`,
-      interdits.has(c) ? 'banni' : d.choix[r] === c ? 'choisi' : ailleurs.has(c) ? 'ailleurs' : '', `${pj} · ${v}-${pj - v}`)).join('');
+    // Un champion entraîné (js/gestion.js) se dit « entraîné », jamais en parties.
+    const puces = j.bassin.map(([c, pj, v, entr]) => puce(champions, c, `data-role="${r}" data-champ="${esc(c)}"${interdits.has(c) ? ' disabled' : ''}`,
+      interdits.has(c) ? 'banni' : d.choix[r] === c ? 'choisi' : ailleurs.has(c) ? 'ailleurs' : '', entr ? 'entraîné' : `${pj} · ${v}-${pj - v}`)).join('');
     return `<li class="repe-joueur"><span class="repe-qui"><b>${esc(j.n)}</b><small>${ROLES[r]}</small></span><span class="repe-puces">${puces || '<small>Hors de son bassin : tout est pris.</small>'}</span></li>`;
   }).join('');
   // Le confort : qui joue loin de son plus joué, en vraies parties.
@@ -77,7 +78,8 @@ export function ecranRepechage(L, d, champions) {
     const j = moi.cinq[r], c = d.choix[r], top = j.bassin[0];
     if (c === HORS) return `${esc(j.n)} joue hors de son bassin`;
     if (!top || c === top[0]) return null;
-    return `${esc(j.n)} sur ${esc(c)} : ${j.bassin.find(([x]) => x === c)[1]} parties, contre ${top[1]} sur ${esc(top[0])}`;
+    const sur = j.bassin.find(([x]) => x === c);
+    return `${esc(j.n)} sur ${esc(c)} : ${sur[3] ? 'entraîné' : `${sur[1]} parties`}, contre ${top[1]} sur ${esc(top[0])}`;
   }).filter(Boolean);
   const forme = dire(effetsDuRepechage(moi, d.choix, champions.classes));
   return `<h2>Repêchage · contre ${esc(d.eux.nom)}</h2>

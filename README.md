@@ -20,6 +20,16 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 
 Ton cinq tient sous 15 points ; un joueur coûte selon son niveau (Remplaçant 1, Régulier 2, Pilier 3, ★ Étoile 5, ★ Phénomène 7). `node scripts/check_plafond.mjs` vérifie que le coût ne dit rien de plus que le niveau et que le cinq se complète toujours.
 
+## La gestion
+
+Une run se joue sur plusieurs splits : le proprio fixe un mandat (les séries, puis la demie, la finale, le titre) ; rempli, tu gardes jusqu'à deux joueurs et la roulette comble le reste. Entre deux journées, la boîte de réception, le marché des agents libres jusqu'à la date limite, ton banc. La partie est un journal d'actions, gardé dans le navigateur : rejoué, il redonne la même partie. `node scripts/check_gestion.mjs` joue des runs entières et les rejoue.
+
+Des autres jeux de gestion de LoL : les commanditaires et leurs objectifs (Teamfight Manager), les liens d'origine entre joueurs qui ont joué ensemble (LoL Esports Manager), l'entraînement d'un champion que les autres jouaient au même rôle.
+
+## La stratégie
+
+Au centre du split : ce que ton cinq priorise — les dragons, le Nashor, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, le tardif. Chaque stratégie demande des joueurs ; bien ajustée, elle rapporte, à contre-emploi, elle coûte. Les objectifs valent ce qu'ils valent dans les vraies parties (`check_feuilles`), et chaque stratégie se mesure en paires (`check_rogue`, MOTEUR.md §10).
+
 ## Le moteur
 
 `js/sim.js` joue chaque partie par événements, un tour de 30 secondes à la fois, de 15 à 80 minutes, calibré sur les vraies parties des shards. `MOTEUR.md` en est la spécification ; `node scripts/check_feuilles.mjs` vérifie la feuille de match et rejoue chaque vraie partie contre ce qui s'est passé.

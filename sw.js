@@ -3,13 +3,13 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.5.0';  // 0.5.0 : le plafond, et l'interface de Cap 82-0
+const VERSION = 'faille-0.7.0';  // 0.7.0 : la stratégie au centre, les objectifs qui comptent
 
 const FICHIERS = [
   './', 'index.html', 'style.css',
   // Le graphe de modules au complet — scripts/check_coquille.mjs le vérifie.
   'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js', 'js/fiche.js', 'js/images.js', 'js/sim.js', 'js/split.js',
-  'js/repechage.js', 'js/tableau-repechage.js', 'js/rogue.js', 'js/boutique.js',
+  'js/repechage.js', 'js/tableau-repechage.js', 'js/rogue.js', 'js/boutique.js', 'js/gestion.js', 'js/partie.js', 'js/bureau.js', 'js/strategie.js',
   'data/index.json', 'data/champions.json',
   // La condensée de Cap 82-0 (OFL 1.1).
   'fonts/BarlowCondensed-700-latin.woff2', 'fonts/BarlowCondensed-700-latin-ext.woff2', 'fonts/BarlowCondensed-800-latin.woff2', 'fonts/BarlowCondensed-800-latin-ext.woff2',
