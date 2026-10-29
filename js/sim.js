@@ -225,10 +225,11 @@ function selon(poids, de) {
  * Rend la feuille : { duree, gagnant (0 bleu, 1 rouge), equipes: [{ nom, k,
  * or, tours, dragons, barons, herauts, inhib, joueurs: [{ n, r, k, m, a, or }] }],
  * fil: [{ t, quoi, camp, … }], courbe: [l'avance d'or du bleu à chaque minute],
- * pouvoirs: [{ t, camp, id }] (ceux qui ont joué, à leur phase) }.
+ * pouvoirs: [{ t, camp, id }] (ceux qui ont joué, à leur phase),
+ * orJoueurs: [à chaque minute, [bleu, rouge] → l'or de chacun des cinq] }.
  * Une équipe peut porter `pouvoirs` : [{ id, phase, quand(etat), effet }].
  * Une élimination de la phase de lignes garde sa ligne (`ligne`, null après).
- * La ligne et la courbe ne font que regarder (le direct les montre) : elles ne tirent aucun dé.
+ * La ligne, la courbe et l'or de chacun ne font que regarder (le direct les montre) : ils ne tirent aucun dé.
  */
 export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const de = hasard(graine);
@@ -240,7 +241,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const avecPouvoirs = eqs.some(e => e.pouvoirs && e.pouvoirs.length);
   const deux = c => Math.sqrt(E[0][c] * E[1][c]);
   const f = {
-    duree: 0, gagnant: null, fil: [], courbe: [], pouvoirs: [],
+    duree: 0, gagnant: null, fil: [], courbe: [], pouvoirs: [], orJoueurs: [],
     equipes: eqs.map(e => ({ nom: e.nom, k: 0, or: 0, tours: 0, dragons: 0, barons: 0, herauts: 0, inhib: 0, joueurs: ROLES.map(r => ({ n: e.cinq[r].n, r, k: 0, m: 0, a: 0, or: 0 })) })),
   };
   const parts = (e, cle) => ROLES.map(r => e.cinq[r].part[cle]);
@@ -336,7 +337,10 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     for (const [quoi, debut, fin] of evenements) {
       if (t >= debut && t < fin && de() < debit[quoi] * PAS) (quoi === 'elim' ? elimination(t) : objectif(t, quoi));
     }
-    if (t % 1 === 0) f.courbe.push(Math.round(f.equipes[0].or - f.equipes[1].or));
+    if (t % 1 === 0) {
+      f.courbe.push(Math.round(f.equipes[0].or - f.equipes[1].or));
+      f.orJoueurs.push(f.equipes.map(e => e.joueurs.map(j => Math.round(j.or))));
+    }
     // Le combat final : de plus en plus probable avec le temps, plus tôt quand une équipe mène.
     if (t >= ABANDON) {
       const h = (deux('fin') * R.fin.base / D) * Math.exp(R.fin.pente * (t / D - 1) + R.fin.avance * Math.abs(avance()));

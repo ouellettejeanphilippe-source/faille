@@ -20,7 +20,7 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 
 L'écran titre : continuer ta partie, en commencer une (ton club, tes déblocages), et tout ce qui reste d'une run à l'autre — les médailles 🏅 et ce qu'elles débloquent, ta collection, le palmarès, tes parties. Chaque partie se garde dans le navigateur, s'exporte en fichier et s'importe sur un autre appareil.
 
-Pendant le split, quatre sections, comme dans Cap 82-0 : le **Bureau** (la boîte, où se règle une décision ; hier soir ; le dépisteur), l'**Effectif** (ton plan de match, tes joueurs et leurs stats chez toi, les liens, l'entraînement), le **Marché** (les agents libres, les packs de joueurs, le plan de jeu) et la **Ligue** (le classement, le calendrier, les meneurs, les séries).
+Pendant le split, quatre sections, comme dans Cap 82-0 : le **Bureau** (la Boîte, où se règle une décision, hier soir et la une ; le Proprio et son mandat ; le Coach et son staff ; le Vestiaire, qui est en feu, les liens, l'entraînement), l'**Effectif** (ton cinq, le tableau de tes joueurs et leurs stats chez toi), le **Marché** (les agents libres, les packs de joueurs, le plan de jeu) et la **Ligue** (le classement, le calendrier, les meneurs, les séries).
 
 ## Le direct et la Faille
 

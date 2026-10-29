@@ -53,6 +53,9 @@ etape('l\'écran titre', await visible('#titre'));
 await page.click('#t-nouvelle');
 await pause(200);
 etape('le départ d\'une run', await visible('#depart') && !!(await page.$('#d-commencer')));
+await page.click('#depart [data-coach-choisi="stratege"]');
+await pause(150);
+etape('un coach se choisit au départ', !!(await page.$('#depart [data-coach-choisi="stratege"].on')));
 await page.click('#d-commencer');
 await pause(300);
 
@@ -89,6 +92,13 @@ await pause(1500);
 etape('le Bureau et sa décision', await visible('#vue') && !!(await page.$('#vue [data-choix]')));
 await page.click('#vue [data-choix]');
 await pause(200);
+etape('la bande des chiffres et la partie de ce soir', !!(await page.$('#bande .bande')) && !!(await page.$('#vue [data-soir]')) && /Jouer ce soir/.test(await page.$eval('#journee', e => e.textContent)));
+await page.click('#vue [data-soir]');
+await pause(250);
+etape('« Ce soir » : l\'affiche et leur cinq', await visible('#soir') && (await page.$$('#soir .soir-cinq li')).length === 5);
+await sansDebordement('ce soir');
+await page.keyboard.press('Escape');
+await pause(150);
 await page.click('#journee');
 await pause(400);
 etape('le repêchage des champions', await visible('#repechage'));
@@ -98,6 +108,20 @@ await page.click('#repe-jouer');
 await pause(500);
 etape('hier soir dit ta série', !!(await page.$('#vue .hier')));
 await sansDebordement('le Bureau');
+await page.click('#vue [data-sommaire]');
+await pause(300);
+etape('le sommaire : trois étoiles, le pointage, la Faille de la partie', await visible('#sommaire') && (await page.$$('#sommaire .etoiles-liste li')).length === 3 && !!(await page.$('#sommaire .tf-carte')));
+await sansDebordement('le sommaire');
+await page.keyboard.press('Escape');
+await pause(150);
+for (const k of ['proprio', 'coach', 'vestiaire']) {
+  await page.click(`.soustab[data-sous="${k}"]`);
+  await pause(150);
+  await sansDebordement(`le Bureau, ${k}`);
+  if (k === 'coach') etape('ton coach au Bureau : son niveau, ses pouvoirs', !!(await page.$('#vue .coach-carte .coach-niveau')) && (await page.$$('#vue .coach-pouvoirs li')).length === 3);
+}
+await page.click('.soustab[data-sous="boite"]');
+await pause(150);
 
 /* 4. Le direct et la Faille. */
 await page.click('#vue [data-direct]');
@@ -118,6 +142,16 @@ await pause(200);
 /* 5. Les sections. */
 await page.click('.navtab[data-section="effectif"]');
 await pause(300);
+await page.click('.soustab[data-sous="joueurs"]');
+await pause(200);
+await page.click('#vue [data-tri="k"]');
+await pause(150);
+etape('le tableau des joueurs se trie', (await page.$$('#vue .tableau-joueurs tbody tr')).length >= 5 && !!(await page.$('#vue [data-tri="k"].on')));
+await page.click('#vue [data-vue-joueurs="vraie"]');
+await pause(150);
+await sansDebordement('les joueurs');
+await page.click('.soustab[data-sous="cinq"]');
+await pause(150);
 await page.click('#vue [data-contrat]');
 await pause(300);
 etape('la carte d\'un joueur de ton effectif, ses stats chez toi', !!(await page.$('#carte .carte-chez-toi')));
@@ -148,6 +182,24 @@ for (const k of ['calendrier', 'meneurs', 'classement']) {
   await sansDebordement(`la ligue, ${k}`);
 }
 etape('les meneurs et le classement', !!(await page.$('#vue .classement li')));
+
+/* « Regarder » : la journée se joue et sa partie s'ouvre en direct. */
+await page.click('.navtab[data-section="bureau"]');
+await pause(200);
+for (let k = 0; k < 4 && !(await visible('#regarder')); k++) {
+  const choix = await page.$('#vue [data-choix]');
+  if (choix) { await choix.click(); await pause(150); }
+}
+if (await visible('#regarder')) {
+  await page.click('#regarder');
+  await pause(400);
+  if (await visible('#repechage')) { await page.click('#repe-auto'); await pause(500); }
+  etape('« Regarder » ouvre la partie en direct', await visible('#direct'));
+  await page.click('#dt-fin');
+  await pause(200);
+  await page.click('#direct [data-retour]');
+  await pause(150);
+}
 
 /* 6. Jusqu'aux séries, les séries, le bilan. */
 for (let k = 0; k < 60 && !(await visible('#bilan')); k++) {

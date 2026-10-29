@@ -5,8 +5,8 @@
 import { esc } from './util.js';
 import { PLAFOND, TARIFS } from './cotes.js';
 import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT, PACKS_JOUEURS, chancesJoueurs } from './gestion.js';
-import { GARDES } from './partie.js';
-import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, COACHS, chances } from './rogue.js';
+import { GARDES, JOURNEES_ADJOINTS } from './partie.js';
+import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, COACHS, XP, SEUILS_NIVEAU, NIVEAU_DES_POUVOIRS, NIVEAU_DES_TALENTS, TALENT, ADJOINTS, ADJOINTS_MAX, chances } from './rogue.js';
 import { BANS } from './repechage.js';
 import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
@@ -51,7 +51,11 @@ export function ecranRegles() {
     <h3>Le plan de jeu</h3>
     ${liste([
     `${PLAN} cartes au plus, qui jouent toutes tes séries. ${Object.entries(PACKS).map(([id, p]) => `${esc(p.nom)} ${p.prix} 🪙 (${chances(id).filter(([r]) => r !== 'commune').map(([r, n]) => `${esc(RARETES[r])} 1 sur ${n}`).join(', ')})`).join(' · ')}.`,
-    `Un coach à la fois, ${PRIX_COACH} 🪙 ; sa confiance monte à chaque série jouée avec une carte de sa couleur au plan, et chaque palier ouvre un de ses pouvoirs : ${Object.values(COACHS).map(co => `${co.ico} ${co.pouvoirs.map(x => esc(x.nom)).join(', ')}`).join(' · ')}. Un pouvoir lit la partie au début de sa phase (les lignes, le milieu, la fin) et la frappe le temps de la phase.`,
+    `Ton coach, choisi au départ, fait la run : ${Object.values(COACHS).map(co => `${co.ico} ${esc(co.nom)} (${co.pouvoirs.map(x => esc(x.nom)).join(', ')})`).join(' · ')}.`,
+    `Son expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre, ${XP.couleur} de plus par série gagnée avec une carte de sa couleur au plan. Ses niveaux : ${SEUILS_NIVEAU.map((x, k) => `${k + 1} à ${x}`).join(' · ')}.`,
+    `Ses pouvoirs s'ouvrent aux niveaux ${NIVEAU_DES_POUVOIRS.join(', ')} ; un talent aux niveaux ${NIVEAU_DES_TALENTS.join(' et ')} fait grandir de ${Math.round(100 * TALENT)} % celui que tu choisis. Un pouvoir lit la partie au début de sa phase (les lignes, le milieu, la fin) et la frappe le temps de la phase.`,
+    `Son staff : ${ADJOINTS_MAX} adjoints au plus, un parmi trois offert, gratuit, aux journées ${JOURNEES_ADJOINTS.join(' et ')} de chaque split ; chacun est un échange — ${Object.values(ADJOINTS).map(([ico, nom]) => `${ico} ${esc(nom)}`).join(' · ')}.`,
+    `Une partie commencée avant le coach-personnage garde sa règle : un coach à ${PRIX_COACH} 🪙, et ses paliers de confiance.`,
   ])}
     <h3>Les médailles 🏅 et la collection</h3>
     ${liste([

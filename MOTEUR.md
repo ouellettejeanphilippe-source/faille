@@ -184,7 +184,7 @@ Le fit se dit en mots, comme un badge (Sur mesure, Bon fit, Fit moyen, À contre
 
 Repris du coach-personnage de Cap 82-0 (sa V21) : un pouvoir **lit ce qui est déjà joué** et **frappe une phase**. Une partie a trois phases : la phase de lignes (jusqu'à `LIGNES_FIN`, 14 min), le milieu de partie (jusqu'à `MILIEU_FIN`, 25 min), la fin de partie. Au début d'une phase, chaque pouvoir de l'équipe lit son état — son côté, son avance d'or, ses tours et ses dragons de plus que l'autre — et, si sa condition tient, ajoute ses effets aux canaux de l'équipe le temps de la phase ; les puissances et les débits se refont. Un pouvoir ne tire aucun dé : celui qui ne joue pas laisse la partie telle quelle, et une équipe sans pouvoir joue la partie calibrée. La feuille garde ceux qui ont joué (`feuille.pouvoirs`) ; le direct les dit.
 
-Chaque coach en a trois, un par palier de confiance (I, II, III) ; chacun joue à peu près une partie sur deux, et fort quand il joue :
+Chaque coach en a trois, ouverts aux niveaux 1, 3 et 5 du coach-personnage (avant la version 4 de la sauvegarde, un par palier de confiance) ; chacun joue à peu près une partie sur deux, et fort quand il joue :
 
 | Coach | I | II | III |
 |---|---|---|---|
@@ -194,4 +194,6 @@ Chaque coach en a trois, un par palier de confiance (I, II, III) ; chacun joue �
 | 🏰 L'assiégeant | Le siège : au milieu, autant de tours ou plus | Le héraut au front : en lignes, du côté bleu | La percée : en fin, en avance à l'or |
 
 **Mesuré en paires** (`check_rogue`, le 29 octobre 2026) : chaque pouvoir seul reste sous 1,5 victoire par saison (de −0,07 à +0,52), joue dans 25 à 75 % des parties (de 29 à 71 %), et se voit sur sa signature les parties où il joue — la traque +0,59 élimination, la curée −0,66 min, le contrôle du fleuve +0,33 dragon de plus que l'adversaire, l'appel du Nashor +0,44 Nashor, la ferme −0,95 élimination, l'endurance +0,57 min, le siège +1,02 tour. Les trois ensemble (le palier III) restent sous 2,5 victoires : de +0,22 (le patient) à +0,62 (l'agresseur).
+
+**Le personnage** (version 4) : le coach, choisi au départ, gagne de l'expérience — 1 par série gagnée, 2 par ronde de séries gagnée, 3 pour un titre, 1 de plus par série gagnée avec une carte de sa couleur au plan — recomptée des résultats comme les jetons. Ses niveaux (à 0, 8, 20, 36 et 56 points) ouvrent ses pouvoirs aux niveaux 1, 3 et 5 ; aux niveaux 2 et 4, un **talent** fait grandir un pouvoir de moitié (chaque canal de moitié plus loin du neutre, toujours dans sa borne). Mesuré en paires : un pouvoir grandi reste sous 2,5 victoires (de −0,07 à +0,65) et se voit encore sur sa signature ; le personnage complet (niveau 5, deux talents) reste sous 4 victoires, de +0,40 (l'assiégeant) à +0,73 (l'agresseur) — un coach change la forme d'une partie bien plus que sa force.
 

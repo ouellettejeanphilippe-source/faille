@@ -5,7 +5,7 @@
  * (dire), et les chances d'un pack en « 1 pack sur N ».
  */
 import { esc } from './util.js';
-import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, couleurDe, chances, prixDuPack, confiance, jetonsDe, dire } from './rogue.js';
+import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, NIVEAU_DES_POUVOIRS, couleurDe, chances, prixDuPack, confiance, jetonsDe, dire } from './rogue.js';
 import { prixDuCoach } from './partie.js';
 import { PACKS_JOUEURS, prixPackJoueurs, chancesJoueurs, marcheOuvert, placements, cleDe } from './gestion.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
@@ -57,15 +57,32 @@ function packsDeJoueurs(P, joueurs) {
     ${tire}<ul class="cartes-jeu">${packs}</ul>`;
 }
 
+/**
+ * LA CARTE DU COACH-PERSONNAGE : ses trois pouvoirs, le niveau qui ouvre
+ * chacun, sa condition et ce qu'il fait ; son niveau et son expérience quand
+ * il fait la run ; ⭐ sur un pouvoir grandi d'un talent.
+ */
+export function carteDuCoach(id, { niveau = 0, talents = [], xp = null, prochain = null } = {}) {
+  const co = COACHS[id];
+  const barre = xp === null ? '' : `<span class="piste coach-piste"><span class="rempli" style="width:${prochain ? Math.round((100 * xp) / prochain) : 100}%"></span></span>
+    <small>${xp} point${xp > 1 ? 's' : ''} d'expérience${prochain ? ` · niveau ${niveau + 1} à ${prochain}` : ' · au sommet'}</small>`;
+  const pouvoirs = co.pouvoirs.map((x, k) => `<li class="${niveau >= NIVEAU_DES_POUVOIRS[k] ? 'ouvert' : ''}"><b>${esc(x.nom)}${talents.includes(x.id) ? ' ⭐' : ''}</b>
+    <small>Niveau ${NIVEAU_DES_POUVOIRS[k]} · ${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></li>`).join('');
+  return `<span class="coach-tete"><span class="jeu-ico">${co.ico}</span><b>${esc(co.nom)}</b>${niveau ? `<span class="coach-niveau">Niveau ${niveau}</span>` : ''}</span>
+    ${barre}<ul class="coach-pouvoirs">${pouvoirs}</ul>`;
+}
+
 /** Le marché des joueurs en packs : tes jetons, les packs, le dernier ouvert. `joueurs` : ses contrats. */
 export const vuePacksJoueurs = (P, joueurs) => `<p class="etat">🪙 ${jetonsDe(P.L, P.R)} jetons — ${GAINS}</p>${packsDeJoueurs(P, joueurs)}`;
 
-/** LE PLAN DE JEU : tes cartes, ton coach, les packs de cartes. `ouvertes` : les cartes du dernier pack ouvert. */
+/** LE PLAN DE JEU : tes cartes, les packs de cartes (et le coach à acheter, avant la version 4). `ouvertes` : les cartes du dernier pack ouvert. */
 export function vuePlanDeJeu(P, ouvertes) {
   const L = P.L, R = P.R;
   const jetons = jetonsDe(L, R);
   const prixCoach = prixDuCoach(P);
   const conf = confiance(R);
+  // Avant la version 4, le coach s'achète ici ; depuis, il fait la run (sa carte est à l'Effectif).
+  const ancienne = P.v < 4;
   const plan = R.cartes.length
     ? `<ul class="cartes-jeu">${R.cartes.map(id => carteJeu(id, { active: R.plan.includes(id) })).join('')}</ul>`
     : '<p class="sous">Aucune carte encore : ouvre un pack.</p>';
@@ -91,9 +108,9 @@ export function vuePlanDeJeu(P, ouvertes) {
     <h3>Ton plan de jeu · ${R.plan.length}/${PLAN}</h3>
     <p class="sous">Touche une carte pour la mettre au plan ou l'en retirer ; il joue toutes tes séries.</p>
     ${plan}
-    <h3>Le coach</h3>
+    ${ancienne ? `<h3>Le coach</h3>
     <p class="sous">Un seul en poste. Sa confiance monte à chaque série jouée avec une carte de sa couleur au plan : palier I à 3, II à 6, III à 9 ; chaque palier ouvre un pouvoir, qui lit la partie au début de sa phase et la frappe quand sa condition tient.</p>
-    <ul class="cartes-jeu">${coachs}</ul>
+    <ul class="cartes-jeu">${coachs}</ul>` : ''}
     <h3>Les packs de cartes</h3>
     <p class="sous">Des cartes de plan de jeu. Chaque pack hausse le prix du suivant ; une carte ne sort qu'une fois.</p>
     <ul class="cartes-jeu">${packs}</ul>`;

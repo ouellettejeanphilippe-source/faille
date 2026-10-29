@@ -263,47 +263,109 @@ export function terrainDe(f, noms, graine) {
 }
 
 /*
- * LES DIX JOUEURS SUR LA CARTE, à l'instant t (illustratif, lu de la feuille) :
- *   mort        à sa fontaine, le temps de revenir (plus long en fin de partie) ;
- *   dans le coup là où il vient de tuer, d'aider ou de tomber (la dernière minute) ;
+ * LES DIX JOUEURS SUR LA CARTE, à l'instant t : où chacun VEUT être
+ * (illustratif, lu de la feuille) ; le direct les fait marcher jusque-là.
+ *   tombé       là où il est tombé, un instant, puis à sa fontaine le temps de
+ *               revenir (plus long en fin de partie) ;
+ *   dans le coup il marche vers le combat qui vient, s'y trouve, puis y reste un
+ *               moment (qui tue, qui aide, qui tombe) ;
+ *   au rappel   en phase de lignes, chacun rentre une ou deux fois à sa base et
+ *               repart ;
  *   sinon       selon la phase : en phase de lignes, chacun dans la sienne et
  *               le jungler d'un camp à l'autre de ses bois ; ensuite, le haut
- *               pousse sa ligne de côté et les quatre autres se regroupent au
- *               milieu ou vers l'objectif qui vient ; à l'assaut final, le
- *               gagnant dans la base adverse.
- * Rend [bleu, rouge] → cinq { x, y, mort }, dans l'ordre des rôles de la feuille.
+ *               pousse sa ligne de côté et les autres tournent ensemble — le
+ *               milieu, la rivière du dragon, celle du Nashor — ou vont à
+ *               l'objectif qui vient ; à l'assaut final, le gagnant dans la base
+ *               adverse.
+ * Rend [bleu, rouge] → cinq { x, y, mort, corps, rappel }, dans l'ordre des rôles.
  */
 const ROLES5 = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
+const DE_LA_LIGNE = { haut: ['haut', 'jungle'], milieu: ['milieu', 'jungle'], bas: ['bas', 'soutien', 'jungle'] };
 const RETOUR = t => 0.25 + t / 45;     // le temps de revenir d'une mort, en minutes de partie
+const CORPS = 0.3;                     // combien de temps un mort reste là où il est tombé
 const VU_DANS_LE_COUP = 0.75;
+const APPROCHE = 0.6;                  // on marche vers un combat la dernière demi-minute
+const RAPPEL = [0.15, 0.55];           // la canalisation, puis le temps à la base
 const autour = ([x, y], i, r = 2.6) => [borner(x + r * Math.cos((i * 2 * Math.PI) / 5)), borner(y + r * Math.sin((i * 2 * Math.PI) / 5))];
-export function positionsDe(T, f, t) {
+/* Où un camp se tient groupé, à tour de rôle, quand rien ne presse : le milieu, la rivière du dragon, la rivière du Nashor — chacun de son côté. */
+const RONDE = (camp, t) => [pointSur('milieu', camp ? 0.62 : 0.38), camp ? [72, 56] : [56, 74], pointSur('milieu', camp ? 0.6 : 0.4), camp ? [44, 27] : [27, 44]][Math.floor(t / 2.5) % 4];
+const POUSSEE_VUE = 2;                 // le haut part vers la tour qu'il fera tomber, jusqu'à deux minutes avant
+
+/** Les rappels de la phase de lignes : [camp][rôle] → les minutes où il rentre (une ou deux fois, hors des combats). */
+export function rappelsDe(T, f, graine) {
+  const de = hasard(graineDe(graine, 'rappels'));
+  return [0, 1].map(camp => ROLES5.map((r, i) => {
+    const out = [];
+    for (const [a, b] of [[5.5, 8.5], [10, 12.5]]) {
+      if (de() < 0.25) continue;
+      const t = a + de() * (b - a);
+      const occupe = T.evenements.some(e => e.quoi === 'elim' && Math.abs(e.t - t) < 1 && ((e.camp === camp && [e.tueur, ...e.aides].includes(i)) || (e.camp !== camp && e.victime === i)));
+      if (!occupe) out.push(Math.round(t * 20) / 20);
+    }
+    return out;
+  }));
+}
+
+export function positionsDe(T, f, t, rappels = null) {
   const pos = [0, 1].map(camp => ROLES5.map((r, i) => {
     const u = camp ? 1 - 0.42 : 0.42;
     if (t >= f.duree - 0.75 && camp === f.gagnant) return { p: autour(pointSur('milieu', camp ? 0.12 : 0.88), i, 3.5) };
     if (t < LIGNES_FIN) {
+      // Au rappel : la canalisation sur place, puis la fontaine ; le direct le fait marcher de retour.
+      const rp = rappels && rappels[camp][i].find(x => t >= x && t < x + RAPPEL[1]);
+      if (rp !== undefined && t >= rp + RAPPEL[0]) return { p: autour(BASES[camp], i, 3) };
       const vague = 0.03 * Math.sin(t * 1.3 + i + camp);
-      if (r === 'jungle') return { p: CAMPS[camp][Math.floor((t + 0.8 * camp) / 1.6) % CAMPS[camp].length][1] };
-      if (r === 'soutien') return { p: autour(pointSur('bas', u + (camp ? 0.03 : -0.03) + vague), 1, 1.5) };
-      return { p: pointSur(r, u + vague) };
+      if (r === 'jungle') return { p: CAMPS[camp][Math.floor((t + 0.8 * camp) / 1.6) % CAMPS[camp].length][1], rappel: rp !== undefined };
+      if (r === 'soutien') return { p: autour(pointSur('bas', u + (camp ? 0.03 : -0.03) + vague), 1, 1.5), rappel: rp !== undefined };
+      return { p: pointSur(r, u + vague), rappel: rp !== undefined };
     }
-    // Après les lignes : le haut pousse de son côté, les autres se regroupent.
-    if (r === 'haut') return { p: pointSur(camp ? 'bas' : 'haut', camp ? 0.4 : 0.6) };
-    const prochain = T.evenements.find(e => (e.quoi === 'dragon' || e.quoi === 'nashor') && e.t >= t && e.t - t < 1.5);
-    const groupe = prochain ? [prochain.x + (camp ? 4 : -4), prochain.y + (camp ? -4 : 4)] : pointSur('milieu', camp ? 0.6 : 0.4);
+    // Après les lignes : le haut pousse une ligne de côté — celle de la tour qu'il va faire tomber, sinon la sienne —, les autres tournent ensemble.
+    if (r === 'haut') {
+      const cible = T.actions.find(a => a.genre === 'poussee' && a.camp === camp && a.t >= t && a.t - t < POUSSEE_VUE);
+      return { p: cible ? [cible.x, cible.y] : pointSur('haut', camp ? 0.42 : 0.58) };
+    }
+    const prochain = T.evenements.find(e => (e.quoi === 'dragon' || e.quoi === 'nashor' || e.quoi === 'heraut') && e.t >= t && e.t - t < 1.5);
+    const groupe = prochain ? [prochain.x + (camp ? 4 : -4), prochain.y + (camp ? -4 : 4)] : RONDE(camp, t);
     return { p: autour(groupe, i) };
   }));
-  // Dans le coup : là où il vient de tuer, d'aider ou de tomber ; le plus récent l'emporte.
+  // Dans le coup : il marche vers le combat qui vient, puis y reste ; le plus récent l'emporte. En phase de lignes,
+  // seuls ceux de la ligne y vont (et le jungler) : une aide comptée de l'autre bout de la carte ne la traverse pas.
   for (const e of T.evenements) {
-    if (e.quoi !== 'elim' || e.t > t || t - e.t >= VU_DANS_LE_COUP) continue;
-    [e.tueur, ...e.aides].forEach(i => { pos[e.camp][i] = { p: autour([e.x, e.y], i, 2) }; });
+    if (e.quoi !== 'elim' || e.t - t > APPROCHE || t - e.t >= VU_DANS_LE_COUP) continue;
+    [e.tueur, ...e.aides].filter(i => !e.ligne || DE_LA_LIGNE[e.ligne].includes(ROLES5[i])).forEach(i => { pos[e.camp][i] = { p: autour([e.x, e.y], i, 2) }; });
     pos[1 - e.camp][e.victime] = { p: autour([e.x, e.y], e.victime, 1.2) };
   }
-  // La poussée de côté : le haut au pied de la tour qu'il fait tomber.
+  // La poussée de côté : le haut reste un moment au pied de la tour qu'il vient de faire tomber.
   for (const a of T.actions) if (a.genre === 'poussee' && a.t <= t && t - a.t < VU_DANS_LE_COUP) pos[a.camp][0] = { p: [a.x, a.y] };
-  // Mort : à sa fontaine, le temps de revenir.
+  // Tombé : un instant là où il est tombé, puis à sa fontaine le temps de revenir.
   for (const e of T.evenements) {
-    if (e.quoi === 'elim' && e.t <= t && t - e.t < RETOUR(e.t)) pos[1 - e.camp][e.victime] = { p: autour(BASES[1 - e.camp], e.victime, 3), mort: true };
+    if (e.quoi !== 'elim' || e.t > t || t - e.t >= RETOUR(e.t)) continue;
+    pos[1 - e.camp][e.victime] = t - e.t < CORPS ? { p: [e.x, e.y], corps: true } : { p: autour(BASES[1 - e.camp], e.victime, 3), mort: true };
   }
-  return pos.map(eq => eq.map(({ p, mort }) => ({ x: p[0], y: p[1], mort: !!mort })));
+  return pos.map(eq => eq.map(({ p, mort, corps, rappel }) => ({ x: p[0], y: p[1], mort: !!mort, corps: !!corps, rappel: !!rappel })));
+}
+
+/*
+ * LES VAGUES DE SBIRES (illustratives) : de chaque base, une vague toutes les
+ * trente secondes dès 1:05, qui marche vers le choc ; le choc se tient au
+ * milieu de la ligne, repoussé vers le camp qui y a perdu plus de tours.
+ * Rend [{ x, y, camp }] : quelques points par ligne.
+ */
+const SBIRES = 1.08, VAGUE = 0.5, MARCHE = 0.42;
+export function vaguesDe(T, f, t) {
+  if (t < SBIRES || t >= f.duree) return [];
+  const out = [];
+  for (const l of LIGNES) {
+    const perdues = [0, 1].map(c => T.tours.filter(x => x.camp === c && x.ligne === l && x.tombe !== null && x.tombe <= t).length);
+    const choc = Math.max(0.2, Math.min(0.8, 0.5 + 0.08 * (perdues[1] - perdues[0])));
+    const age = (t - SBIRES) % VAGUE;
+    const avance = Math.min(1, age / MARCHE);
+    [0, 1].forEach(camp => {
+      const depart = camp ? 0.95 : 0.05;
+      const u = depart + (choc - depart) * avance;
+      const p = pointSur(l, u);
+      out.push({ x: p[0], y: p[1], camp }, { ...(([x, y]) => ({ x, y }))(pointSur(l, choc + (camp ? 0.012 : -0.012))), camp });
+    });
+  }
+  return out;
 }

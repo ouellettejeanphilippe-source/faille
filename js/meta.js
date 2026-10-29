@@ -33,7 +33,7 @@ export const RANGS = [[0, 'Club de quartier'], [8, 'Académie'], [25, 'Équipe d
  */
 export const DEBLOCAGES = {
   bourse: { ico: '🪙', nom: 'La bourse de départ', mot: '10 jetons de plus au départ de chaque run', prix: 6, rang: 0, effet: { jetons: 10 } },
-  coach: { ico: '🧑‍🏫', nom: 'Le coach fidèle', mot: 'le premier coach de la run ne coûte rien', prix: 8, rang: 0, effet: { coachGratuit: 1 } },
+  coach: { ico: '🧑‍🏫', nom: 'Le coach d\'expérience', mot: 'ton coach commence la run au niveau 2', prix: 8, rang: 0, effet: { xp: 8, coachGratuit: 1 } },
   cadeau: { ico: '🎁', nom: 'Le cadeau du proprio', mot: 'un pack argent de cartes offert au premier split', prix: 8, rang: 1, effet: { cadeau: 1 } },
   roulette: { ico: '🎲', nom: 'La roulette généreuse', mot: 'une relance de plus de chaque sorte, à chaque repêchage', prix: 10, rang: 1, effet: { relances: 1 } },
   depisteur: { ico: '🔎', nom: 'Le dépisteur chevronné', mot: 'un agent libre de plus à chaque journée', prix: 12, rang: 2, effet: { offre: 1 } },
@@ -58,9 +58,13 @@ export const EXIGENCES = [
 ];
 export const PRIME_EXIGENCE = 0.25;
 
-/** Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, coachGratuit, cadeau, relances, offre, gardes, sursis, mandat, plafond, cherte }. */
+/*
+ * Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, xp, coachGratuit, cadeau,
+ * relances, offre, gardes, sursis, mandat, plafond, cherte }. `coachGratuit` ne sert qu'aux parties d'avant
+ * la version 4, où le coach s'achetait ; `xp`, l'expérience de départ du coach-personnage.
+ */
 export function effetDe(deb, exig = 0) {
-  const e = { jetons: 0, coachGratuit: 0, cadeau: 0, relances: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0 };
+  const e = { jetons: 0, xp: 0, coachGratuit: 0, cadeau: 0, relances: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0 };
   const sources = [...deb.filter(id => DEBLOCAGES[id]).map(id => DEBLOCAGES[id].effet), ...EXIGENCES.slice(0, exig).map(x => x.effet)];
   for (const src of sources) for (const [k, v] of Object.entries(src)) e[k] += v;
   return e;
@@ -98,13 +102,16 @@ export const COULEURS = {
 const ARTICLES = { deb: DEBLOCAGES, club: CLUBS, couleur: COULEURS };
 const article = cle => { const [genre, id] = cle.split(':'); return ARTICLES[genre] && ARTICLES[genre][id] ? { genre, id, ...ARTICLES[genre][id] } : null; };
 
-export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille', exig: 0 });
+export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille', exig: 0, coach: 'agresseur' });
 
 /** Le club que portera la prochaine run : { nom, code, couleur }. */
 export function clubDe(m) {
   const c = CLUBS[m.club] || CLUBS.faille;
   return { nom: c.nom, code: c.code, couleur: (COULEURS[m.couleur] || COULEURS.faille).hex };
 }
+
+/** Le coach que prendra la prochaine run (un id de COACHS, js/rogue.js). */
+export const coachDe = m => m.coach || 'agresseur';
 
 /** Les déblocages achetés : ce que la prochaine run aura de plus. */
 export const deblocagesDe = m => m.achats.filter(c => c.startsWith('deb:')).map(c => c.slice(4)).filter(id => DEBLOCAGES[id]);

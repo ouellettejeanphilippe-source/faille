@@ -11,8 +11,12 @@
  *
  * Les bornes, par saison de 18 parties :
  *   une carte rapporte au plus MAX_V[rareté] victoires, dans un sens ou l'autre ;
- *   un pouvoir de coach, MAX_V.rare, et le coach entier (ses trois), MAX_V.legendaire ;
+ *   un pouvoir de coach, MAX_V.rare (grandi d'un talent, MAX_V.legendaire), et le coach
+ *   entier (ses trois), MAX_V.legendaire ; le personnage complet (niveau 5, deux
+ *   talents) a le droit de peser plus, jusqu'à PERSONNAGE_MAX : c'est la récompense
+ *   d'une run qui a duré (Cap 82-0) ;
  *   un pouvoir joue dans 25 à 75 % des parties, et se VOIT dans celles où il joue ;
+ *   un adjoint (un échange) n'est ni un cadeau ni un piège : MAX_V.peu, et il se voit sur sa signature ;
  *   une rare, une légendaire se VOIENT sur la feuille :
  *     ±1 min de durée, ou ±2 éliminations, ou ±0,6 tour, ou ±0,3 objectif par
  *     partie, ou ±0,3 objectif de plus pour elle que pour l'adversaire ;
@@ -30,7 +34,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
-import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, pouvoirsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { CARTES, COACHS, PACKS, JETONS, LIENS, ADJOINTS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, effetDeLAdjoint, pouvoirsDeToi, pouvoirsDuPersonnage, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { STRATEGIES, effetDeStrategie, fitDe } from '../js/strategie.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
@@ -43,6 +47,7 @@ const moyenne = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
 
 const LIGUES = 12, EQUIPES = 10;
 const MAX_V = { commune: 0.6, peu: 1, rare: 1.5, legendaire: 2.5 };
+const PERSONNAGE_MAX = 4;
 const VISIBLE = { duree: 1, k: 2, tours: 0.6, objectifs: 0.3, nosObjectifs: 0.3 };
 const ligues = Array.from({ length: LIGUES }, (_, l) => ligueDEssai(splits, EQUIPES, 500 + l));
 
@@ -120,6 +125,18 @@ if (splits.length) {
     else informer(`${ico} ${nom} : la forme`, `${ecrire(m.forme)} · coach : ${couleurDe(id) || 'neutre'}`);
   }
 
+  /* Les adjoints, des échanges : ni cadeau ni piège sur une équipe ordinaire, et chacun se voit sur sa signature. */
+  const SIGNE_ADJOINT = {
+    fermier: ['nos_tours', 0.1], escarmoucheur: ['k', 0.5], dragons: ['nos_dragons', 0.3], nashor: ['nos_barons', 0.1],
+    ingenieur: ['nos_tours', 0.5], tardif: ['duree', 0.15], debut: ['duree', -0.15], vision: ['k', -0.8],
+  };
+  for (const [id, [ico, nom]] of Object.entries(ADJOINTS)) {
+    const m = mesurer({ effet: effetDeLAdjoint(id) });
+    borne(`${ico} ${nom} (un adjoint) : victoires de plus`, m.dv, -MAX_V.peu, MAX_V.peu);
+    const [cle, seuil] = SIGNE_ADJOINT[id];
+    exiger(`${ico} ${nom} se voit : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
+  }
+
   /* Les liens d'origine, comme des cartes de leur rareté. */
   for (const [ico, nom, rarete, eff] of Object.values(LIENS)) {
     const m = mesurer({ effet: eff });
@@ -167,6 +184,16 @@ if (splits.length) {
     const m = mesurer({ pouvoirs: co.pouvoirs });
     borne(`${co.ico} ${co.nom}, ses trois pouvoirs : victoires de plus`, m.dv, -MAX_V.legendaire, MAX_V.legendaire);
     informer(`${co.ico} ${co.nom}, ses trois pouvoirs : la forme`, ecrire(m.forme));
+    // Un talent : le pouvoir grandi reste sous la borne d'une légendaire, et se voit encore.
+    for (const x of pouvoirsDuPersonnage(id, 5, co.pouvoirs.map(p => p.id))) {
+      const t = mesurer({ pouvoirs: [x], pouvoir: x.id });
+      borne(`${co.ico} ${x.nom}, grandi d'un talent : victoires de plus`, t.dv, -MAX_V.legendaire, MAX_V.legendaire);
+      const [cle, seuil] = SIGNE_POUVOIR[x.id];
+      exiger(`${co.ico} ${x.nom}, grandi, se voit encore : ${cle}`, Math.abs(t.forme[cle]) >= Math.abs(seuil), `${t.forme[cle].toFixed(2)} par partie`);
+    }
+    // Le personnage complet : niveau 5, deux talents (sur les deux premiers pouvoirs).
+    const plein = mesurer({ pouvoirs: pouvoirsDuPersonnage(id, 5, co.pouvoirs.slice(0, 2).map(p => p.id)) });
+    borne(`${co.ico} ${co.nom}, le personnage complet : victoires de plus`, plein.dv, -MAX_V.legendaire, PERSONNAGE_MAX);
     const cartes = Object.keys(CARTES).filter(c => couleurDe(c) === id);
     exiger(`${co.ico} ${co.nom} a au moins deux cartes de sa couleur`, cartes.length >= 2, cartes.join(', '));
   }
@@ -250,7 +277,7 @@ if (splits.length) {
   while (L.jour < L.journees.length) {
     L.equipes[0] = { ...L.equipes[0], effets: effetsDeToi(R), pouvoirs: pouvoirsDeToi(R) };
     jouerJournee(L);
-    noterJoue(R, 1);
+    noterJoue(R, L.journees[L.jour - 1].find(s => s.a === 0 || s.b === 0).gagnant === 0);
   }
   creerSeries(L);
   while (jouerRonde(L));

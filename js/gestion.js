@@ -308,6 +308,7 @@ export function gainsDe(L) {
   return {
     v, d: tes.length - v,
     rondes: L.series ? L.series.rondes.flat().filter(s => s.gagnant === 0).length : 0,
+    titre: L.series && L.series.champion === 0 ? 1 : 0,
     objectifs: objectifsDe(L).filter(o => o.etat === 'atteint').length,
     elan: plusLongue(tesResultats(L), true) >= ELAN.suite ? 1 : 0,
     commandite: L.commanditaire ? partiesCommanditees(L).filter(Boolean).length * COMMANDITAIRES[L.commanditaire][3] : 0,

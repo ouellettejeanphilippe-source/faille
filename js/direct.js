@@ -27,7 +27,7 @@
 import { esc } from './util.js';
 import { horloge, vedetteDe } from './split.js';
 import { commenter } from './commentaire.js';
-import { terrainDe, positionsDe, TRACES, FOSSES, BASES, BOIS, CAMPS, CRABES, MURS, GENRES } from './terrain.js';
+import { terrainDe, positionsDe, rappelsDe, vaguesDe, TRACES, FOSSES, BASES, BOIS, CAMPS, CRABES, MURS, GENRES } from './terrain.js';
 import { LIGNES_FIN, MILIEU_FIN } from './sim.js';
 import { COACHS, pouvoirDe } from './rogue.js';
 import { jouerSon } from './sons.js';
@@ -38,6 +38,9 @@ const COURBE_MAX = 10000;        // l'avance d'or qui touche le bord de la courb
 const VU = 1.5;                  // combien de minutes un événement reste sur la carte
 const TIENT = 2.5;               // combien de minutes un moment nommé reste en titre
 const ICONES = { dragon: '🐉', nashor: '🟣', heraut: '🦀', inhib: '💢', nexus: '💥' };
+const VITESSE = 110;             // ce qu'un joueur marche, en unités de la carte par minute de partie (la traverser : moins d'une minute)
+const COUP = 0.2;                // combien de temps le trait d'une élimination reste
+const SAUT = 3;                  // un pas plus long que ça (« La fin ») : on ne marche pas, on y est
 const ROLES = { haut: 'Haut', jungle: 'Jungle', milieu: 'Milieu', bas: 'Bas', soutien: 'Soutien' };
 
 let D = null;
@@ -69,8 +72,9 @@ function courbe(f, t) {
 const pts = l => l.map(p => p.join(',')).join(' ');
 const initiales = n => esc(String(n).replace(/\s*\(.*\)$/, '').slice(0, 2).toUpperCase());
 
-/* LA FAILLE, dessinée une fois : le sol, les bois et leurs camps, la rivière et ses crabes, les lignes, les fosses, les bases, les tours ; puis les dix joueurs. */
-function carte(T, joueurs) {
+/* Le décor de la Faille : le sol, les bois et leurs murs, la rivière et ses crabes, les lignes, les fosses, les bases, les tours et les inhibiteurs (tombés à `t`, s'il est dit). */
+function decor(T, t = -1) {
+  const tombee = x => (x.tombe !== null && x.tombe <= t ? ' tombee' : '');
   const bois = BOIS.flatMap((b, c) => b.map(poly => `<polygon class="tf-bois camp-${c}" points="${pts(poly)}"/>`)).join('')
     + MURS.map(m => `<polygon class="tf-mur" points="${pts(m)}"/>`).join('');
   const camps = CAMPS.flatMap((cs, c) => cs.map(([k, [x, y]]) => `<circle class="tf-camp tf-camp-${k}" cx="${x}" cy="${y}" r="${k === 'bleu' || k === 'rouge' ? 1.9 : 1.3}"/>`)).join('');
@@ -78,15 +82,26 @@ function carte(T, joueurs) {
   const lignes = Object.values(TRACES).map(l => `<polyline class="tf-ligne" points="${pts(l)}"/>`).join('');
   const fosses = Object.entries(FOSSES).map(([k, [x, y]]) => `<circle class="tf-fosse" cx="${x}" cy="${y}" r="4.5"/><text class="tf-fosse-ico" x="${x}" y="${y}">${ICONES[k === 'dragon' ? 'dragon' : 'nashor']}</text>`).join('');
   const bases = BASES.map(([x, y], c) => `<circle class="tf-base camp-${c}" cx="${x}" cy="${y}" r="6"/>`).join('');
-  const tours = T.tours.map((tr, k) => `<rect class="tf-tour camp-${tr.camp}" data-tour="${k}" x="${(tr.x - 1.4).toFixed(1)}" y="${(tr.y - 1.4).toFixed(1)}" width="2.8" height="2.8"/>`).join('');
-  const inhibs = T.inhibs.map((x, k) => `<rect class="tf-inhib camp-${x.camp}" data-inhib="${k}" x="${(x.x - 1.2).toFixed(1)}" y="${(x.y - 1.2).toFixed(1)}" width="2.4" height="2.4" transform="rotate(45 ${x.x.toFixed(1)} ${x.y.toFixed(1)})"/>`).join('');
+  const tours = T.tours.map((tr, k) => `<rect class="tf-tour camp-${tr.camp}${tombee(tr)}" data-tour="${k}" x="${(tr.x - 1.4).toFixed(1)}" y="${(tr.y - 1.4).toFixed(1)}" width="2.8" height="2.8"/>`).join('');
+  const inhibs = T.inhibs.map((x, k) => `<rect class="tf-inhib camp-${x.camp}${tombee(x)}" data-inhib="${k}" x="${(x.x - 1.2).toFixed(1)}" y="${(x.y - 1.2).toFixed(1)}" width="2.4" height="2.4" transform="rotate(45 ${x.x.toFixed(1)} ${x.y.toFixed(1)})"/>`).join('');
+  return `<rect class="tf-sol" x="0" y="0" width="100" height="100" rx="3"/>${bois}<path class="tf-riviere" d="M4 4 L96 96"/>${lignes}${camps}${crabes}${fosses}${bases}${tours}${inhibs}`;
+}
+
+/** LA FAILLE D'UNE PARTIE JOUÉE, à plat (le sommaire) : les tours tombées, chaque élimination à sa place, aux couleurs de qui l'a faite. */
+export function faillePlate(T) {
+  const croix = T.evenements.filter(e => e.quoi === 'elim').map(e => `<text class="tf-croix camp-${e.camp}" x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}">✕</text>`).join('');
+  return `<div class="tf"><svg class="tf-carte" viewBox="0 0 100 100" aria-hidden="true">${decor(T, Infinity)}${croix}</svg></div>`;
+}
+
+/* LA FAILLE DU DIRECT, dessinée une fois : le décor, puis les dix joueurs. */
+function carte(T, joueurs) {
   const qui = joueurs.flatMap((eq, c) => eq.map((j, i) => `<g class="tf-joueur camp-${c}" data-j="${c}-${i}">
       <circle class="tf-anneau" r="2.6"/>${j.icone ? `<image href="${j.icone}" x="-2.3" y="-2.3" width="4.6" height="4.6" clip-path="url(#tf-rond)"/>` : `<text class="tf-init" y="0.1">${initiales(j.n)}</text>`}
       <text class="tf-nom" y="5.8">${esc(j.n.replace(/\s*\(.*\)$/, ''))}</text></g>`)).join('');
   return `<div class="tf"><svg class="tf-carte" viewBox="0 0 100 100" aria-hidden="true">
     <defs><clipPath id="tf-rond" clipPathUnits="objectBoundingBox"><circle cx="0.5" cy="0.5" r="0.5"/></clipPath></defs>
-    <rect class="tf-sol" x="0" y="0" width="100" height="100" rx="3"/>${bois}<path class="tf-riviere" d="M4 4 L96 96"/>${lignes}${camps}${crabes}${fosses}${bases}${tours}${inhibs}
-    <g class="tf-marques"></g><g class="tf-joueurs">${qui}</g></svg>
+    ${decor(T)}
+    <g class="tf-sbires"></g><g class="tf-marques"></g><g class="tf-joueurs">${qui}</g></svg>
     <p class="tf-action"></p></div>`;
 }
 
@@ -108,21 +123,44 @@ function majCarte(t) {
   const banniere = el.querySelector('.tf-action');
   banniere.className = `tf-action${a ? ` camp-${a.camp}` : ''}`;
   banniere.textContent = a ? `${GENRES[a.genre][0]} ${a.texte}` : phase;
-  positionsDe(T, f, t).forEach((eq, c) => eq.forEach((p, i) => {
+  // Les sbires, vague après vague.
+  el.querySelector('.tf-sbires').innerHTML = vaguesDe(T, f, t).map(v => `<circle class="tf-sbire camp-${v.camp}" cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="0.7"/>`).join('');
+  // Les joueurs marchent vers où ils veulent être ; un mort et un rappel arrivent d'un coup ; un saut de temps aussi.
+  const cibles = positionsDe(T, f, t, D.rappels);
+  const pas = Math.max(0, t - D.tVu);
+  cibles.forEach((eq, c) => eq.forEach((p, i) => {
+    const v = D.vus[c][i];
+    const d = Math.hypot(p.x - v.x, p.y - v.y);
+    const k = p.mort || p.corps || pas > SAUT || d <= VITESSE * pas ? 1 : (VITESSE * pas) / d;
+    v.x += (p.x - v.x) * k;
+    v.y += (p.y - v.y) * k;
     const g = el.querySelector(`[data-j="${c}-${i}"]`);
-    g.style.transform = `translate(${p.x.toFixed(2)}px, ${p.y.toFixed(2)}px)`;
+    g.style.transform = `translate(${v.x.toFixed(2)}px, ${v.y.toFixed(2)}px)`;
     g.classList.toggle('mort', p.mort);
+    g.classList.toggle('corps', p.corps);
+    g.classList.toggle('rappel', p.rappel);
   }));
+  D.tVu = t;
+  // Un nom se tait quand un autre joueur est trop près : dans un combat, les icônes parlent.
+  const tous = D.vus.flat();
+  tous.forEach((v, k) => el.querySelector(`[data-j="${Math.floor(k / 5)}-${k % 5}"]`).classList.toggle('serre', tous.some((w, m) => m !== k && Math.hypot(v.x - w.x, v.y - w.y) < 6)));
+  // Les coups : un trait du tueur à sa victime, le temps d'un éclair.
+  const coups = T.evenements.filter(e => e.quoi === 'elim' && e.t <= t && t - e.t < COUP).map(e => {
+    const a = D.vus[e.camp][e.tueur], b = D.vus[1 - e.camp][e.victime];
+    return `<line class="tf-coup camp-${e.camp}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`;
+  }).join('');
+  el.querySelector('.tf-marques').insertAdjacentHTML('beforeend', coups);
 }
 
-/* Les dix joueurs : leur champion, leur nom, leurs éliminations, morts et aides jusqu'ici. */
+/* Les dix joueurs : leur champion, leur nom, leurs éliminations, morts et aides jusqu'ici, et leur or. */
 function tableau(c, t) {
   const { joueurs, T, f } = D;
-  const morts = positionsDe(T, f, t);
+  const morts = positionsDe(T, f, t, D.rappels);
+  const or = f.orJoueurs[Math.min(f.orJoueurs.length, Math.floor(t)) - 1] || [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]];
   return `<div class="dt-joueurs">${[0, 1].map(x => `<ol class="dt-camp ${x ? 'rouge' : 'bleu'}">${joueurs[x].map((j, i) => `<li class="${morts[x][i].mort ? 'mort' : ''}">
     <span class="dt-champ">${j.icone ? `<img src="${j.icone}" alt="" loading="lazy">` : initiales(j.n)}</span>
     <span class="dt-qui"><b>${esc(j.n.replace(/\s*\(.*\)$/, ''))}</b><small>${j.champion ? esc(j.champion) : ROLES[j.r]}</small></span>
-    <span class="dt-kma">${c[x].j[i].k}/${c[x].j[i].m}/${c[x].j[i].a}</span></li>`).join('')}</ol>`).join('')}</div>`;
+    <span class="dt-kma">${c[x].j[i].k}/${c[x].j[i].m}/${c[x].j[i].a}<small>${(or[x][i] / 1000).toFixed(1).replace('.', ',')} k</small></span></li>`).join('')}</ol>`).join('')}</div>`;
 }
 
 const SON = { elim: 'elim', dragon: 'objectif', heraut: 'objectif', nashor: 'objectif', tour: 'tour', inhib: 'tour' };
@@ -188,7 +226,9 @@ export function ouvrirDirect(el, { feuille, noms, joueurs, graine, toi }) {
   });
   const lignes = [...commenter(feuille, noms, champs, graine), ...pouvoirs, ...T.actions.map(a => ({ t: a.t, quoi: 'action', camp: a.camp, texte: `${GENRES[a.genre][0]} ${a.texte}` }))]
     .sort((a, b) => a.t - b.t || (a.quoi === 'action') - (b.quoi === 'action'));
-  D = { f: feuille, noms, joueurs, toi, el, T, lignes, t: 0, vitesse: VITESSES[0], minuterie: null };
+  // Où chacun est vu : à sa fontaine au départ ; il marche de là.
+  const vus = [0, 1].map(c => [0, 1, 2, 3, 4].map(() => ({ x: BASES[c][0], y: BASES[c][1] })));
+  D = { f: feuille, noms, joueurs, toi, el, T, lignes, t: 0, tVu: 0, vus, rappels: rappelsDe(T, feuille, graine), vitesse: VITESSES[0], minuterie: null };
   el.innerHTML = `<div class="dt-tete"></div>${carte(T, joueurs)}<div class="dt-bas"></div><div class="actionbar dt-gestes"></div>`;
   D.minuterie = setInterval(avancer, PAS_MS);
   gestes();

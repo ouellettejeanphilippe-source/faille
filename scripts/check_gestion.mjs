@@ -16,6 +16,13 @@
  *   les packs        un pack de joueurs se tire pareil deux fois, jamais un des
  *                    tiens ; on en signe un seul, sous le plafond, avant la
  *                    journée suivante ; les niveaux sortent selon leurs chances ;
+ *   le coach         choisi au départ, il fait la run (on n'en achète pas) ;
+ *                    son expérience se recompte à la main des résultats ; son
+ *                    niveau ne descend jamais ; un talent attend à son niveau, et
+ *                    la journée attend le talent ;
+ *   le staff         un adjoint parmi trois aux journées 6 et 12, jamais un
+ *                    déjà là, les mêmes deux fois ; trois au plus, et « qui
+ *                    part ? » quand il en vient un de trop ;
  *   le vieillissement un gardé devient sa version du plus proche split plus
  *                    récent, et le plafond tient avec elle ;
  *   la collection    chaque joueur passé chez toi y entre ;
@@ -32,8 +39,9 @@ import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion } from '../js/gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit } from '../js/partie.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, adjointsOfferts, JOURNEES_ADJOINTS } from '../js/partie.js';
 import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
+import { COACHS, XP, SEUILS_NIVEAU, ADJOINTS_MAX, couleurDe } from '../js/rogue.js';
 import { confort } from '../js/repechage.js';
 import { STRATEGIES } from '../js/strategie.js';
 import { exiger, informer, verdict } from './verdict.mjs';
@@ -60,7 +68,7 @@ const empreinte = P => JSON.stringify({
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -71,6 +79,7 @@ const refuse = (P, a) => {
 const tenter = (P, a) => { try { appliquer(P, a, ctx); return true; } catch { return false; } };
 const surveiller = P => {
   bilan.actions++;
+  if (P.staff && (P.staff.length > ADJOINTS_MAX || new Set(P.staff).size !== P.staff.length)) faute(`le staff : ${P.staff.join(', ')}`);
   if (masseDe(P.eff) > plafondDe(P.eff)) faute(`plafond dépassé : ${masseDe(P.eff)} après ${JSON.stringify(P.log[P.log.length - 1]).slice(0, 80)} (${P.etape})`);
   if (plafondDe(P.eff) !== PLAFOND + P.fx.plafond) faute(`le plafond de la run s'est perdu : ${plafondDe(P.eff)}`);
   if (jetonsDe(P.L, P.R) < 0) faute('jetons sous zéro');
@@ -79,13 +88,41 @@ const surveiller = P => {
 /* Un refus attendu se juge une fois : faux une seule fois, et c'est une faute. */
 const refusVus = new Map();
 const exigerRefus = (nom, ok) => refusVus.set(nom, (refusVus.get(nom) ?? true) && ok);
-const agir = (P, a) => { const r = appliquer(P, a, ctx); surveiller(P); return r; };
+/* L'expérience du coach, recomptée à la main : les séries gagnées, les rondes, le titre, les séries gagnées à sa couleur. */
+const xpALaMain = P => {
+  const gains = [...P.R.reports, ...(P.L ? [{ ...P.L, _vivant: true }] : [])];
+  let xp = P.fx.xp;
+  for (const g of gains) {
+    const L = g._vivant ? g : null;
+    const tes = L ? [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => s.gagnant !== null && (s.a === 0 || s.b === 0)) : null;
+    const v = L ? tes.filter(s => s.gagnant === 0).length : g.v;
+    const rondes = L ? (L.series ? L.series.rondes.flat().filter(s => s.gagnant === 0).length : 0) : g.rondes;
+    const titre = L ? (L.series && L.series.champion === 0 ? 1 : 0) : g.titre;
+    xp += v * XP.serie + rondes * XP.ronde + titre * XP.titre;
+  }
+  return xp + P.R.joue.filter(x => x.gagne && x.plan.some(c => couleurDe(c) === P.R.coach.id)).length * XP.couleur;
+};
+const niveaux = new Map();
+const agir = (P, a) => {
+  const r = appliquer(P, a, ctx);
+  surveiller(P);
+  if (P.v >= 4 && P.R.coach) {
+    const c = coachDeLaPartie(P);
+    if (c.xp !== xpALaMain(P)) faute(`l'expérience du coach : ${c.xp} contre ${xpALaMain(P)} à la main`);
+    if (c.n < (niveaux.get(P) || 1)) faute('le niveau du coach a descendu');
+    if (c.n !== SEUILS_NIVEAU.filter(x => c.xp >= x).length) faute('le niveau ne suit pas l\'expérience');
+    niveaux.set(P, c.n);
+    bilan.niveauMax = Math.max(bilan.niveauMax, c.n);
+  }
+  return r;
+};
 
 async function unRun(graine, version = null) {
   const de = hasard(graine);
   // Une run sur deux avec tous les déblocages du méta, une sur trois au plus haut des exigences : les règles tiennent avec eux.
   const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
-  const P = nouvellePartie(graine, { deb: graine % 2 ? [] : Object.keys(DEBLOCAGES), club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig });
+  const coach = Object.keys(COACHS)[graine % 4];
+  const P = nouvellePartie(graine, { deb: graine % 2 ? [] : Object.keys(DEBLOCAGES), club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach });
   if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'demie' || Object.keys(RELANCES).some(k => relancesMax(P, k) !== RELANCES[k][1] - (graine % 2 ? 1 : 0)) || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
     faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
   }
@@ -127,10 +164,23 @@ async function unRun(graine, version = null) {
       const ev = enAttente(P);
       if (ev) {
         exigerRefus('une journée attend la décision', refuse(P, { t: 'journee' }));
-        agir(P, { t: 'evenement', choix: piger(ev.choix, de) });
-        bilan.evenements++;
+        if (ev.id === 'adjoint') {
+          bilan.offres++;
+          if (!JOURNEES_ADJOINTS.some(j => ev.cle.endsWith(`-${j}`)) || ev.choix.length !== 4 || ev.choix.some(id => P.staff.includes(id))) faute(`une offre d'adjoints : ${ev.cle} ${ev.choix}`);
+          if (JSON.stringify(adjointsOfferts(P, ev.cle)) !== JSON.stringify(ev.choix.slice(0, 3))) faute('une offre d\'adjoints ne rejoue pas');
+        }
+        // Le robot prend un adjoint quatre fois sur cinq : le staff se remplit, puis déborde.
+        const choix = ev.id === 'adjoint' && de() < 0.8 ? ev.choix[0] : piger(ev.choix, de);
+        agir(P, { t: 'evenement', choix });
+        if (ev.id === 'talent') bilan.talents++;
+        else if (ev.id === 'adjoint') bilan.adjoints += choix !== 'aucun' ? 1 : 0;
+        else if (ev.id === 'quiPart') bilan.quiPart++;
+        else bilan.evenements++;
         continue;
       }
+      // Avant la version 4, un coach s'achète ; depuis, il fait la run.
+      if (P.v < 4 && !P.R.coach && jetonsDe(P.L, P.R) >= 12 && de() < 0.3 && tenter(P, { t: 'coach', id: piger(Object.keys(COACHS), de) })) bilan.coachsAchetes++;
+      if (P.v >= 4 && P.run.n === 1 && P.L.jour === 1) exigerRefus('un coach ne s\'achète plus', refuse(P, { t: 'coach', id: Object.keys(COACHS).find(k => k !== P.R.coach.id) }));
       if (marcheOuvert(P.L) && de() < 0.35) {
         const offre = await agentsLibres(P.L, ids, lire, P.eff, P.adversaires, offreDe(P));
         const encore = await agentsLibres(P.L, ids, lire, P.eff, P.adversaires, offreDe(P));
@@ -256,10 +306,11 @@ async function unRun(graine, version = null) {
 }
 
 const pasRejouees = [];
-for (let g = 1; g <= RUNS + 1; g++) {
-  // La dernière run se joue sous la version 2 : une vieille sauvegarde se rejoue pareil.
-  const { P, milieu } = await unRun(g, g > RUNS ? 2 : null);
-  if (g > RUNS && (P.v !== 2 || sauvegarde(P).v !== 2)) pasRejouees.push('la version 2 ne se garde pas');
+for (let g = 1; g <= RUNS + 2; g++) {
+  // Les deux dernières runs se jouent sous les versions 2 et 3 : une vieille sauvegarde se rejoue pareil.
+  const version = g > RUNS ? g - RUNS + 1 : null;
+  const { P, milieu } = await unRun(g, version);
+  if (version && (P.v !== version || sauvegarde(P).v !== version)) pasRejouees.push(`la version ${version} ne se garde pas`);
   const fin = empreinte(P);
   const relu = rejouer(JSON.parse(JSON.stringify(sauvegarde(P))), ctx);
   if (empreinte(relu) !== fin) pasRejouees.push(`${g} au bout`);
@@ -273,6 +324,9 @@ exiger('les événements ont servi', bilan.evenements > 0, `${bilan.evenements} 
 exiger('les commanditaires ont payé', bilan.commandite > 0, `${bilan.commandite} 🪙 sur ${bilan.splits} splits`);
 exiger('des entraînements sont entrés au bassin', bilan.entraines > 0, `${bilan.entraines} champions entraînés`);
 exiger('des packs de joueurs ouverts et signés', bilan.packs > 0 && bilan.signesPack > 0, `${bilan.packs} packs, ${bilan.signesPack} signatures`);
+exiger('des adjoints offerts, pris, et un staff qui déborde', bilan.offres > 0 && bilan.adjoints > 0 && bilan.quiPart > 0, `${bilan.offres} offres, ${bilan.adjoints} pris, ${bilan.quiPart} « qui part ? »`);
+exiger('le coach monte de niveau et prend ses talents', bilan.niveauMax >= 3 && bilan.talents > 0, `niveau ${bilan.niveauMax} au plus, ${bilan.talents} talents`);
+exiger('une vieille partie achète encore son coach', bilan.coachsAchetes > 0, `${bilan.coachsAchetes} coachs achetés sous la version 3`);
 exiger('tes séries de séries se jouent partie par partie, chacune repêchée', bilan.partiesDeSeries > 0, `${bilan.partiesDeSeries} parties de séries`);
 exiger('des gardés ont vieilli', bilan.vieillis > 0, `${bilan.vieillis} joueurs`);
 exiger('des runs au plus haut des exigences', bilan.exigences > 0, `${bilan.exigences} runs à 🔺 ${EXIGENCES.length}`);

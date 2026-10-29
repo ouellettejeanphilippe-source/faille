@@ -27,7 +27,8 @@ img/lp/               les photos des joueurs et les logos des équipes, HORS DU 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, les déblocages, le club, le journal)
 js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          les sections Bureau (la boîte, hier soir), Effectif et agents libres ; la stratégie ; le bilan d'un split
+js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), l'Effectif (ton cinq, le tableau de tes joueurs), les agents libres ; la stratégie ; le bilan d'un split
+js/soir.js            « Ce soir » avant une partie (l'affiche, la forme, le face-à-face, leur cinq), le sommaire d'une partie jouée ; la une, les nouvelles, autour de la ligue
 js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
 js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
 js/sauvegardes.js     les parties (un index, une clé chacune, l'export et l'import), le méta et les options, dans le stockage
@@ -107,7 +108,9 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une finition ou un galon ne change rien au jeu.
 - Un trophée, un galon, un record se lisent dans les feuilles, par une colonne, jamais par un vote ; les seuils des galons sont mesurés sur le moteur — `check_meta`.
 - Le direct rejoue la feuille, il ne décide rien ; le commentateur et la Faille tirent leur hasard de `hasard()`, et la même graine redit la même partie — `check_commentaire`, `check_terrain`.
-- Un pouvoir du coach lit ce qui est déjà joué au début d'une phase (lignes, milieu, fin) et frappe la phase par les canaux ; il ne tire aucun dé ; seul, il reste sous 1,5 victoire, joue dans 25 à 75 % des parties et se voit sur sa signature — `check_rogue`, MOTEUR.md § 11.
+- Un pouvoir du coach lit ce qui est déjà joué au début d'une phase (lignes, milieu, fin) et frappe la phase par les canaux ; il ne tire aucun dé ; seul, il reste sous 1,5 victoire (grandi d'un talent, 2,5), joue dans 25 à 75 % des parties et se voit sur sa signature ; le personnage complet reste sous 4 — `check_rogue`, MOTEUR.md § 11.
+- Le coach est un personnage choisi au départ, qui fait la run : son expérience se recompte des résultats, jamais gardée ; son niveau ne descend pas ; un talent se règle dans la boîte — `check_gestion`. Une partie d'avant la version 4 garde son coach acheté et sa confiance.
+- Un adjoint est un échange sur les canaux : ni cadeau ni piège sur une équipe ordinaire (sous 1 victoire), visible sur sa signature — `check_rogue` ; un parmi trois aux journées 6 et 12, trois au plus — `check_gestion`.
 - Au direct, les dix joueurs et leur champion se placent d'après la feuille (la phase, qui vient de tuer, d'aider ou de tomber, un mort à sa fontaine) — `check_terrain`.
 - La Faille est lue de la feuille : un moment ne se nomme que si la feuille le porte (un gank, le jungler ; un combat, trois éliminations ; une poussée, personne ne meurt autour) ; seule la place est illustrative, et cohérente (une ligne tombe dans l'ordre, le nexus par une ligne ouverte) — `check_terrain`. La carte est un dessin à nous, jamais celle du jeu.
 
@@ -120,7 +123,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
-- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; une décision se règle dans la boîte.
+- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; le Bureau en quatre onglets (Boîte, Proprio, Coach, Vestiaire), une maison par sujet ; une décision se règle dans la boîte.
+- Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
 
@@ -151,12 +155,12 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
 - **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
-- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0. Un **pouvoir** : ce qu'un palier du coach ouvre ; il joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient.
+- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack** : comme dans Cap 82-0. Le **coach** : un personnage choisi au départ, son **expérience**, son **niveau** (1 à 5) ; un **pouvoir** s'ouvre à un niveau et joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient ; un **talent** fait grandir un pouvoir ; son **staff**, ses **adjoints** (chacun un échange). Le **palier** de confiance : la règle d'avant la version 4.
 - **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
 - **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run) et sa **finition** (Base, Argent, Or, Holo) ; un **album** par split.
 - **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
 - **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.
-- **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau.
+- **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau ; **ce soir** : la partie qui vient, son affiche et son face-à-face ; le **sommaire** : une partie jouée, en un écran ; **la une** : le fait le plus lourd d'hier soir, dit par une voix ; les **nouvelles** : qui est en feu, qui est en panne.
 
 ## Tester
 

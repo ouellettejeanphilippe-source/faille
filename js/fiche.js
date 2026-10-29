@@ -27,6 +27,11 @@ export const badge = b => `<span class="badge pal-${b.palier.toLowerCase()}">${b
 /** La petite photo d'une ligne du vestiaire. */
 export const vignette = j => `<span class="vignette">${initiales(j.n)}${j.photo ? `<img src="${imageLP(j.photo)}" alt="" loading="lazy">` : ''}</span>`;
 
+/** L'écusson d'un club : un blason à ses couleurs et son code de trois lettres (un dessin à nous, comme les clubs inventés). */
+export const ecussonHtml = club => `<svg class="ecusson" viewBox="0 0 40 44" aria-hidden="true"${club.couleur ? ` style="--club:${club.couleur}"` : ''}>
+  <path class="ecusson-fond" d="M20 2 L37 8 V22 C37 32 29 38 20 42 C11 38 3 32 3 22 V8 Z"/><path class="ecusson-filet" d="M20 6 L33 11 V22 C33 30 27 35 20 38 C13 35 7 30 7 22 V11 Z"/>
+  <text class="ecusson-code" x="20" y="25">${esc(club.code || '')}</text></svg>`;
+
 /** Le coût d'un joueur sous le plafond : le chiffre, son unité dessous. */
 export const coutHtml = n => `<span class="cout"><b>${n}</b><small>${pts(n).split(' ')[1]}</small></span>`;
 
