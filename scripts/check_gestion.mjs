@@ -60,7 +60,7 @@ const empreinte = P => JSON.stringify({
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -81,7 +81,7 @@ const refusVus = new Map();
 const exigerRefus = (nom, ok) => refusVus.set(nom, (refusVus.get(nom) ?? true) && ok);
 const agir = (P, a) => { const r = appliquer(P, a, ctx); surveiller(P); return r; };
 
-async function unRun(graine) {
+async function unRun(graine, version = null) {
   const de = hasard(graine);
   // Une run sur deux avec tous les déblocages du méta, une sur trois au plus haut des exigences : les règles tiennent avec eux.
   const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
@@ -90,6 +90,8 @@ async function unRun(graine) {
     faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
   }
   if (exig) bilan.exigences++;
+  // Une partie d'avant la version 3 garde sa règle : une série de séries se joue d'un bloc, d'un seul repêchage.
+  if (version) P.v = version;
   let milieu = null;
   while (P.etape !== 'fin' && P.run.n <= SPLITS_MAX) {
     // LE REPÊCHAGE : un tour par case, parfois une relance.
@@ -205,7 +207,16 @@ async function unRun(graine) {
       if ((o.etat === 'atteint') !== (o.v >= o.cible)) faute(`objectif ${o.debut} : ${o.v}/${o.cible} ${o.etat}`);
     }
     agir(P, { t: 'series' });
-    while (P.L.series.champion === null) agir(P, { t: 'ronde' });
+    while (P.L.series.champion === null) {
+      const s = P.L.series.rondes[P.L.series.rondes.length - 1].find(x => (x.a === 0 || x.b === 0) && x.gagnant === null);
+      const avant = s ? s.parties.length : 0;
+      agir(P, { t: 'ronde' });
+      if (!s) continue;
+      bilan.partiesDeSeries += s.parties.length - avant;
+      // Version 3 : une partie à la fois, chacune avec son repêchage ; d'avant : la série entière, un repêchage.
+      if (P.v >= 3 && (s.parties.length !== avant + 1 || !s.repechages || s.repechages.length !== s.parties.length)) faute('une partie de séries sans son repêchage');
+      if (P.v < 3 && (s.gagnant === null || !s.repechage || s.repechages)) faute('une vieille partie ne joue plus sa série d\'un bloc');
+    }
     const L = P.L;
     agir(P, { t: 'bilan' });
     // Le commanditaire a été choisi avant la première journée, et il a payé ses parties réussies.
@@ -245,8 +256,10 @@ async function unRun(graine) {
 }
 
 const pasRejouees = [];
-for (let g = 1; g <= RUNS; g++) {
-  const { P, milieu } = await unRun(g);
+for (let g = 1; g <= RUNS + 1; g++) {
+  // La dernière run se joue sous la version 2 : une vieille sauvegarde se rejoue pareil.
+  const { P, milieu } = await unRun(g, g > RUNS ? 2 : null);
+  if (g > RUNS && (P.v !== 2 || sauvegarde(P).v !== 2)) pasRejouees.push('la version 2 ne se garde pas');
   const fin = empreinte(P);
   const relu = rejouer(JSON.parse(JSON.stringify(sauvegarde(P))), ctx);
   if (empreinte(relu) !== fin) pasRejouees.push(`${g} au bout`);
@@ -260,6 +273,7 @@ exiger('les événements ont servi', bilan.evenements > 0, `${bilan.evenements} 
 exiger('les commanditaires ont payé', bilan.commandite > 0, `${bilan.commandite} 🪙 sur ${bilan.splits} splits`);
 exiger('des entraînements sont entrés au bassin', bilan.entraines > 0, `${bilan.entraines} champions entraînés`);
 exiger('des packs de joueurs ouverts et signés', bilan.packs > 0 && bilan.signesPack > 0, `${bilan.packs} packs, ${bilan.signesPack} signatures`);
+exiger('tes séries de séries se jouent partie par partie, chacune repêchée', bilan.partiesDeSeries > 0, `${bilan.partiesDeSeries} parties de séries`);
 exiger('des gardés ont vieilli', bilan.vieillis > 0, `${bilan.vieillis} joueurs`);
 exiger('des runs au plus haut des exigences', bilan.exigences > 0, `${bilan.exigences} runs à 🔺 ${EXIGENCES.length}`);
 

@@ -103,7 +103,8 @@ function prochaine(P, ctx) {
     return ch ? `${esc(eux.cinq[r].n)} (${mot}) : ${esc(ch[0])}, ${ch[1]} partie${ch[1] > 1 ? 's' : ''}` : null;
   }).filter(Boolean).join(' · ');
   const id = identite(P, ctx, i);
-  const quand = L.series ? `${s.bo > 1 ? `en ${s.bo} parties` : ''}` : `journée ${L.jour + 1}`;
+  const nous = s.a === 0 ? 0 : 1;
+  const quand = L.series ? `partie ${s.parties.length + 1} de ${s.bo}, ${s.v[nous]}-${s.v[1 - nous]}` : `journée ${L.jour + 1}`;
   return message('🔎', 'Le dépisteur', `Contre ${eux.nom} · ${quand}`,
     `${eux.split ? `${esc(eux.split)} · ` : ''}${rangMot(k + 1)} au classement, ${c[k].v}-${c[k].d}. ${id ? `Ils priorisent ${esc(id)}. ` : ''}Leurs plus joués — ${fetiches}. Ils bannissent tes plus joués.`);
 }

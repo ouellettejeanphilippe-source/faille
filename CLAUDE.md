@@ -142,7 +142,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **carte** : la fiche d'un joueur, habillée selon l'époque (le client d'origine, la saison 4, hextech, l'esport).
 - **bassin** : les champions qu'un joueur a joués dans le split, avec ses parties et sa fiche sur chacun.
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
-- **repêchage** : les bannissements et les champions d'une série ; le **confort** est ce qu'un joueur perd loin de son plus joué.
+- **repêchage** : les bannissements et les champions d'une série de saison, ou d'une partie d'une série de séries ; le **confort** est ce qu'un joueur perd loin de son plus joué.
 - **canal** : une prise du moteur par où passe un effet (ligne, combat, objectifs, tardif, rythme, siège, fin, confort).
 - **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et ceux qu'on **garde**.
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.

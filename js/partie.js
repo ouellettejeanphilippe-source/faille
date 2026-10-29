@@ -17,7 +17,7 @@
  * 'fin' (la run est gagnée, ou le mandat manqué).
  */
 import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
-import { repecher } from './repechage.js';
+import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
@@ -26,7 +26,7 @@ import { effetDe } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 2;
+export const VERSION = 3;
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 /* Le club d'une partie sans club (une sauvegarde d'avant le méta). */
 const CLUB_DEPART = { nom: 'Ton cinq', code: 'TOI', couleur: null };
@@ -41,7 +41,7 @@ const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [
 export function nouvellePartie(graine, { deb = [], club = null, exig = 0 } = {}) {
   const fx = effetDe(deb, exig);
   const P = {
-    graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx,
+    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx,
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
@@ -106,15 +106,23 @@ export function taSerie(L) {
 /** L'événement que la partie attend, ou null. */
 export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) : null);
 
-/* Joue ce qui vient avec ton plan de jeu, ta série repêchée d'abord (`rp` : tes bannissements et tes choix ; absent, l'automatique). */
+/*
+ * Joue ce qui vient avec ton plan de jeu, ta partie repêchée d'abord (`rp` :
+ * tes bannissements et tes choix ; absent, l'automatique). Depuis la
+ * version 3, ta série de séries se joue partie par partie, un repêchage
+ * avant chacune ; une sauvegarde d'avant garde l'ancienne règle (toute la
+ * série d'un repêchage) pour se rejouer pareil.
+ */
 function jouerAvecToi(P, ctx, jouer, rp) {
   const L = P.L;
   P.offrePack = null;
   const s = taSerie(L);
-  if (s && !s.repechage) repecher(L, s, ctx.classes, rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {});
+  const options = rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {};
+  if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
+  else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
   L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
   jouer(L);
-  if (s) noterJoue(P.R, 1);
+  if (s && s.gagnant !== null) noterJoue(P.R, 1);
   finirEntrainement(P);
 }
 
@@ -196,7 +204,8 @@ const ACTIONS = {
   },
   ronde(P, a, ctx) {
     exiger(P.etape === 'split' && P.L.series && P.L.series.champion === null, 'aucune ronde à jouer');
-    jouerAvecToi(P, ctx, jouerRonde, a.rp);
+    // Ta série de séries, partie par partie (version 3) ; d'avant, la ronde entière.
+    jouerAvecToi(P, ctx, L => jouerRonde(L, P.v >= 3 ? 0 : null), a.rp);
   },
   pack(P, a) {
     exiger(P.etape === 'split', 'la boutique ouvre avec le split');
@@ -331,11 +340,12 @@ export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t ==
   ...(a.refs || []).map(x => x.id), ...Object.values(a.vieux || {}).map(x => x.id)]).filter(Boolean))];
 
 /** La sauvegarde : la graine, les déblocages et le club du départ, et le journal ; rien de compté. */
-export const sauvegarde = P => ({ v: VERSION, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, log: P.log });
+export const sauvegarde = P => ({ v: P.v, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, log: P.log });
 
-/** Rejoue une sauvegarde (une d'avant le méta, la version 1, n'a ni déblocages ni club). */
+/** Rejoue une sauvegarde (une d'avant le méta, la version 1, n'a ni déblocages ni club ; avant la 3, une série de séries se jouait d'un bloc). */
 export function rejouer(sv, ctx) {
   const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0 });
+  P.v = sv.v || 1;
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;
 }

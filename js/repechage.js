@@ -110,13 +110,8 @@ export function effetsDuRepechage(eq, choix, classes) {
   return { ...effetsDeComposition(classesDe(choix, classes)), confort: Object.fromEntries(ROLES.map(r => [r, confort(eq.cinq[r], choix[r])])) };
 }
 
-/*
- * LE REPÊCHAGE D'UNE SÉRIE de la ligue L où joue l'équipe `toi` (0 : ton
- * cinq). `mesBans` et `mesChoix` : les tiens ; absents, le repêchage
- * automatique (bansAuto, choixParDefaut). Pose s.repechage (ce qui
- * s'affiche) et s.effets (ce que js/sim.js joue), dans l'ordre de la série (a, b).
- */
-export function repecher(L, s, classes, { mesBans = null, mesChoix = null, toi = 0 } = {}) {
+/* Le repêchage de `toi` contre son adversaire de la série s : ce qui s'affiche, et ce que le moteur joue, dans l'ordre (a, b). */
+function brouillon(L, s, classes, { mesBans = null, mesChoix = null, toi = 0 }) {
   const lui = s.a === toi ? s.b : s.a;
   const moi = L.equipes[toi], eux = L.equipes[lui];
   const contreMoi = bansAuto(moi);
@@ -125,7 +120,41 @@ export function repecher(L, s, classes, { mesBans = null, mesChoix = null, toi =
   const choixMoi = mesChoix || choixParDefaut(moi, tous);
   const choixEux = choixParDefaut(eux, new Set([...tous, ...Object.values(choixMoi).filter(c => c !== HORS)]));
   const effMoi = effetsDuRepechage(moi, choixMoi, classes), effEux = effetsDuRepechage(eux, choixEux, classes);
-  s.repechage = { contreMoi, bans, choix: s.a === toi ? [choixMoi, choixEux] : [choixEux, choixMoi] };
-  s.effets = s.a === toi ? [effMoi, effEux] : [effEux, effMoi];
+  return {
+    repechage: { contreMoi, bans, choix: s.a === toi ? [choixMoi, choixEux] : [choixEux, choixMoi] },
+    effets: s.a === toi ? [effMoi, effEux] : [effEux, effMoi],
+  };
+}
+
+/*
+ * LE REPÊCHAGE D'UNE SÉRIE de la ligue L où joue l'équipe `toi` (0 : ton
+ * cinq). `mesBans` et `mesChoix` : les tiens ; absents, le repêchage
+ * automatique (bansAuto, choixParDefaut). Pose s.repechage (ce qui
+ * s'affiche) et s.effets (ce que js/sim.js joue), dans l'ordre de la série
+ * (a, b), pour toutes ses parties.
+ */
+export function repecher(L, s, classes, options = {}) {
+  const b = brouillon(L, s, classes, options);
+  s.repechage = b.repechage;
+  s.effets = b.effets;
   return s;
 }
+
+/*
+ * LE REPÊCHAGE D'UNE PARTIE, la prochaine de la série (ta série de séries se
+ * joue partie par partie : un repêchage avant chacune). Pose
+ * s.repechages[k] et s.effetsParPartie[k], k étant la partie qui vient.
+ */
+export function repecherPartie(L, s, classes, options = {}) {
+  const k = s.parties.length;
+  const b = brouillon(L, s, classes, options);
+  (s.repechages ||= [])[k] = b.repechage;
+  (s.effetsParPartie ||= [])[k] = b.effets;
+  return s;
+}
+
+/** La prochaine partie de la série attend-elle son repêchage ? */
+export const attendRepechage = s => !s.repechages || !s.repechages[s.parties.length];
+
+/** Le repêchage de la partie k d'une série (le sien, sinon celui de la série), ou null. */
+export const repechageDe = (s, k) => (s.repechages && s.repechages[k]) || s.repechage || null;

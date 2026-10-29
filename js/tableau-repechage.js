@@ -1,5 +1,6 @@
 /*
- * L'ÉCRAN DU REPÊCHAGE, avant chacune de tes séries (js/repechage.js) :
+ * L'ÉCRAN DU REPÊCHAGE, avant chacune de tes séries de saison et chaque
+ * partie de tes séries de séries (js/repechage.js) :
  * ce qu'ils te bannissent, tes trois bannissements dans leurs bassins, ton
  * champion pour chacun de tes cinq, et ce que l'adversaire prendra. Ce qui
  * s'affiche : les vraies parties de chaque joueur sur chaque champion, et ce
@@ -82,7 +83,10 @@ export function ecranRepechage(L, d, champions) {
     return `${esc(j.n)} sur ${esc(c)} : ${sur[3] ? 'entraîné' : `${sur[1]} parties`}, contre ${top[1]} sur ${esc(top[0])}`;
   }).filter(Boolean);
   const forme = dire(effetsDuRepechage(moi, d.choix, champions.classes));
-  return `<h2>Repêchage · contre ${esc(d.eux.nom)}</h2>
+  const s = L.series && [...L.series.rondes.flat()].find(x => x.cle === d.cle);
+  const nous = s && s.a === 0 ? 0 : 1;
+  const ou = s ? `<p class="mandat">Partie ${s.parties.length + 1} de ${s.bo} · ${s.v[nous]}-${s.v[1 - nous]}. Un repêchage avant chaque partie ; ta stratégie se change à l'Effectif entre deux.</p>` : '';
+  return `<h2>Repêchage · contre ${esc(d.eux.nom)}</h2>${ou}
     <p class="sous">Ils te bannissent : ${d.contreMoi.map(esc).join(', ') || 'rien'}.</p>
     <h3>Tes bannissements · ${d.bans.length}/${BANS}</h3>
     <ul class="repe-liste">${lignesEux}</ul>
@@ -90,5 +94,5 @@ export function ecranRepechage(L, d, champions) {
     <p class="sous">Tu choisis avant eux : prendre leur champion fétiche le leur enlève.</p>
     <ul class="repe-liste">${lignesMoi}</ul>
     <p class="etat">${forme.length ? `Ta composition : ${forme.map(esc).join(' · ')}.` : 'Une composition ordinaire.'}${malaises.length ? `<br>Moins à l'aise : ${malaises.join(' ; ')}.` : ''}</p>
-    <div class="actionbar"><button id="repe-jouer" class="go">Jouer la série</button><button id="repe-auto">Automatique</button></div>`;
+    <div class="actionbar"><button id="repe-jouer" class="go">${s ? `Jouer la partie ${s.parties.length + 1}` : 'Jouer la série'}</button><button id="repe-auto">Automatique</button></div>`;
 }

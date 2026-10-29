@@ -358,21 +358,27 @@ export function creerSplit(equipes, { graine, rondes = 2, bo = 1 }) {
   };
 }
 
-/* Une série jusqu'à sa dernière partie. Le perdant de la partie d'avant prend le côté bleu (la règle des ligues). */
-function jouerSerie(L, s) {
+/*
+ * Une série jusqu'à sa dernière partie, ou `max` parties de plus (ta série de
+ * séries se joue partie par partie). Le perdant de la partie d'avant prend le
+ * côté bleu (la règle des ligues). Chaque partie a son dé : jouée seule ou
+ * d'un bloc, elle donne la même chose.
+ */
+function jouerSerie(L, s, max = Infinity) {
   const besoin = Math.ceil(s.bo / 2);
-  let bleu = 0;
-  while (s.v[0] < besoin && s.v[1] < besoin) {
+  for (let n = 0; n < max && s.v[0] < besoin && s.v[1] < besoin; n++) {
+    const k = s.parties.length;
+    const bleu = k && s.parties[k - 1].gagnant === 0 ? 1 : 0;
     const camps = bleu ? [s.b, s.a] : [s.a, s.b];
-    // Le repêchage de la série (js/repechage.js), s'il y en a un : ses effets suivent chaque équipe d'un côté à l'autre.
-    const effets = s.effets ? (bleu ? [s.effets[1], s.effets[0]] : s.effets) : undefined;
-    const f = jouerPartie(L.equipes[camps[0]], L.equipes[camps[1]], graineDe(L.graine, `${s.cle}-${s.parties.length}`), effets);
+    // Le repêchage de la partie (js/repechage.js), sinon celui de la série : ses effets suivent chaque équipe d'un côté à l'autre.
+    const eff = (s.effetsParPartie && s.effetsParPartie[k]) || s.effets;
+    const effets = eff ? (bleu ? [eff[1], eff[0]] : eff) : undefined;
+    const f = jouerPartie(L.equipes[camps[0]], L.equipes[camps[1]], graineDe(L.graine, `${s.cle}-${k}`), effets);
     const gagnant = camps[f.gagnant] === s.a ? 0 : 1;
-    s.parties.push({ bleu: camps[0], rouge: camps[1], feuille: f });
+    s.parties.push({ bleu: camps[0], rouge: camps[1], feuille: f, gagnant });
     s.v[gagnant]++;
-    bleu = gagnant === 0 ? 1 : 0;
   }
-  s.gagnant = s.v[0] > s.v[1] ? s.a : s.b;
+  if (s.v[0] >= besoin || s.v[1] >= besoin) s.gagnant = s.v[0] > s.v[1] ? s.a : s.b;
 }
 
 /** Joue la prochaine journée de la saison. Faux s'il n'en reste plus. */
@@ -414,12 +420,17 @@ export function creerSeries(L) {
   return L.series;
 }
 
-/** Joue la ronde en cours des séries et prépare la suivante. Faux s'il n'y a plus rien à jouer. */
-export function jouerRonde(L) {
+/**
+ * Joue la ronde en cours des séries et prépare la suivante. Faux s'il n'y a
+ * plus rien à jouer. `toi` : une équipe dont la série se joue partie par
+ * partie — une seule de ses parties, et la ronde attend qu'elle soit décidée.
+ */
+export function jouerRonde(L, toi = null) {
   const S = L.series;
   if (S.champion !== null) return false;
   const ronde = S.rondes[S.rondes.length - 1];
-  for (const s of ronde) jouerSerie(L, s);
+  for (const s of ronde) if (s.gagnant === null) jouerSerie(L, s, s.a === toi || s.b === toi ? 1 : Infinity);
+  if (ronde.some(s => s.gagnant === null)) return true;
   const gagnants = ronde.map(s => s.gagnant).sort((x, y) => S.rang.indexOf(x) - S.rang.indexOf(y));
   const k = S.rondes.length;
   const serie = (a, b, i) => ({ a, b, bo: BO_SERIES, cle: `s${k}-${i}`, parties: [], v: [0, 0], gagnant: null });

@@ -30,6 +30,7 @@ import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
+import { attendRepechage, repechageDe } from './repechage.js';
 import { jetonsDe, liensDe, LIENS } from './rogue.js';
 import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
@@ -445,6 +446,11 @@ function rendreSplit() {
   $('#jusqua').hidden = !saison || attend;
   $('#series').hidden = saison || !!S;
   $('#ronde').hidden = !S || S.champion !== null;
+  const tienne = S && taSerie(L);
+  if (tienne) {
+    const nous = tienne.a === 0 ? 0 : 1;
+    $('#ronde').textContent = `Partie ${tienne.parties.length + 1} · ${tienne.v[nous]}-${tienne.v[1 - nous]}`;
+  } else $('#ronde').textContent = 'Ronde suivante';
   $('#bilan-ouvrir').hidden = !S || S.champion === null;
   for (const b of $$('.navtab')) {
     b.classList.toggle('on', b.dataset.section === G.section);
@@ -498,7 +504,7 @@ function allerA(section) {
 function avancer(t) {
   const L = G.P.L;
   const s = taSerie(L);
-  if (s && !s.repechage) {
+  if (s && (G.P.v < 3 ? !s.repechage : attendRepechage(s))) {
     G.repechage = { t, d: nouveauRepechage(L, s) };
     rendreRepechage();
     montrer('#repechage');
@@ -507,12 +513,13 @@ function avancer(t) {
   jouer({ t });
 }
 
-/* Une journée, une ronde : jouée, on revient au Bureau, où hier soir la dit. */
+/* Une journée, une partie de séries : jouée, on revient au Bureau, où hier soir la dit. */
 function jouer(a) {
-  const avant = taDerniere(G.P.L);
+  const compte = s => (s ? `${s.cle}-${s.parties.length}` : '');
+  const avant = compte(taDerniere(G.P.L));
   if (faire(a) === undefined) return;
-  const apres = G.P.L && taDerniere(G.P.L);
-  if (apres && apres !== avant) jouerSon(apres.gagnant === 0 ? 'victoire' : 'defaite');
+  const s = G.P.L && taDerniere(G.P.L);
+  if (s && compte(s) !== avant) jouerSon(s.parties[s.parties.length - 1].gagnant === (s.a === 0 ? 0 : 1) ? 'victoire' : 'defaite');
   allerA('bureau');
 }
 
@@ -587,7 +594,7 @@ function regarder(quoi) {
   const s = L && serieDe(L, cle);
   const p = s && s.parties[Number(k)];
   if (!p) return;
-  const rp = s.repechage;
+  const rp = repechageDe(s, Number(k));
   const champs = rp ? [p.bleu === s.a ? rp.choix[0] : rp.choix[1], p.rouge === s.a ? rp.choix[0] : rp.choix[1]] : null;
   montrer('#direct');
   ouvrirDirect($('#direct'), {

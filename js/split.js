@@ -7,6 +7,7 @@
 import { esc, virgule } from './util.js';
 import { classement } from './sim.js';
 import { statsDuSplit, meneurs, MENEURS } from './palmares.js';
+import { repechageDe } from './repechage.js';
 
 const ROLES = { haut: 'Haut', jungle: 'Jungle', milieu: 'Milieu', bas: 'Bas', soutien: 'Soutien' };
 const RONDES = ['Quarts de finale', 'Demi-finales', 'Finale'];
@@ -37,9 +38,9 @@ export function titreSplit(L) {
 /** Toutes les séries de la ligue, par leur clé. */
 export const serieDe = (L, cle) => [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].find(s => s.cle === cle);
 
-/** Ta dernière série jouée (la saison puis les séries), ou null. */
+/** Ta dernière série jouée, ou en cours (une série de séries se joue partie par partie), ou null. */
 export function taDerniere(L) {
-  const tes = [...L.journees.slice(0, L.jour).flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => (s.a === 0 || s.b === 0) && s.gagnant !== null);
+  const tes = [...L.journees.slice(0, L.jour).flat(), ...(L.series ? L.series.rondes.flat() : [])].filter(s => (s.a === 0 || s.b === 0) && s.parties.length);
   return tes[tes.length - 1] || null;
 }
 
@@ -54,19 +55,21 @@ export function hierSoir(L) {
   if (!s) return '<p class="sous">Rien de joué encore : ta première série est à la journée 1.</p>';
   const nous = s.a === 0 ? 0 : 1;
   const eux = L.equipes[nous ? s.a : s.b];
-  const gagne = s.gagnant === 0;
-  const rp = s.repechage;
+  const enCours = s.gagnant === null;
+  const gagne = enCours ? s.v[nous] > s.v[1 - nous] : s.gagnant === 0;
   const parties = s.parties.map((p, k) => {
     const f = p.feuille;
     const x = p.bleu === 0 ? 0 : 1;
     const v = vedetteDe(f);
+    const rp = repechageDe(s, k);
     const champ = rp ? rp.choix[f.gagnant === x ? nous : 1 - nous][v.r] : null;
     return `<li class="hier-partie"><span class="hier-res ${f.gagnant === x ? 'bon' : 'mauvais'}">${f.gagnant === x ? 'V' : 'D'}</span>
       <span class="hier-id"><b>${horloge(f.duree)} · ${f.equipes[x].k}-${f.equipes[1 - x].k}</b><small>⭐ ${esc(v.n)} ${v.k}/${v.m}/${v.a}${champ ? ` · ${esc(champ)}` : ''}</small></span>
       <button class="mini" data-direct="${s.cle}|${k}">▶ Regarder</button></li>`;
   }).join('');
-  return `<div class="hier${gagne ? ' gagne' : ''}"><p class="hier-tete"><b>${gagne ? 'Victoire' : 'Défaite'} ${s.v[nous]}-${s.v[1 - nous]}</b> contre ${esc(eux.nom)}${eux.split ? ` <small>${esc(eux.split)}</small>` : ''}</p>
-    <ul class="hier-parties">${parties}</ul><button class="mini lien" data-serie="${s.cle}">La feuille de la série ›</button></div>`;
+  const mot = enCours ? (s.v[nous] === s.v[1 - nous] ? 'Égalité' : gagne ? 'Tu mènes' : 'Tu tires de l\'arrière') : gagne ? 'Victoire' : 'Défaite';
+  return `<div class="hier${gagne ? ' gagne' : ''}"><p class="hier-tete"><b>${mot} ${s.v[nous]}-${s.v[1 - nous]}</b> contre ${esc(eux.nom)}${eux.split ? ` <small>${esc(eux.split)}</small>` : ''}${enCours ? ` · en ${s.bo} parties` : ''}</p>
+    <ul class="hier-parties">${parties}</ul>${enCours ? '' : `<button class="mini lien" data-serie="${s.cle}">La feuille de la série ›</button>`}</div>`;
 }
 
 /** Le classement de la saison. */
@@ -123,19 +126,19 @@ function moments(L, p) {
     ? `: premier sang, ${esc(f.equipes[x.camp].joueurs[x.tueur].n)} sur ${esc(f.equipes[1 - x.camp].joueurs[x.victime].n)}` : MOTS[x.quoi]}</li>`).join('');
 }
 
-/** La feuille d'une série : son repêchage, chaque partie, ses deux équipes, leurs joueurs, ses moments. */
+/** La feuille d'une série : chaque partie, son repêchage, ses deux équipes, leurs joueurs, ses moments. */
 export function feuilleSerie(L, s) {
-  const rp = s.repechage;
-  // Le champion d'un joueur, quand la série a eu son repêchage (js/repechage.js).
-  const champ = (i, r) => (rp && rp.choix[i === s.a ? 0 : 1][r] ? ` · ${esc(rp.choix[i === s.a ? 0 : 1][r])}` : '');
-  const bans = rp ? `<p class="sous">Bannis : ${[...rp.contreMoi, ...rp.bans].map(esc).join(', ')}.</p>` : '';
-  return `<h2>${esc(L.equipes[s.a].nom)} ${s.v[0]}-${s.v[1]} ${esc(L.equipes[s.b].nom)}</h2>${bans}${s.parties.map((p, k) => {
+  return `<h2>${esc(L.equipes[s.a].nom)} ${s.v[0]}-${s.v[1]} ${esc(L.equipes[s.b].nom)}</h2>${s.parties.map((p, k) => {
     const f = p.feuille;
     const camps = [p.bleu, p.rouge];
+    const rp = repechageDe(s, k);
+    // Le champion d'un joueur, quand la partie a eu son repêchage (js/repechage.js).
+    const champ = (i, r) => (rp && rp.choix[i === s.a ? 0 : 1][r] ? ` · ${esc(rp.choix[i === s.a ? 0 : 1][r])}` : '');
+    const bans = rp ? `<p class="sous">Bannis : ${[...rp.contreMoi, ...rp.bans].map(esc).join(', ')}.</p>` : '';
     const equipe = (e, x) => `<div class="feuille-equipe${f.gagnant === x ? ' gagne' : ''}">
       <h4>${x ? 'Rouge' : 'Bleu'} · ${esc(L.equipes[camps[x]].nom)}${f.gagnant === x ? ' · victoire' : ''}</h4>
       <p class="sous">${e.k} élim. · ${virgule(e.or / 1000)} k d'or · ${e.tours} tours · ${e.dragons} dragons · ${e.barons} Nashor</p>
       <table><tbody>${e.joueurs.map(j => `<tr><td>${ROLES[j.r]}</td><td>${esc(j.n)}${champ(camps[x], j.r)}</td><td>${j.k}/${j.m}/${j.a}</td><td>${virgule(j.or / 1000)} k</td></tr>`).join('')}</tbody></table></div>`;
-    return `<section class="partie"><h3>Partie ${k + 1} · ${horloge(f.duree)} <button class="mini" data-direct="${s.cle}|${k}">▶ Regarder</button></h3>${f.equipes.map(equipe).join('')}<ul class="moments">${moments(L, p)}</ul></section>`;
+    return `<section class="partie"><h3>Partie ${k + 1} · ${horloge(f.duree)} <button class="mini" data-direct="${s.cle}|${k}">▶ Regarder</button></h3>${bans}${f.equipes.map(equipe).join('')}<ul class="moments">${moments(L, p)}</ul></section>`;
   }).join('')}`;
 }

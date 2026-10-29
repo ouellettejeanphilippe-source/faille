@@ -214,7 +214,7 @@ await page.waitForSelector('#t-continuer', { timeout: 15000 });
 await page.click('#t-continuer');
 await pause(1500);
 const apres = await page.$eval('#teteEtat', e => e.textContent);
-etape('« Continuer » reprend la partie', /Split/.test(apres), `${avant} → ${apres}`);
+etape('« Continuer » reprend la partie', /split/i.test(apres), `${avant} → ${apres}`);
 
 exiger('rien ne déborde à 390 px', !debordements.length, debordements.join(', ') || `${etapes.length} étapes`);
 exiger('zéro erreur dans la console', !erreurs.length, erreurs.slice(0, 3).join(' · '));
