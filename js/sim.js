@@ -62,7 +62,7 @@ export function regler(r) {
 }
 
 const PAS = 0.5;               // un tour de moteur : 30 secondes de partie
-const LIGNES_FIN = 14;         // les plaques tombent : fin de la phase de lignes
+export const LIGNES_FIN = 14;  // les plaques tombent : fin de la phase de lignes
 const ABANDON = 15;            // le nexus ne tombe pas avant (l'abandon permis)
 const DUREE_MAX = 80;          // et toujours à 80 min : le combat final est forcé
 const SBIRES = 1.5, DRAGON = 5, HERAUT = [8, 20], NASHOR = 20, TOUR = 10;   // TOUR : la première tour, rarement avant
@@ -215,7 +215,9 @@ function selon(poids, de) {
  * repêchage), ou null.
  * Rend la feuille : { duree, gagnant (0 bleu, 1 rouge), equipes: [{ nom, k,
  * or, tours, dragons, barons, herauts, inhib, joueurs: [{ n, r, k, m, a, or }] }],
- * fil: [{ t, quoi, camp, … }] }.
+ * fil: [{ t, quoi, camp, … }], courbe: [l'avance d'or du bleu à chaque minute] }.
+ * Une élimination de la phase de lignes garde sa ligne (`ligne`, null après).
+ * La ligne et la courbe ne font que regarder (le direct les montre) : elles ne tirent aucun dé.
  */
 export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const de = hasard(graine);
@@ -226,7 +228,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const P = eqs.map((e, i) => puissances(e, E[i]));
   const deux = c => Math.sqrt(E[0][c] * E[1][c]);
   const f = {
-    duree: 0, gagnant: null, fil: [],
+    duree: 0, gagnant: null, fil: [], courbe: [],
     equipes: eqs.map(e => ({ nom: e.nom, k: 0, or: 0, tours: 0, dragons: 0, barons: 0, herauts: 0, inhib: 0, joueurs: ROLES.map(r => ({ n: e.cinq[r].n, r, k: 0, m: 0, a: 0, or: 0 })) })),
   };
   const parts = (e, cle) => ROLES.map(r => e.cinq[r].part[cle]);
@@ -259,7 +261,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     nous.k++; nous.joueurs[tueur].k++; eux.joueurs[victime].m++;
     aides.forEach(i => { nous.joueurs[i].a++; donner(camp, i, PRIME_AIDES / aides.length); });
     donner(camp, tueur, PRIME);
-    f.fil.push({ t, quoi: 'elim', camp, tueur, victime, aides });
+    f.fil.push({ t, quoi: 'elim', camp, tueur, victime, aides, ligne });
   };
   const CANAL = { dragon: 'dragons', heraut: 'heraut', nashor: 'nashor', tour: 'split' };
   const tour = (t, camp) => {
@@ -306,6 +308,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     for (const [quoi, debut, fin] of evenements) {
       if (t >= debut && t < fin && de() < debit[quoi] * PAS) (quoi === 'elim' ? elimination(t) : objectif(t, quoi));
     }
+    if (t % 1 === 0) f.courbe.push(Math.round(f.equipes[0].or - f.equipes[1].or));
     // Le combat final : de plus en plus probable avec le temps, plus tôt quand une équipe mène.
     if (t >= ABANDON) {
       const h = (deux('fin') * R.fin.base / D) * Math.exp(R.fin.pente * (t / D - 1) + R.fin.avance * Math.abs(avance()));

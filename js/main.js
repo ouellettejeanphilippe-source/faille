@@ -1,22 +1,24 @@
 /*
- * LE CONTRÔLEUR. Une run de plusieurs splits (js/partie.js), tenue en journal
- * d'actions : chaque geste passe par faire(), qui l'applique, le garde dans
- * la sauvegarde (localStorage : la graine et le journal) et redessine.
+ * LE CONTRÔLEUR. L'écran titre (js/menu.js), puis une run de plusieurs splits
+ * (js/partie.js) tenue en journal d'actions : chaque geste passe par faire(),
+ * qui l'applique, le garde dans sa sauvegarde (js/sauvegardes.js : plusieurs
+ * parties, chacune sa graine et son journal), note la partie au méta
+ * (js/meta.js : médailles, collection, palmarès) et redessine.
  *
+ *   le titre       Continuer, Nouvelle run (ton club, tes déblocages), tes
+ *                  déblocages, ta collection, le palmarès, les parties, les règles ;
  *   le repêchage   la roulette sort un split et une équipe ; tu signes un
- *                  joueur pour un rôle libre sous le plafond ; deux relances
- *                  de chaque sorte (js/gestion.js) ;
- *   le split       ton cinq contre neuf vrais vestiaires, une journée à la
- *                  fois, puis les séries ; le repêchage des champions avant
- *                  chacune de tes séries ; la boîte, le marché, la boutique
- *                  entre deux journées ;
- *   le bilan       le mandat du proprio ; rempli, tu gardes jusqu'à deux
- *                  joueurs et le split suivant commence.
+ *                  joueur pour un rôle libre sous le plafond ;
+ *   le split       en quatre sections, comme Cap 82-0 : le Bureau (la boîte,
+ *                  hier soir), l'Effectif, le Marché (agents libres, packs de
+ *                  joueurs, plan de jeu), la Ligue (classement, calendrier,
+ *                  meneurs, séries) ; une partie se regarde en direct ;
+ *   le bilan       tes trophées et tes galons, le mandat ; rempli, tu gardes
+ *                  des joueurs (ils vieillissent) et le split suivant commence.
  *
- * Le hasard de la roulette et du marché se tire ici (le dé de la partie, le
- * dé du split) et le journal garde ce qui est sorti. L'interface suit Cap
- * 82-0 : le tableau indicateur en haut, une action principale par écran.
- * Ce qui s'affiche est le niveau, les badges ou une vraie stat, jamais une cote.
+ * Le hasard de la roulette, du marché et des packs se tire ici (le dé de la
+ * partie, le dé du split) et le journal garde ce qui est sorti. Ce qui
+ * s'affiche est le niveau, les badges ou une vraie stat, jamais une cote.
  */
 import { chargerIndex, chargerSplit, chargerChampions } from './data.js';
 import { hasard, graineDe } from './hasard.js';
@@ -26,21 +28,37 @@ import { brancherRetour } from './pile.js';
 import { profilsDuSplit, PLAFOND, TARIFS } from './cotes.js';
 import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement } from './sim.js';
-import { titreSplit, tableauJour, tableauClassement, serieDe, feuilleSerie } from './split.js';
+import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { jetonsDe, liensDe, LIENS } from './rogue.js';
-import { boutique, resumeRogue } from './boutique.js';
-import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, signables, marcheOuvert, cleDe } from './gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, VERSION } from './partie.js';
-import { phraseMandat, aTraiter, ecranBoite, ecranMarche, ecranBilan, panneauStrategie, ecranStrategie } from './bureau.js';
+import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
+import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION } from './partie.js';
+import { phraseMandat, aTraiter, vueBureau, vueEffectif, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
+import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe } from './meta.js';
+import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
+import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
+import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
+import { ecranRegles } from './regles.js';
+import { ouvrirDirect, fermerDirect } from './direct.js';
+import { activerSons, jouerSon } from './sons.js';
 
 const $ = s => document.querySelector(s);
-const CLE = 'faille-partie';
+const $$ = s => document.querySelectorAll(s);
 
-const G = { index: null, champions: null, splits: new Map(), P: null, de: null, carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), entr: null };
-const COUCHES = ['#feuille', '#strategie', '#repechage', '#boutique', '#boite', '#marche', '#carte', '#vestiaire'];
+const G = {
+  index: null, champions: null, splits: new Map(), P: null, pid: null, de: null, meta: null, options: null, vue: 'titre',
+  section: 'bureau', sous: { marche: 'agents', ligue: 'classement' },
+  carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null, album: null,
+};
+/* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
+const COUCHES = ['#carte', '#direct', '#feuille', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
 const rang = k => (k === 1 ? '1er' : `${k}e`);
+const SOUS = {
+  marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu']],
+  ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries']],
+};
 
 /* Un split chargé, avec ses profils et son tempo, gardé pour la suite. */
 async function lireSplit(id) {
@@ -51,21 +69,41 @@ async function lireSplit(id) {
   return G.splits.get(id);
 }
 const ids = () => G.index.splits.map(s => s.id);
+const idNeuf = () => `${Date.now().toString(36)}${Math.floor(G.de() * 1296).toString(36).padStart(2, '0')}`;
 
-/* LA SAUVEGARDE : la graine et le journal. Le navigateur peut la refuser (navigation privée) : le jeu continue sans. */
-function garder() {
-  try { localStorage.setItem(CLE, JSON.stringify(sauvegarde(G.P))); } catch { /* pas de sauvegarde ici */ }
+/* ---- LA SAUVEGARDE ET LE MÉTA ---- */
+
+/* Où en est la partie, en une ligne : pour l'index des parties et « Continuer ». */
+function resumeDe(P) {
+  if (P.etape === 'fin') return `Run ${P.run.fin === 'gagnee' ? 'gagnée' : 'finie'} · ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}`;
+  if (P.etape === 'bati') return `Split ${P.run.n} · repêchage ${5 - libresDe(P.eff).length}/5`;
+  if (P.etape === 'gardes') return `Split ${P.run.n} · bilan`;
+  const c = classement(P.L);
+  const k = c.findIndex(l => l.i === 0);
+  return `Split ${P.run.n} · ${P.L.series ? 'séries' : `journée ${P.L.jour + 1}`} · ${c[k].v}-${c[k].d}`;
 }
-async function reprendre() {
-  let sv = null;
-  try { sv = JSON.parse(localStorage.getItem(CLE)); } catch { sv = null; }
-  if (!sv || sv.v !== VERSION) return null;
+
+function garder() {
+  ecrirePartie(G.pid, sauvegarde(G.P), G.P.club.nom, resumeDe(G.P));
+  if (noter(G.meta, G.pid, G.P)) ecrireMeta(G.meta);
+}
+
+/* Une partie sauvegardée, rejouée : ses splits d'abord chargés. null si elle ne rejoue plus (les splits ont changé). */
+async function charger(id) {
+  const sv = lirePartie(id);
+  if (!sv || !(sv.v <= VERSION)) return null;
   try {
     await Promise.all(refsDuJournal(sv.log).map(lireSplit));
     return rejouer(sv, ctx());
   } catch {
-    return null;   // les splits ont changé depuis : la sauvegarde ne rejoue plus
+    return null;
   }
+}
+
+/* La couleur de ton club teint la Faille de l'interface : celle de la partie en jeu, sinon celle que tu portes. */
+function teindre() {
+  const c = G.vue === 'jeu' && G.P && G.P.club.couleur ? G.P.club.couleur : clubDe(G.meta).couleur;
+  document.documentElement.style.setProperty('--club-vif', c);
 }
 
 /* Un mot qui passe, en bas de l'écran : ce qui a été refusé, et pourquoi. */
@@ -77,28 +115,36 @@ function avis(texte) {
   minuterie = setTimeout(() => { $('#avis').hidden = true; }, 3000);
 }
 
-/* LE GESTE : une action appliquée, gardée, redessinée. Rend son résultat, ou undefined si elle est refusée. */
+/* LE GESTE : une action appliquée, gardée, notée, redessinée. Rend son résultat, ou undefined si elle est refusée. */
 function faire(a) {
   let r;
   try { r = appliquer(G.P, a, ctx()); } catch (err) { avis(err.message); return undefined; }
   garder();
+  if (a.t === 'signer' || a.t === 'marche' || a.t === 'signerPack') jouerSon('signer');
+  else if (a.t === 'pack' || a.t === 'packJoueurs') jouerSon('pack');
+  else if (a.t === 'bilan') jouerSon(G.P.run.fin ? 'medaille' : G.P.run.passes[G.P.run.passes.length - 1].rempli ? 'victoire' : 'defaite');
   rendre();
   return r ?? null;
 }
 
-/* LE TABLEAU INDICATEUR : le retour quand une couche est ouverte ; le plafond pendant le repêchage ; la fiche, le rang et les jetons ensuite. */
+/* ---- LE TABLEAU INDICATEUR : le retour, où en est la partie, ses chiffres, le menu ---- */
 function majTete() {
   const P = G.P;
-  const L = P.L;
+  const enJeu = G.vue === 'jeu' && P;
   $('#retourBtn').hidden = !COUCHES.some(id => !$(id).hidden);
-  $('#jauge').hidden = P.etape !== 'bati';
+  $('#menuBtn').hidden = !enJeu || !$('#menu').hidden;
+  $('#teteNom').textContent = enJeu ? P.club.nom : 'Faille';
+  $('#jauge').hidden = !enJeu || P.etape !== 'bati';
+  $('#teteFiche').hidden = !enJeu || !P.L;
+  $('#teteRang').hidden = !enJeu || !P.L;
+  $('#teteJetons').hidden = !enJeu || P.etape === 'bati';
+  $('#nav').hidden = !enJeu || P.etape !== 'split';
+  if (!enJeu) { $('#teteEtat').textContent = 'Le jeu de gestion des splits'; return; }
+  const L = P.L;
   const reste = PLAFOND - masseDe(P.eff);
   $('#jaugeReste').textContent = `${reste} / ${PLAFOND}`;
   $('#jaugeReste').className = `tete-ch-v${reste <= 3 ? ' serre' : ''}`;
   $('#jaugeRempli').style.width = `${(100 * reste) / PLAFOND}%`;
-  $('#teteFiche').hidden = !L;
-  $('#teteRang').hidden = !L;
-  $('#teteJetons').hidden = P.etape === 'bati';
   $('#teteJetons .tete-ch-v').textContent = jetonsDe(L, P.R);
   if (P.etape === 'bati') $('#teteEtat').textContent = `Split ${P.run.n} · ${5 - libresDe(P.eff).length} / 5 signés`;
   else if (!L) $('#teteEtat').textContent = `Bilan du split ${P.run.n}`;
@@ -120,20 +166,147 @@ function montrer(id) {
 function fermer(id) {
   if ($(id).hidden) return false;
   $(id).hidden = true;
+  if (id === '#direct') fermerDirect();
   majTete();
   return true;
 }
 
 function rendre() {
-  const e = G.P.etape;
-  $('#bati').hidden = e !== 'bati';
-  $('#split').hidden = e !== 'split';
-  $('#bilan').hidden = e !== 'gardes' && e !== 'fin';
-  if (e === 'bati') rendreBati();
+  teindre();
+  const titre = G.vue === 'titre' || !G.P;
+  const e = G.P && G.P.etape;
+  $('#titre').hidden = !titre;
+  $('#bati').hidden = titre || e !== 'bati';
+  $('#split').hidden = titre || e !== 'split';
+  $('#bilan').hidden = titre || (e !== 'gardes' && e !== 'fin');
+  if (titre) rendreTitre();
+  else if (e === 'bati') rendreBati();
   else if (e === 'split') rendreSplit();
   else rendreBilan();
-  for (const id of ['#boite', '#marche', '#boutique', '#strategie']) if (!$(id).hidden) RENDUS[id]();
+  for (const [id, f] of Object.entries(RENDUS)) if (!$(id).hidden) f();
   majTete();
+}
+
+/* ---- L'ÉCRAN TITRE ET LES COUCHES DU MENU ---- */
+function rendreTitre() {
+  $('#titre').innerHTML = ecranTitre(G.meta, partieActive(), G.options.sons);
+}
+
+/* Ce qui se redessine quand la partie ou le méta change, si c'est ouvert. */
+const RENDUS = {
+  '#menu': () => { $('#menu').innerHTML = ecranMenu(G.meta, G.options.sons); },
+  '#parties': () => { $('#parties').innerHTML = ecranParties(lireIndex()); },
+  '#regles': () => { $('#regles').innerHTML = ecranRegles(); },
+  '#deblocages': () => { $('#deblocages').innerHTML = ecranDeblocages(G.meta); },
+  '#palmares': () => { $('#palmares').innerHTML = ecranPalmares(G.meta); },
+  '#collection': () => { $('#collection').innerHTML = ecranCollection(G.meta, G.index.splits, new Map([...G.splits].map(([id, s]) => [id, s.split.equipes.reduce((n, e) => n + e.joueurs.length, 0)]))); },
+  '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta); },
+  '#strategie': () => { if (G.P && G.P.L) $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
+};
+
+function ouvrir(nom) {
+  const id = `#${nom}`;
+  if (!RENDUS[id]) return;
+  RENDUS[id]();
+  montrer(id);
+}
+
+async function ouvrirAlbum(id) {
+  const { split, profils } = await lireSplit(id);
+  G.album = id;
+  $('#album').innerHTML = ecranAlbum(G.meta, split, profils);
+  montrer('#album');
+}
+
+/* Les gestes des écrans du menu : ouvrir, acheter, porter, les parties, les sons. */
+async function toucherMenu(ev) {
+  const b = ev.target.closest('button');
+  if (!b || b.disabled) {
+    const c = ev.target.closest('[data-carte-col]');
+    if (c && (ev.type === 'click' || ev.key === 'Enter')) carteDeCollection(c.dataset.carteCol);
+    return;
+  }
+  if (b.dataset.ouvrir) ouvrir(b.dataset.ouvrir);
+  else if (b.dataset.sons !== undefined) {
+    G.options.sons = !G.options.sons;
+    ecrireOptions(G.options);
+    activerSons(G.options.sons);
+    rendre();
+  } else if (b.dataset.acheter) {
+    if (acheter(G.meta, b.dataset.acheter)) { ecrireMeta(G.meta); jouerSon('medaille'); }
+    rendre();
+  } else if (b.dataset.porter) {
+    const [genre, id] = b.dataset.porter.split(':');
+    if (porter(G.meta, genre, id)) ecrireMeta(G.meta);
+    rendre();
+  } else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
+  else if (b.dataset.reprendre) reprendre(b.dataset.reprendre);
+  else if (b.dataset.exporter) telecharger(b.dataset.exporter);
+  else if (b.dataset.supprimer) {
+    if (!window.confirm('Effacer cette partie ? Ses médailles et sa collection te restent.')) return;
+    supprimer(b.dataset.supprimer);
+    if (b.dataset.supprimer === G.pid) { G.P = null; G.pid = null; G.vue = 'titre'; }
+    rendre();
+  } else if (b.id === 't-continuer') reprendre(partieActive().id);
+  else if (b.id === 't-nouvelle') ouvrir('depart');
+  else if (b.id === 'm-titre') {
+    for (const id of COUCHES) fermer(id);
+    G.vue = 'titre';
+    rendre();
+  } else if (b.id === 'd-commencer') nouvelle();
+}
+
+/* Le fichier d'une partie, téléchargé. */
+function telecharger(id) {
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(new Blob([exporter(id)], { type: 'application/json' }));
+  lien.download = `faille-${id}.json`;
+  document.body.append(lien);
+  lien.click();
+  lien.remove();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+}
+
+async function importerFichier(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  try {
+    const id = importer(await f.text());
+    await reprendre(id);
+  } catch (err) { avis(err.message); }
+}
+
+/* Reprend une partie sauvegardée. */
+async function reprendre(id) {
+  const P = await charger(id);
+  if (!P) { avis('Cette partie ne se rejoue plus : les splits ont changé depuis.'); return; }
+  G.pid = id;
+  G.P = P;
+  activer(id);
+  if (noter(G.meta, G.pid, G.P)) ecrireMeta(G.meta);
+  entrer();
+}
+
+/* LA RUN NEUVE : ton club et tes déblocages, posés au départ et gardés dans sa sauvegarde. */
+function nouvelle() {
+  G.pid = idNeuf();
+  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta) });
+  garder();
+  entrer();
+}
+
+/* Entre en partie : les couches se ferment, l'écran de l'étape s'ouvre. */
+function entrer() {
+  for (const id of COUCHES) fermer(id);
+  G.vue = 'jeu';
+  G.section = 'bureau';
+  G.gardes = new Set();
+  G.vieux = new Map();
+  G.offre = null;
+  G.ouvertes = null;
+  rendre();
+  window.scrollTo(0, 0);
+  if (G.P.etape === 'gardes') vieillir();
 }
 
 /* ---- LE REPÊCHAGE DE TON CINQ ---- */
@@ -149,8 +322,6 @@ function rendreBati() {
   $('#roulette').hidden = complet;
   $('#roulette').lastChild.textContent = P.tirage ? 'Revoir le vestiaire' : 'Tourner la roulette';
   $('#jouer').hidden = !complet;
-  $('#recommencer').hidden = P.run.n === 1 && !P.log.length;
-  $('#recommencer').textContent = P.run.n > 1 ? 'Abandonner la run' : 'Recommencer';
   const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);
   $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${PLAFOND}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
   if (!$('#vestiaire').hidden) rendreVestiaire();
@@ -167,6 +338,7 @@ function rendreVestiaire() {
   const v = vestiaireDe(P, ctx());
   if (!v) { fermer('#vestiaire'); return; }
   const l = libresDe(P.eff);
+  const col = collectionDe(G.meta);
   $('#vestiaire-bandeau').innerHTML = `${v.equipe.logo ? `<img src="${imageLP(v.equipe.logo)}" alt="">` : ''}
     <span class="bandeau-id"><small>${esc(v.split.nom)} · ${v.equipe.v}-${v.equipe.d} en parties</small><h2>${esc(v.equipe.nom)}</h2></span>`;
   $('#vestiaire-libres').textContent = l.map(r => ROLES[r]).join(', ');
@@ -174,14 +346,15 @@ function rendreVestiaire() {
   $('#vestiaire-liste').innerHTML = v.equipe.joueurs.map((j, i) => {
     const p = v.profils.joueurs.get(j);
     const non = refus(v, j);
+    const deja = col.get(`${v.id}|${v.equipe.nom}|${j.n}|${j.r}`);
     return `<li class="joueur${P.eff.cinq[j.r] ? ' pris' : ''}" data-i="${i}" tabindex="0">
       ${vignette(j)}
-      <span class="joueur-id"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${p.niveau}</small><span class="joueur-champs">${icones(G.champions, j)}</span>${p.badges.length ? `<span>${p.badges.map(badge).join('')}</span>` : ''}</span>
+      <span class="joueur-id"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${p.niveau}${deja && deja.copies ? ' · 🃏 à ta collection' : ''}</small><span class="joueur-champs">${icones(G.champions, j)}</span>${p.badges.length ? `<span>${p.badges.map(badge).join('')}</span>` : ''}</span>
       ${coutHtml(p.cout)}
       <button class="signer" data-signer="${i}"${non ? ' disabled' : ''}>${non || 'Signer'}</button></li>`;
   }).join('');
-  $('#relances').innerHTML = Object.entries(RELANCES).map(([k, [mot, max]]) =>
-    `<button data-relance="${k}"${P.relances[k] >= max ? ' disabled' : ''}>${mot} <span class="compte">${max - P.relances[k]}</span></button>`).join('');
+  $('#relances').innerHTML = Object.entries(RELANCES).map(([k, [mot]]) =>
+    `<button data-relance="${k}"${P.relances[k] >= relancesMax(P, k) ? ' disabled' : ''}>${mot} <span class="compte">${relancesMax(P, k) - P.relances[k]}</span></button>`).join('');
 }
 
 function ouvrirCarte(i) {
@@ -189,7 +362,34 @@ function ouvrirCarte(i) {
   const j = v && v.equipe.joueurs[i];
   if (!j) return;
   G.carte = i;
-  $('#carte').innerHTML = carte({ split: v.split, equipe: v.equipe, j, profil: v.profils.joueurs.get(j), champions: G.champions, refus: refus(v, j) });
+  const col = collectionDe(G.meta).get(`${v.id}|${v.equipe.nom}|${j.n}|${j.r}`);
+  $('#carte').innerHTML = carte({ split: v.split, equipe: v.equipe, j, profil: v.profils.joueurs.get(j), champions: G.champions, refus: refus(v, j), collection: col && col.copies ? col : null });
+  montrer('#carte');
+}
+
+/* La carte d'un joueur de ton effectif : son split, ses stats chez toi. */
+function carteDuContrat(cle) {
+  const P = G.P;
+  const c = [...Object.values(P.eff.cinq), P.eff.banc].find(x => x && cleDe(x.ref) === cle);
+  if (!c) return;
+  const { split, profils } = G.splits.get(c.ref.id);
+  const equipe = split.equipes.find(e => e.nom === c.ref.e);
+  const j = equipe.joueurs.find(x => x.n === c.n && x.r === c.r);
+  const col = collectionDe(G.meta).get(cle);
+  G.carte = null;
+  $('#carte').innerHTML = carte({ split, equipe, j, profil: profils.joueurs.get(j), champions: G.champions, bouton: false, collection: col && col.copies ? col : null, chezToi: P.L ? chezToi(P.L, c) : null });
+  montrer('#carte');
+}
+
+/* La carte d'un joueur de ta collection. */
+async function carteDeCollection(cle) {
+  const [id, e, n, r] = cle.split('|');
+  const { split, profils } = await lireSplit(id);
+  const equipe = split.equipes.find(x => x.nom === e);
+  const j = equipe && equipe.joueurs.find(x => x.n === n && x.r === r);
+  if (!j) return;
+  G.carte = null;
+  $('#carte').innerHTML = carte({ split, equipe, j, profil: profils.joueurs.get(j), champions: G.champions, bouton: false, collection: collectionDe(G.meta).get(cle) });
   montrer('#carte');
 }
 
@@ -197,10 +397,10 @@ function ouvrirCarte(i) {
 async function tourner(mode) {
   const P = G.P;
   if (mode === 'tour' && P.tirage) { rendreVestiaire(); montrer('#vestiaire'); return; }
-  for (const b of document.querySelectorAll('#roulette, #relances button')) b.disabled = true;
+  for (const b of $$('#roulette, #relances button')) b.disabled = true;
   try {
     const t = await tirer(G.de, ids(), lireSplit, P.eff, mode, P.tirage);
-    if (t && faire({ t: 'tirage', mode, ...t }) !== undefined) { rendreVestiaire(); montrer('#vestiaire'); }
+    if (t && faire({ t: 'tirage', mode, ...t }) !== undefined) { jouerSon('tap'); rendreVestiaire(); montrer('#vestiaire'); }
   } finally {
     $('#roulette').disabled = false;
     if (!$('#vestiaire').hidden) rendreVestiaire();
@@ -221,12 +421,13 @@ async function lancer() {
   try {
     const adversaires = await tirerAdversaires(G.de, ids(), lireSplit, equipeReelle);
     faire({ t: 'lancer', adversaires, graine: Math.floor(G.de() * 2 ** 32) });
+    G.section = 'bureau';
   } finally {
     $('#jouer').disabled = false;
   }
 }
 
-/* ---- LE SPLIT ---- */
+/* ---- LE SPLIT, EN SECTIONS ---- */
 function rendreSplit() {
   const P = G.P;
   const L = P.L;
@@ -235,18 +436,59 @@ function rendreSplit() {
   const attend = !!enAttente(P);
   $('#split-titre').textContent = titreSplit(L);
   $('#split-mandat').textContent = phraseMandat(P.run.n);
-  $('#split-strategie').innerHTML = panneauStrategie(P);
-  $('#split-jour').innerHTML = tableauJour(L);
-  $('#split-classement').innerHTML = tableauClassement(L);
-  $('#jetons').textContent = resumeRogue(L, P.R);
-  $('#decision').hidden = !attend;
+  $('#decision').hidden = !attend || G.section === 'bureau';
   $('#journee').hidden = !saison || attend;
-  $('#jusqua').hidden = !saison;
+  $('#journee').disabled = false;
+  $('#jusqua').hidden = !saison || attend;
   $('#series').hidden = saison || !!S;
   $('#ronde').hidden = !S || S.champion !== null;
   $('#bilan-ouvrir').hidden = !S || S.champion === null;
-  $('#ouvrir-boite').lastChild.innerHTML = aTraiter(P) ? `Boîte <span class="compte">${aTraiter(P)}</span>` : 'Boîte';
-  $('#ouvrir-marche').lastChild.textContent = marcheOuvert(L) ? 'Marché' : 'Effectif';
+  for (const b of $$('.navtab')) {
+    b.classList.toggle('on', b.dataset.section === G.section);
+    b.classList.toggle('a-traiter', b.dataset.section === 'bureau' && aTraiter(P) > 0);
+  }
+  const sous = SOUS[G.section];
+  $('#sousnav').hidden = !sous;
+  if (sous) $('#sousnav').innerHTML = sous.filter(([k]) => k !== 'series' || L.series).map(([k, mot]) => `<button class="soustab${G.sous[G.section] === k ? ' on' : ''}" data-sous="${k}">${mot}</button>`).join('');
+  rendreVue();
+}
+
+function rendreVue() {
+  const P = G.P;
+  const L = P.L;
+  const s = G.section;
+  if (s === 'bureau') $('#vue').innerHTML = vueBureau(P, ctx());
+  else if (s === 'effectif') $('#vue').innerHTML = vueEffectif(P, ctx(), G.entr);
+  else if (s === 'marche') {
+    const k = G.sous.marche;
+    if (k === 'agents') rendreAgents();
+    else if (k === 'joueurs') $('#vue').innerHTML = vuePacksJoueurs(P, P.offrePack ? P.offrePack.refs.map(ref => contratDe(ctx(), ref)) : null);
+    else $('#vue').innerHTML = vuePlanDeJeu(P, G.ouvertes);
+  } else {
+    const k = G.sous.ligue === 'series' && !L.series ? 'classement' : G.sous.ligue;
+    $('#vue').innerHTML = { classement: tableauClassement, calendrier, meneurs: tableauMeneurs, series: tableauSeries }[k](L);
+  }
+}
+
+/* Les agents libres de la journée, tirés du dé du split : la même journée offre toujours les mêmes. */
+async function rendreAgents() {
+  const P = G.P;
+  const L = P.L;
+  const cle = `${G.pid}-${P.run.n}-${L.jour}-${P.log.length}`;
+  if (marcheOuvert(L) && (!G.offre || G.offre.cle !== cle)) {
+    G.offre = { cle, contrats: null };
+    $('#vue').innerHTML = vueAgents(P, null);
+    const refs = await agentsLibres(L, ids(), lireSplit, P.eff, P.adversaires, offreDe(P));
+    if (G.offre.cle !== cle) return;
+    G.offre.contrats = refs.map(ref => contratDe(ctx(), ref));
+  }
+  if (G.section === 'marche' && G.sous.marche === 'agents') $('#vue').innerHTML = vueAgents(P, G.offre && G.offre.cle === cle ? G.offre.contrats : null);
+}
+
+function allerA(section) {
+  G.section = section;
+  rendreSplit();
+  window.scrollTo(0, 0);
 }
 
 /* Joue la journée ou la ronde ; ta série d'abord repêchée, à l'écran du repêchage. */
@@ -259,7 +501,16 @@ function avancer(t) {
     montrer('#repechage');
     return;
   }
-  faire({ t });
+  jouer({ t });
+}
+
+/* Une journée, une ronde : jouée, on revient au Bureau, où hier soir la dit. */
+function jouer(a) {
+  const avant = taDerniere(G.P.L);
+  if (faire(a) === undefined) return;
+  const apres = G.P.L && taDerniere(G.P.L);
+  if (apres && apres !== avant) jouerSon(apres.gagnant === 0 ? 'victoire' : 'defaite');
+  allerA('bureau');
 }
 
 function rendreRepechage() {
@@ -276,57 +527,44 @@ function toucherRepechage(ev) {
   if (b.id !== 'repe-jouer' && b.id !== 'repe-auto') return;
   G.repechage = null;
   fermer('#repechage');
-  faire(b.id === 'repe-jouer' ? { t, rp: { bans: d.bans, choix: d.choix } } : { t });
+  jouer(b.id === 'repe-jouer' ? { t, rp: { bans: d.bans, choix: d.choix } } : { t });
 }
 
-/* ---- LA BOÎTE, LE MARCHÉ, LA BOUTIQUE : des couches sur le split ---- */
-const RENDUS = {
-  '#boite': () => { $('#boite').innerHTML = ecranBoite(G.P, ctx()); },
-  '#strategie': () => { $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
-  '#marche': () => rendreMarche(),
-  '#boutique': () => { $('#boutique').innerHTML = boutique(G.P.L, G.P.R, G.ouvertes); },
-};
-
-/* Les agents libres de la journée, tirés du dé du split : la même journée offre toujours les mêmes. */
-async function rendreMarche() {
+/* Les gestes des sections et de la stratégie. */
+async function toucherVue(ev) {
   const P = G.P;
-  const L = P.L;
-  const cle = `${P.run.n}-${L.jour}-${P.log.length}`;
-  if (marcheOuvert(L) && (!G.offre || G.offre.cle !== cle)) {
-    G.offre = { cle, contrats: null };
-    $('#marche').innerHTML = ecranMarche(P, null, ctx(), G.entr);
-    const refs = await agentsLibres(L, ids(), lireSplit, P.eff, P.adversaires);
-    if (G.offre.cle !== cle) return;
-    G.offre.contrats = refs.map(ref => contratDe(ctx(), ref));
-  }
-  $('#marche').innerHTML = ecranMarche(P, G.offre && G.offre.cle === cle ? G.offre.contrats : null, ctx(), G.entr);
-}
-
-function ouvrir(id) {
-  G.ouvertes = null;
-  RENDUS[id]();
-  montrer(id);
-}
-
-function toucherCouches(ev) {
+  const li = ev.target.closest('[data-contrat]');
   const b = ev.target.closest('button');
-  if (!b || b.disabled) return;
-  if (b.dataset.strategie !== undefined) {
+  if (li && !b && (ev.type === 'click' || ev.key === 'Enter')) { carteDuContrat(li.dataset.contrat); return; }
+  const serie = ev.target.closest('[data-serie]');
+  if (serie && (!b || b === serie) && (ev.type === 'click' || ev.key === 'Enter')) { ouvrirFeuille(serie.dataset.serie); return; }
+  if (!b || b.disabled || ev.type !== 'click') return;
+  if (b.id === 'ouvrir-strategie') ouvrir('strategie');
+  else if (b.dataset.sous) { G.sous[G.section] = b.dataset.sous; rendreSplit(); }
+  else if (b.dataset.direct) regarder(b.dataset.direct);
+  else if (b.dataset.strategie !== undefined) {
     faire({ t: 'strategie', id: b.dataset.strategie || null });
     fermer('#strategie');
   } else if (b.dataset.choix) {
-    // Un pack offert s'ouvre à la boutique.
+    // Un pack offert s'ouvre au plan de jeu.
     const r = faire({ t: 'evenement', choix: b.dataset.choix });
-    if (r) { fermer('#boite'); ouvrir('#boutique'); G.ouvertes = r; RENDUS['#boutique'](); }
+    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); }
   } else if (b.dataset.geste) faire({ t: b.dataset.geste });
-  else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreMarche(); }
+  else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreVue(); }
   else if (b.dataset.entrChamp) { faire({ t: 'entrainer', r: G.entr, champion: b.dataset.entrChamp }); G.entr = null; }
   else if (b.dataset.agent) {
     const c = G.offre.contrats.find(x => cleDe(x.ref) === b.dataset.agent);
     faire({ t: 'marche', ref: c.ref, place: b.dataset.place });
+  } else if (b.dataset.packJoueurs) {
+    b.disabled = true;
+    const refs = await tirerPackJoueurs(P.R, b.dataset.packJoueurs, ids(), lireSplit, P.eff);
+    faire({ t: 'packJoueurs', id: b.dataset.packJoueurs, refs });
+  } else if (b.dataset.packSigner) {
+    const ref = P.offrePack.refs.find(x => cleDe(x) === b.dataset.packSigner);
+    faire({ t: 'signerPack', ref, place: b.dataset.place });
   } else if (b.dataset.pack) {
     const r = faire({ t: 'pack', id: b.dataset.pack });
-    if (r) { G.ouvertes = r; RENDUS['#boutique'](); }
+    if (r) { G.ouvertes = r; rendreVue(); }
   } else if (b.dataset.carte) faire({ t: 'plan', carte: b.dataset.carte });
   else if (b.dataset.coach) faire({ t: 'coach', id: b.dataset.coach });
 }
@@ -339,9 +577,39 @@ function ouvrirFeuille(cle) {
   montrer('#feuille');
 }
 
+/* Regarder une partie en direct : « clé de la série|numéro de la partie ». */
+function regarder(quoi) {
+  const L = G.P.L || G.P.dernier;
+  const [cle, k] = quoi.split('|');
+  const s = L && serieDe(L, cle);
+  const p = s && s.parties[Number(k)];
+  if (!p) return;
+  const rp = s.repechage;
+  const champs = rp ? [p.bleu === s.a ? rp.choix[0] : rp.choix[1], p.rouge === s.a ? rp.choix[0] : rp.choix[1]] : null;
+  montrer('#direct');
+  ouvrirDirect($('#direct'), {
+    feuille: p.feuille, noms: [L.equipes[p.bleu].nom, L.equipes[p.rouge].nom], champs,
+    graine: graineDe(L.graine, `${cle}-${k}-direct`), toi: p.bleu === 0 ? 0 : p.rouge === 0 ? 1 : null,
+  });
+}
+
 /* ---- LE BILAN ---- */
 function rendreBilan() {
-  $('#bilan').innerHTML = ecranBilan(G.P, G.gardes);
+  $('#bilan').innerHTML = ecranBilan(G.P, G.gardes, G.vieux);
+}
+
+/* Qui vieillit : pour chacun, sa version du plus proche split plus récent, si elle existe. */
+async function vieillir() {
+  const P = G.P;
+  const run = P.run.n;
+  const vieux = new Map();
+  for (const c of [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean)) {
+    const ref = await prochaineVersion(G.index.splits, lireSplit, c);
+    if (ref) vieux.set(cleDe(c.ref), contratDe(ctx(), ref));
+  }
+  if (G.P !== P || P.run.n !== run || P.etape !== 'gardes') return;
+  G.vieux = vieux;
+  rendre();
 }
 
 function toucherBilan(ev) {
@@ -352,63 +620,54 @@ function toucherBilan(ev) {
     if (G.gardes.has(k)) G.gardes.delete(k); else G.gardes.add(k);
     rendreBilan();
   } else if (b.id === 'bilan-suivant') {
-    try {
-      appliquer(G.P, { t: 'garder', cles: [...G.gardes] }, ctx());
-    } catch (err) { avis(err.message); return; }
+    const vieux = Object.fromEntries([...G.gardes].filter(k => G.vieux.has(k)).map(k => [k, G.vieux.get(k).ref]));
+    if (faire({ t: 'garder', cles: [...G.gardes], vieux }) === undefined) return;
     G.gardes = new Set();
-    garder();
-    rendre();
-  } else if (b.id === 'bilan-nouvelle') nouvelle();
+    G.vieux = new Map();
+    window.scrollTo(0, 0);
+  } else if (b.id === 'bilan-nouvelle') ouvrir('depart');
+  else if (b.id === 'bilan-titre') { G.vue = 'titre'; rendre(); }
 }
 
-/* ---- LA RUN ---- */
-function nouvelle() {
-  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32));
-  G.gardes = new Set();
-  G.offre = null;
-  for (const id of COUCHES) $(id).hidden = true;
-  garder();
-  rendre();
-}
-
+/* ---- LE DÉMARRAGE ---- */
 async function demarrer() {
   G.de = hasard(Date.now());
+  G.options = lireOptions();
+  activerSons(G.options.sons);
+  G.meta = lireMeta() || nouveauMeta();
   [G.index, G.champions] = await Promise.all([chargerIndex(), chargerChampions()]);
   $('#source').textContent = `Données : ${G.index.source}. Photos et logos : Leaguepedia.`;
   if (!G.index.splits.length) {
-    $('#etat').textContent = 'Aucun split bâti : lance scripts/build_splits.mjs.';
-    $('#roulette').hidden = true;
+    $('#titre').innerHTML = '<p class="etat">Aucun split bâti : lance scripts/build_splits.mjs.</p>';
     return;
   }
-  // Le dé de la roulette reprend après la sauvegarde : une graine neuve à chaque visite, tirée de l'heure.
-  G.P = await reprendre() || nouvellePartie(Math.floor(G.de() * 2 ** 32));
-  G.de = hasard(graineDe(G.P.graine, `visite-${Date.now()}`));
+  migrer(idNeuf());
+  // Le dé de la roulette reprend une graine neuve à chaque visite, tirée de l'heure.
+  G.de = hasard(graineDe(Date.now(), 'visite'));
 
+  for (const id of ['#titre', '#menu', '#parties', '#deblocages', '#palmares', '#collection', '#depart', '#album']) {
+    $(id).addEventListener('click', toucherMenu);
+    $(id).addEventListener('keydown', toucherMenu);
+  }
+  for (const id of ['#parties']) $(id).addEventListener('change', importerFichier);
+  $('#menuBtn').addEventListener('click', () => ouvrir('menu'));
   $('#roulette').addEventListener('click', () => tourner('tour'));
   $('#relances').addEventListener('click', ev => { const b = ev.target.closest('[data-relance]'); if (b && !b.disabled) tourner(b.dataset.relance); });
-  $('#recommencer').addEventListener('click', () => {
-    if (G.P.run.n === 1 || window.confirm('Abandonner la run ? Tes cartes, ton coach et tes jetons repartent de zéro.')) nouvelle();
-  });
   $('#jouer').addEventListener('click', lancer);
-  $('#journee').addEventListener('click', () => avancer('journee'));
-  $('#jusqua').addEventListener('click', () => faire({ t: 'jusqua' }));
-  $('#series').addEventListener('click', () => faire({ t: 'series' }));
+  $('#journee').addEventListener('click', () => { $('#journee').disabled = true; avancer('journee'); });
+  $('#jusqua').addEventListener('click', () => jouer({ t: 'jusqua' }));
+  $('#series').addEventListener('click', () => { faire({ t: 'series' }); G.sous.ligue = 'series'; allerA('ligue'); });
   $('#ronde').addEventListener('click', () => avancer('ronde'));
   $('#bilan-ouvrir').addEventListener('click', () => faire({ t: 'bilan' }));
-  $('#decision').addEventListener('click', () => ouvrir('#boite'));
-  $('#ouvrir-boite').addEventListener('click', () => ouvrir('#boite'));
-  $('#ouvrir-marche').addEventListener('click', () => ouvrir('#marche'));
-  $('#ouvrir-boutique').addEventListener('click', () => ouvrir('#boutique'));
-  for (const id of ['#boite', '#marche', '#boutique', '#strategie']) $(id).addEventListener('click', toucherCouches);
-  $('#split-strategie').addEventListener('click', ev => { if (ev.target.closest('#ouvrir-strategie')) ouvrir('#strategie'); });
+  $('#decision').addEventListener('click', () => allerA('bureau'));
+  $('#nav').addEventListener('click', ev => { const b = ev.target.closest('[data-section]'); if (b) allerA(b.dataset.section); });
+  for (const id of ['#vue', '#sousnav', '#strategie', '#feuille']) {
+    $(id).addEventListener('click', toucherVue);
+    $(id).addEventListener('keydown', toucherVue);
+  }
   $('#repechage').addEventListener('click', toucherRepechage);
   $('#bilan').addEventListener('click', toucherBilan);
-  const voirSerie = ev => {
-    const li = ev.target.closest('[data-serie]');
-    if (li && (ev.type === 'click' || ev.key === 'Enter')) ouvrirFeuille(li.dataset.serie);
-  };
-  $('#split-jour').addEventListener('click', voirSerie);
-  $('#split-jour').addEventListener('keydown', voirSerie);
+  $('#bilan').addEventListener('click', ev => { const b = ev.target.closest('[data-serie]'); if (b) ouvrirFeuille(b.dataset.serie); });
   const toucherVestiaire = ev => {
     const b = ev.target.closest('[data-signer]');
     if (b) { if (ev.type === 'click') signer(Number(b.dataset.signer)); return; }
@@ -417,10 +676,10 @@ async function demarrer() {
   };
   $('#vestiaire-liste').addEventListener('click', toucherVestiaire);
   $('#vestiaire-liste').addEventListener('keydown', toucherVestiaire);
-  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte')) signer(G.carte); });
+  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte') && G.carte !== null) signer(G.carte); });
   brancherRetour(COUCHES.map(id => () => fermer(id)));
   rendre();
 }
 
-demarrer().catch(err => { $('#etat').textContent = `Erreur : ${err.message}`; });
+demarrer().catch(err => { $('#titre').innerHTML = `<p class="etat">Erreur : ${esc(err.message)}</p>`; });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

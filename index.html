@@ -18,69 +18,82 @@
     <symbol id="i-saut" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7V5z" fill="currentColor" stroke="none"/><path d="M18 5v14"/></symbol>
     <symbol id="i-boite" viewBox="0 0 24 24"><path d="M4 13l2.2-7h11.6L20 13v6H4z"/><path d="M4 13h4.5l1.5 2.5h4L15.5 13H20"/></symbol>
     <symbol id="i-maillot" viewBox="0 0 24 24"><path d="M9 3h6l5 3-2 4-2-1v12H8V9L6 10 4 6z"/><path d="M9 3a3 3 0 0 0 6 0"/></symbol>
+    <symbol id="i-ligue" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   </svg>
 
-  <!-- LE TABLEAU INDICATEUR, comme dans Cap 82-0 : toujours là. À gauche le retour et où en est la partie ; à droite les chiffres — le plafond pendant qu'on bâtit, la fiche, le rang et les jetons pendant le split. -->
+  <!-- LE TABLEAU INDICATEUR, comme dans Cap 82-0 : toujours là. À gauche le retour et où en est la partie ; à droite les chiffres — le plafond pendant qu'on bâtit, la fiche, le rang et les jetons pendant le split — et le menu. -->
   <header class="topbar">
     <div class="topbar-inner">
       <button type="button" class="retour-btn" id="retourBtn" data-retour hidden><svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Retour</button>
-      <div class="tete-id"><b class="tete-nom">Faille</b><span class="tete-etat" id="teteEtat">—</span></div>
+      <div class="tete-id"><b class="tete-nom" id="teteNom">Faille</b><span class="tete-etat" id="teteEtat">—</span></div>
       <div class="tete-chiffres">
         <div class="tete-ch" id="teteFiche" hidden><span class="tete-ch-l">Fiche</span><b class="tete-ch-v"></b></div>
         <div class="tete-ch" id="teteRang" hidden><span class="tete-ch-l">Rang</span><b class="tete-ch-v"></b></div>
         <div class="tete-ch" id="teteJetons" hidden><span class="tete-ch-l">Jetons</span><b class="tete-ch-v"></b></div>
-        <div class="tete-ch jauge" id="jauge"><span class="tete-ch-l">Plafond restant</span><b class="tete-ch-v" id="jaugeReste">—</b><span class="piste" aria-hidden="true"><span class="rempli" id="jaugeRempli"></span></span></div>
+        <div class="tete-ch jauge" id="jauge" hidden><span class="tete-ch-l">Plafond restant</span><b class="tete-ch-v" id="jaugeReste">—</b><span class="piste" aria-hidden="true"><span class="rempli" id="jaugeRempli"></span></span></div>
       </div>
+      <button type="button" class="menu-btn" id="menuBtn" hidden aria-label="Menu"><svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg></button>
     </div>
   </header>
 
   <main>
-    <section id="bati" class="ecran">
+    <section id="titre" class="ecran"></section>
+
+    <section id="bati" class="ecran" hidden>
       <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p><p id="bati-mandat" class="mandat"></p></div>
       <ol id="alignement" class="alignement"></ol>
       <p id="etat" class="etat"></p>
       <div class="actionbar">
         <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg><span>Tourner la roulette</span></button>
         <button id="jouer" class="go" hidden>Jouer le split</button>
-        <button id="recommencer" hidden>Recommencer</button>
       </div>
     </section>
 
+    <!-- LE SPLIT, en quatre sections (la barre du bas) : le Bureau, l'Effectif, le Marché, la Ligue. L'action principale reste en bas, au-dessus de la barre. -->
     <section id="split" class="ecran" hidden>
-      <div class="ecran-tete"><h1 id="split-titre"></h1><p class="sous">Ton cinq contre neuf vrais vestiaires, deux fois chacun, puis les six premiers en séries (cinq parties). Avant chacune de tes séries, le repêchage des champions.</p><p id="split-mandat" class="mandat"></p></div>
-      <div id="split-strategie"></div>
-      <div id="split-jour"></div>
-      <div id="split-classement"></div>
-      <div class="actionbar">
+      <div class="ecran-tete compacte"><h1 id="split-titre"></h1><p id="split-mandat" class="mandat"></p></div>
+      <nav class="sousnav" id="sousnav" hidden></nav>
+      <div id="vue"></div>
+      <div class="actionbar avec-nav">
         <button id="decision" class="go" hidden>Une décision t'attend</button>
         <button id="journee" class="go">Journée suivante</button>
         <button id="series" class="go" hidden>Lancer les séries</button>
         <button id="ronde" class="go" hidden>Ronde suivante</button>
         <button id="bilan-ouvrir" class="go" hidden>Le bilan du split</button>
-        <button id="jusqua" title="Jusqu'aux séries, ou jusqu'à la prochaine décision"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Séries</button>
-        <button id="ouvrir-boite"><svg class="ico" aria-hidden="true"><use href="#i-boite"/></svg><span>Boîte</span></button>
-        <button id="ouvrir-marche"><svg class="ico" aria-hidden="true"><use href="#i-maillot"/></svg><span>Marché</span></button>
-        <button id="ouvrir-boutique"><svg class="ico" aria-hidden="true"><use href="#i-marche"/></svg>Boutique</button>
+        <button id="jusqua" title="Jusqu'aux séries, ou jusqu'à la prochaine décision"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Jusqu'aux séries</button>
       </div>
-      <p id="jetons" class="etat"></p>
     </section>
+    <section id="bilan" class="ecran" hidden></section>
 
+    <!-- Les couches, dans l'ordre où elles s'empilent : la dernière ouverte passe dessus. -->
+    <section id="menu" class="couche" hidden></section>
+    <section id="parties" class="couche" hidden></section>
+    <section id="regles" class="couche" hidden></section>
+    <section id="palmares" class="couche" hidden></section>
+    <section id="collection" class="couche" hidden></section>
+    <section id="deblocages" class="couche" hidden></section>
+    <section id="depart" class="couche" hidden></section>
     <section id="vestiaire" class="couche" hidden>
       <header class="bandeau" id="vestiaire-bandeau"></header>
       <div class="combler"><span>À combler <b id="vestiaire-libres"></b></span><span>Ce choix <b id="vestiaire-max"></b></span></div>
       <ul id="vestiaire-liste" class="liste-joueurs"></ul>
       <div class="actionbar" id="relances"></div>
     </section>
-    <section id="bilan" class="ecran" hidden></section>
-
-    <section id="carte" class="couche" hidden></section>
-    <section id="boite" class="couche" hidden></section>
-    <section id="strategie" class="couche" hidden></section>
-    <section id="marche" class="couche" hidden></section>
     <section id="repechage" class="couche" hidden></section>
-    <section id="boutique" class="couche" hidden></section>
+    <section id="strategie" class="couche" hidden></section>
+    <section id="album" class="couche" hidden></section>
     <section id="feuille" class="couche" hidden></section>
+    <section id="direct" class="couche" hidden></section>
+    <section id="carte" class="couche" hidden></section>
   </main>
+
+  <nav class="navbar" id="nav" hidden>
+    <button class="navtab" data-section="bureau"><svg class="ico" aria-hidden="true"><use href="#i-boite"/></svg><span class="navtab-lbl">Bureau</span></button>
+    <button class="navtab" data-section="effectif"><svg class="ico" aria-hidden="true"><use href="#i-maillot"/></svg><span class="navtab-lbl">Effectif</span></button>
+    <button class="navtab" data-section="marche"><svg class="ico" aria-hidden="true"><use href="#i-marche"/></svg><span class="navtab-lbl">Marché</span></button>
+    <button class="navtab" data-section="ligue"><svg class="ico" aria-hidden="true"><use href="#i-ligue"/></svg><span class="navtab-lbl">Ligue</span></button>
+  </nav>
   <p id="avis" class="avis" role="status" hidden></p>
   <footer>
     <p id="source"></p>

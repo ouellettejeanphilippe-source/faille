@@ -20,23 +20,53 @@ import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee,
 import { repecher } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe } from './rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine } from './gestion.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
+import { effetDe } from './meta.js';
+import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 1;
+export const VERSION = 2;
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
+/* Le club d'une partie sans club (une sauvegarde d'avant le méta). */
+const CLUB_DEPART = { nom: 'Ton cinq', code: 'TOI', couleur: null };
 
 const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [k, 0]));
 
-export const nouvellePartie = graine => ({
-  graine, log: [], etape: 'bati',
-  run: { n: 1, passes: [], fin: null },
-  R: nouveauRogue(graine),
-  eff: { cinq: {}, banc: null },
-  tirage: null, relances: relancesNeuves(),
-  L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null, strategie: null,
-});
+/**
+ * Une partie neuve. `deb` : les déblocages du méta (js/meta.js), posés au
+ * départ et gardés dans la sauvegarde ; `club` : { nom, code, couleur }.
+ */
+export function nouvellePartie(graine, { deb = [], club = null } = {}) {
+  const fx = effetDe(deb);
+  const P = {
+    graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, fx,
+    run: { n: 1, passes: [], fin: null, sursis: 0 },
+    R: nouveauRogue(graine),
+    eff: { cinq: {}, banc: null },
+    tirage: null, relances: relancesNeuves(),
+    L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null, strategie: null,
+    cartes: [], cadeau: null, offrePack: null,
+  };
+  if (fx.jetons) P.R.primes.push({ cle: 'depart', jetons: fx.jetons });
+  return P;
+}
+
+/** Les relances d'une sorte qu'un repêchage permet, déblocages compris. */
+export const relancesMax = (P, k) => RELANCES[k][1] + P.fx.relances;
+/** Combien de joueurs restent d'un split à l'autre. */
+export const gardesDe = P => GARDES + P.fx.gardes;
+/** Combien d'agents libres le dépisteur trouve par journée. */
+export const offreDe = P => MARCHE.offre + P.fx.offre;
+
+/** Ce que coûte le prochain coach : rien pour le premier de la run avec le coach fidèle (un déblocage). */
+export const prixDuCoach = P => (P.fx.coachGratuit && !P.R.achats.some(x => x.quoi === 'coach') ? 0 : PRIX_COACH);
+
+/* Un joueur passe chez toi : sa carte entre à ta collection (une fois par partie). */
+function collectionner(P, ref) {
+  const cle = cleDe(ref);
+  if (!P.cartes.includes(cle)) P.cartes.push(cle);
+}
 
 /** Un contrat : le joueur d'un split, tel que l'effectif et le moteur le lisent. */
 export function contratDe(ctx, ref) {
@@ -60,7 +90,7 @@ function majToi(P) {
   const cinq = Object.fromEntries(ROLES.map(r => [r, P.eff.cinq[r].moteur]));
   const tempo = melangerTempos(ROLES.map(r => P.eff.cinq[r].tempo));
   if (P.L) Object.assign(P.L.equipes[0], { cinq, tempo });
-  return { nom: 'Ton cinq', split: null, cinq, tempo };
+  return { nom: P.club.nom, split: null, cinq, tempo };
 }
 
 /** Ta série de la prochaine journée, ou de la ronde des séries en cours ; null si tu n'y joues pas. */
@@ -76,12 +106,25 @@ export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.d
 /* Joue ce qui vient avec ton plan de jeu, ta série repêchée d'abord (`rp` : tes bannissements et tes choix ; absent, l'automatique). */
 function jouerAvecToi(P, ctx, jouer, rp) {
   const L = P.L;
+  P.offrePack = null;
   const s = taSerie(L);
   if (s && !s.repechage) repecher(L, s, ctx.classes, rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {});
   L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
   jouer(L);
   if (s) noterJoue(P.R, 1);
   finirEntrainement(P);
+}
+
+/* Un nouveau joueur entre à sa place : titulaire (l'ancien descend au banc s'il est vide, sinon il part) ou au banc. */
+function placer(P, c, place) {
+  exiger(![...Object.values(P.eff.cinq), P.eff.banc].some(x => x && cleDe(x.ref) === cleDe(c.ref)), 'déjà chez toi');
+  const pl = exiger(placements(P.eff, c).find(x => x.place === place), 'au-dessus du plafond');
+  if (pl.place === 'titulaire') {
+    P.eff.cinq[c.r] = c;
+    if (pl.descend) P.eff.banc = pl.descend;
+  } else P.eff.banc = c;
+  collectionner(P, c.ref);
+  majToi(P);
 }
 
 /* L'entraînement fini entre au bassin du joueur, s'il est encore chez toi. */
@@ -107,7 +150,7 @@ const ACTIONS = {
   tirage(P, a, ctx) {
     exiger(P.etape === 'bati' && libresDe(P.eff).length, 'aucune case à combler');
     if (a.mode === 'tour') exiger(!P.tirage, 'un vestiaire est déjà ouvert');
-    else exiger(P.tirage && RELANCES[a.mode] && P.relances[a.mode] < RELANCES[a.mode][1], 'plus de relance');
+    else exiger(P.tirage && RELANCES[a.mode] && P.relances[a.mode] < relancesMax(P, a.mode), 'plus de relance');
     const s = ctx.splits.get(a.id);
     const e = s.split.equipes.find(x => x.nom === a.e);
     exiger(e && signables(P.eff, e, s.profils.joueurs).length, 'personne à signer dans ce vestiaire');
@@ -119,6 +162,7 @@ const ACTIONS = {
     const j = signables(P.eff, v.equipe, v.profils.joueurs).find(x => x.n === a.n && x.r === a.r);
     exiger(j, `${a.n} ne se signe pas`);
     P.eff.cinq[j.r] = contratDe(ctx, { id: v.id, e: v.equipe.nom, n: j.n, r: j.r });
+    collectionner(P, P.eff.cinq[j.r].ref);
     P.tirage = null;
   },
   lancer(P, a, ctx) {
@@ -130,6 +174,8 @@ const ACTIONS = {
     P.L = creerSplit([majToi(P), ...adv], { graine: a.graine, rondes: 2, bo: 1 });
     P.adversaires = a.adversaires;
     P.etape = 'split';
+    // Le cadeau du proprio (un déblocage) : un pack argent au premier split de la run.
+    if (P.run.n === 1 && P.fx.cadeau) P.cadeau = ouvrirPack(P.L, P.R, 'argent', { gratuit: true });
   },
   journee(P, a, ctx) {
     exiger(P.etape === 'split' && P.L.jour < P.L.journees.length, 'la saison est jouée');
@@ -154,23 +200,32 @@ const ACTIONS = {
     return exiger(ouvrirPack(P.L, P.R, a.id), 'pas assez de jetons');
   },
   plan(P, a) { exiger(basculer(P.R, a.carte), 'le plan est plein'); },
-  coach(P, a) { exiger(P.etape === 'split' && engager(P.L, P.R, a.id), 'pas assez de jetons'); },
+  coach(P, a) { exiger(P.etape === 'split' && engager(P.L, P.R, a.id, prixDuCoach(P)), 'pas assez de jetons'); },
   marche(P, a, ctx) {
     exiger(P.etape === 'split' && marcheOuvert(P.L), 'le marché est fermé');
     const c = contratDe(ctx, a.ref);
     exiger(c.cout <= MARCHE.coutMax, 'trop cher pour un agent libre');
-    exiger(![...Object.values(P.eff.cinq), P.eff.banc].some(x => x && cleDe(x.ref) === cleDe(a.ref)), 'déjà chez toi');
-    const pl = exiger(placements(P.eff, c).find(x => x.place === a.place), 'au-dessus du plafond');
+    exiger(placements(P.eff, c).some(x => x.place === a.place), 'au-dessus du plafond');
+    if (!P.bons) exiger(jetonsDe(P.L, P.R) >= MARCHE.prix, 'pas assez de jetons');
+    placer(P, c, a.place);
     if (P.bons) P.bons--;
-    else {
-      exiger(jetonsDe(P.L, P.R) >= MARCHE.prix, 'pas assez de jetons');
-      P.R.achats.push({ quoi: 'marche', id: cleDe(a.ref), prix: MARCHE.prix });
-    }
-    if (pl.place === 'titulaire') {
-      P.eff.cinq[c.r] = c;
-      if (pl.descend) P.eff.banc = pl.descend;
-    } else P.eff.banc = c;
-    majToi(P);
+    else P.R.achats.push({ quoi: 'marche', id: cleDe(a.ref), prix: MARCHE.prix });
+  },
+  /* Un pack de joueurs : trois vrais joueurs (tirés par js/gestion.js tirerPackJoueurs), qui entrent tous à ta collection. */
+  packJoueurs(P, a) {
+    exiger(P.etape === 'split' && marcheOuvert(P.L), 'les packs de joueurs se vendent jusqu\'à la date limite');
+    exiger(PACKS_JOUEURS[a.id] && a.refs.length <= PACKS_JOUEURS[a.id].n, 'pack inconnu');
+    const prix = prixPackJoueurs(P.R, a.id);
+    exiger(jetonsDe(P.L, P.R) >= prix, 'pas assez de jetons');
+    P.R.achats.push({ quoi: 'joueurs', id: a.id, prix });
+    P.offrePack = { refs: a.refs, pris: false };
+    for (const ref of a.refs) collectionner(P, ref);
+  },
+  /* Signer un des joueurs du dernier pack, sans frais, avant la journée suivante. */
+  signerPack(P, a, ctx) {
+    exiger(P.etape === 'split' && P.offrePack && !P.offrePack.pris && P.offrePack.refs.some(r => cleDe(r) === cleDe(a.ref)), 'ce joueur n\'est pas dans ton pack');
+    placer(P, contratDe(ctx, a.ref), a.place);
+    P.offrePack.pris = true;
   },
   permuter(P) {
     exiger(P.etape === 'split' && P.eff.banc, 'personne au banc');
@@ -213,19 +268,35 @@ const ACTIONS = {
     const champion = L.series.champion === 0;
     const c = classement(L);
     const k = c.findIndex(l => l.i === 0);
-    P.run.passes.push({ n: P.run.n, mandat: cle, rempli, champion, rang: k + 1, fiche: [c[k].v, c[k].d] });
+    // Le palmarès du split, gravé : tes trophées, les galons de tes joueurs (à leur carte), tes records.
+    const cles = new Map([...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean).map(x => [`${x.n}|${x.r}`, cleDe(x.ref)]));
+    const trophees = tropheesDuSplit(L).filter(t => t.i === 0).map(({ id, n, r }) => ({ id, n, r }));
+    const galons = galonsDuSplit(L).filter(g => cles.has(`${g.n}|${g.r}`)).map(g => ({ ...g, cle: cles.get(`${g.n}|${g.r}`) }));
+    const rondes = L.series.rondes.flat().filter(s => s.gagnant === 0).length;
+    // Le proprio patient (un déblocage) : le premier mandat manqué ne finit pas la run.
+    const sursis = !rempli && !champion && P.run.sursis < P.fx.sursis;
+    if (sursis) P.run.sursis++;
+    P.run.passes.push({ n: P.run.n, mandat: cle, rempli, champion, rang: k + 1, fiche: [c[k].v, c[k].d], rondes, trophees, galons, records: recordsDuSplit(L), sursis });
     P.R.reports.push(gainsDe(L));
     P.dernier = L;
     P.L = null;
     P.entrainement = null;
-    P.run.fin = champion ? 'gagnee' : rempli ? null : 'perdue';
+    P.run.fin = champion ? 'gagnee' : rempli || sursis ? null : 'perdue';
     P.etape = P.run.fin ? 'fin' : 'gardes';
   },
-  garder(P, a) {
+  garder(P, a, ctx) {
     exiger(P.etape === 'gardes', 'pas le moment');
     const tous = [...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean);
-    const gardes = tous.filter(c => a.cles.includes(cleDe(c.ref)));
-    exiger(gardes.length === a.cles.length && gardes.length <= GARDES, `${GARDES} joueurs au plus`);
+    const gardes = tous.filter(c => a.cles.includes(cleDe(c.ref))).map(c => {
+      // Le joueur qui vieillit : il devient sa version d'un split plus récent (le plus proche, js/gestion.js prochaineVersion).
+      const ref = a.vieux && a.vieux[cleDe(c.ref)];
+      if (!ref) return c;
+      exiger(ref.n === c.n && ref.r === c.r && ctx.splits.get(ref.id).split.annee > ctx.splits.get(c.ref.id).split.annee, `${c.n} ne vieillit pas ainsi`);
+      const v = contratDe(ctx, ref);
+      collectionner(P, v.ref);
+      return v;
+    });
+    exiger(gardes.length === a.cles.length && gardes.length <= gardesDe(P), `${gardesDe(P)} joueurs au plus`);
     const eff = { cinq: {}, banc: null };
     for (const c of gardes) {
       if (eff.cinq[c.r]) eff.banc = c;
@@ -253,14 +324,15 @@ export function appliquer(P, a, ctx) {
 }
 
 /** Les splits qu'un journal nomme : à charger avant de le rejouer. */
-export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t === 'tirage' ? a.id : null, ...(a.adversaires || []).map(x => x.id), a.ref ? a.ref.id : null]).filter(Boolean))];
+export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t === 'tirage' ? a.id : null, ...(a.adversaires || []).map(x => x.id), a.ref ? a.ref.id : null,
+  ...(a.refs || []).map(x => x.id), ...Object.values(a.vieux || {}).map(x => x.id)]).filter(Boolean))];
 
-/** La sauvegarde : la graine et le journal, rien de compté. */
-export const sauvegarde = P => ({ v: VERSION, graine: P.graine, log: P.log });
+/** La sauvegarde : la graine, les déblocages et le club du départ, et le journal ; rien de compté. */
+export const sauvegarde = P => ({ v: VERSION, graine: P.graine, deb: P.deb, club: P.club, log: P.log });
 
-/** Rejoue une sauvegarde. */
+/** Rejoue une sauvegarde (une d'avant le méta, la version 1, n'a ni déblocages ni club). */
 export function rejouer(sv, ctx) {
-  const P = nouvellePartie(sv.graine);
+  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null });
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;
 }

@@ -142,10 +142,10 @@ export function basculer(R, id) {
   return true;
 }
 
-/** Engage un coach (un seul en poste : le nouveau repart de zéro). Faux s'il manque des jetons. */
-export function engager(L, R, id) {
-  if ((R.coach && R.coach.id === id) || jetonsDe(L, R) < PRIX_COACH) return false;
-  R.achats.push({ quoi: 'coach', id, prix: PRIX_COACH });
+/** Engage un coach (un seul en poste : le nouveau repart de zéro), à `prix` jetons. Faux s'il manque des jetons. */
+export function engager(L, R, id, prix = PRIX_COACH) {
+  if ((R.coach && R.coach.id === id) || jetonsDe(L, R) < prix) return false;
+  R.achats.push({ quoi: 'coach', id, prix });
   R.coach = { id, depuis: R.joue.length };
   return true;
 }

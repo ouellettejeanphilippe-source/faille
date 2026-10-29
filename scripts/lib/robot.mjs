@@ -1,0 +1,55 @@
+/*
+ * UN DG ROBOT, pour les scripts qui ont besoin de runs entières (check_meta) :
+ * il joue par les mêmes actions que l'écran (js/partie.js) — la roulette, la
+ * signature, le split, les décisions au hasard, les séries, le bilan, ceux
+ * qu'on garde. check_gestion a le sien, plus curieux : celui-ci va droit.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { profilsDuSplit } from '../../js/cotes.js';
+import { tempoDuSplit, equipeReelle } from '../../js/sim.js';
+import { hasard, piger } from '../../js/hasard.js';
+import { tirer, tirerAdversaires, signables, cleDe } from '../../js/gestion.js';
+import { nouvellePartie, appliquer, vestiaireDe, enAttente, gardesDe } from '../../js/partie.js';
+
+const ROOT = path.dirname(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
+
+/** Le contexte de js/partie.js, avec tous les splits de data/splits/ : { ctx, ids, lire }. */
+export function contexte() {
+  const dossier = path.join(ROOT, 'data/splits');
+  const splits = new Map(fs.existsSync(dossier) ? fs.readdirSync(dossier).filter(f => f.endsWith('.json')).sort().map(f => {
+    const split = JSON.parse(fs.readFileSync(path.join(dossier, f), 'utf8'));
+    return [split.id, { split, profils: profilsDuSplit(split), tempo: tempoDuSplit(split) }];
+  }) : []);
+  const ctx = { splits, classes: JSON.parse(fs.readFileSync(path.join(ROOT, 'data/champions.json'), 'utf8')).classes };
+  return { ctx, ids: [...splits.keys()], lire: id => splits.get(id) };
+}
+
+/** Joue une run jusqu'à sa fin (ou `splitsMax` splits) ; rend la partie. `options` : ceux de nouvellePartie. */
+export async function jouerUneRun(graine, { ctx, ids, lire }, options = {}, splitsMax = 5) {
+  const de = hasard(graine);
+  const P = nouvellePartie(graine, options);
+  const agir = a => appliquer(P, a, ctx);
+  while (P.etape !== 'fin' && P.run.n <= splitsMax) {
+    while (P.etape === 'bati' && Object.keys(P.eff.cinq).length < 5) {
+      if (!P.tirage) agir({ t: 'tirage', mode: 'tour', ...(await tirer(de, ids, lire, P.eff, 'tour')) });
+      const v = vestiaireDe(P, ctx);
+      const j = piger(signables(P.eff, v.equipe, v.profils.joueurs), de);
+      agir({ t: 'signer', n: j.n, r: j.r });
+    }
+    agir({ t: 'lancer', adversaires: await tirerAdversaires(de, ids, lire, equipeReelle), graine: Math.floor(de() * 2 ** 32) });
+    while (P.L.jour < P.L.journees.length) {
+      const ev = enAttente(P);
+      agir(ev ? { t: 'evenement', choix: piger(ev.choix, de) } : { t: 'journee' });
+    }
+    agir({ t: 'series' });
+    while (P.L.series.champion === null) agir({ t: 'ronde' });
+    agir({ t: 'bilan' });
+    if (P.etape === 'gardes') {
+      const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).map(c => cleDe(c.ref));
+      try { agir({ t: 'garder', cles: tous.filter(() => de() < 0.4).slice(0, gardesDe(P)) }); } catch { agir({ t: 'garder', cles: [] }); }
+    }
+  }
+  return P;
+}

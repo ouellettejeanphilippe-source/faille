@@ -1,0 +1,81 @@
+/*
+ * L'ÉCRAN TITRE, LE MENU, LES PARTIES, LE DÉPART D'UNE RUN (repris de Cap
+ * 82-0, js/menu.js). Rien que du HTML tiré du méta (js/meta.js) et de
+ * l'index des parties (js/sauvegardes.js) ; le contrôleur branche les gestes.
+ *
+ *   le titre    Continuer (s'il y a une partie), Nouvelle run, puis tes
+ *               médailles, ta collection, le palmarès, les parties, les règles ;
+ *   le menu     la même chose en pleine partie, avec « Quitter vers le titre » ;
+ *   les parties chacune se reprend, s'exporte en fichier, s'efface ; un fichier
+ *               s'importe ;
+ *   le départ   ton club, ta couleur, tes déblocages, puis « Commencer la run ».
+ */
+import { esc } from './util.js';
+import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, deblocagesDe, possede } from './meta.js';
+
+const date = ms => new Date(ms).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/* Les liens communs au titre et au menu. */
+const liens = sons => `<ul class="menu-liens">
+  <li><button data-ouvrir="deblocages">🏅 Déblocages et ton club</button></li>
+  <li><button data-ouvrir="collection">🃏 Ta collection</button></li>
+  <li><button data-ouvrir="palmares">🏆 Le palmarès</button></li>
+  <li><button data-ouvrir="parties">💾 Les parties</button></li>
+  <li><button data-ouvrir="regles">📖 Les règles</button></li>
+  <li><button data-sons>${sons ? '🔊 Sons : oui' : '🔇 Sons : non'}</button></li>
+</ul>`;
+
+/* Tes médailles et ton rang, en une ligne. */
+function ligneRang(m) {
+  const md = medailles(m);
+  const r = rangDe(m);
+  return `<p class="titre-rang">🏅 <b>${md.reste}</b> à dépenser · ${esc(r.nom)}${r.suivant ? ` · ${esc(r.suivant.nom)} dans ${r.suivant.manque}` : ''}</p>`;
+}
+
+/** L'écran titre. `active` : l'entrée de la partie active (js/sauvegardes.js), ou null. */
+export function ecranTitre(m, active, sons) {
+  return `<div class="titre">
+    <p class="titre-sur">Le jeu de gestion des splits</p>
+    <h1 class="titre-nom">Faille</h1>
+    ${ligneRang(m)}
+    <div class="titre-actions">
+      ${active ? `<button id="t-continuer" class="go titre-continuer"><span>Continuer</span><small>${esc(active.titre)}${active.resume ? ` · ${esc(active.resume)}` : ''}</small></button>` : ''}
+      <button id="t-nouvelle"${active ? '' : ' class="go"'}>Nouvelle run</button>
+    </div>
+    ${liens(sons)}
+  </div>`;
+}
+
+/** Le menu, en pleine partie. */
+export function ecranMenu(m, sons) {
+  return `<h2>Menu</h2>${ligneRang(m)}
+    <ul class="menu-liens"><li><button class="go" data-retour>Reprendre la partie</button></li></ul>
+    ${liens(sons)}
+    <ul class="menu-liens"><li><button id="m-titre">Quitter vers le titre</button></li></ul>
+    <p class="sous">Ta partie se garde à chaque geste : tu la retrouves au titre, sous « Continuer ».</p>`;
+}
+
+/** Les parties sauvegardées. `ix` : l'index (js/sauvegardes.js). */
+export function ecranParties(ix) {
+  const lignes = [...ix.parties].sort((a, b) => b.maj - a.maj).map(p => `<li class="partie-ligne${p.id === ix.actif ? ' actif' : ''}">
+    <span class="jeu-id"><b>${esc(p.titre)}</b><small>${p.resume ? `${esc(p.resume)} · ` : ''}${date(p.maj)}</small></span>
+    <span class="partie-gestes"><button data-reprendre="${esc(p.id)}">Reprendre</button><button data-exporter="${esc(p.id)}">Exporter</button><button data-supprimer="${esc(p.id)}">Effacer</button></span></li>`).join('');
+  return `<h2>Les parties</h2>
+    ${lignes ? `<ul class="parties">${lignes}</ul>` : '<p class="sous">Aucune partie : commence une run au titre.</p>'}
+    <h3>D'un autre appareil</h3>
+    <p class="sous">Une partie exportée est un petit fichier : elle se rejoue de sa graine, geste par geste.</p>
+    <label class="bouton-fichier">Importer un fichier<input type="file" id="importer" accept=".json,application/json"></label>`;
+}
+
+/** Le départ d'une run : ton club, ta couleur, tes déblocages. */
+export function ecranDepart(m) {
+  const club = Object.entries(CLUBS).filter(([id]) => possede(m, 'club', id)).map(([id, c]) => `<button class="puce${m.club === id ? ' on' : ''}" data-porter="club:${id}">${esc(c.nom)}</button>`).join('');
+  const couleur = Object.entries(COULEURS).filter(([id]) => possede(m, 'couleur', id)).map(([id, c]) => `<button class="puce${m.couleur === id ? ' on' : ''}" data-porter="couleur:${id}"><span class="pastille" style="--pastille:${c.hex}"></span>${esc(c.nom)}</button>`).join('');
+  const deb = deblocagesDe(m).map(id => `<li class="trophee"><span class="jeu-ico">${DEBLOCAGES[id].ico}</span><span class="jeu-id"><b>${esc(DEBLOCAGES[id].nom)}</b><small>${esc(DEBLOCAGES[id].mot)}</small></span></li>`).join('');
+  return `<h2>Une nouvelle run</h2>
+    <p class="sous">La roulette sort des splits et des équipes ; tu bâtis ton cinq sous le plafond et le proprio fixe ton mandat, split après split. Un titre gagne la run.</p>
+    <h3>Ton club</h3><div class="puces">${club}</div>
+    <h3>Ta couleur</h3><div class="puces">${couleur}</div>
+    <h3>Tes déblocages</h3>${deb ? `<ul class="trophees">${deb}</ul>` : '<p class="sous">Aucun encore : tes médailles en achètent, au menu.</p>'}
+    <div class="actionbar"><button id="d-commencer" class="go">Commencer la run</button></div>`;
+}
