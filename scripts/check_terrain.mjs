@@ -15,20 +15,22 @@
  *   les joueurs          les dix ont toujours une place dans la carte ; un mort
  *                        attend à sa fontaine ; en phase de lignes, un laner
  *                        hors combat est dans sa ligne ;
+ *                        un rappel se fait en phase de lignes, à sa fontaine ;
+ *                        les sbires marchent dans la carte, pendant la partie ;
  *   il rejoue            la même graine redonne la même carte ;
  *   il varie             chaque genre de moment sort dans les parties.
  *
  *   node scripts/check_terrain.mjs
  */
 import { creerSplit, jouerJournee, LIGNES_FIN } from '../js/sim.js';
-import { terrainDe, positionsDe, GENRES, BASES } from '../js/terrain.js';
+import { terrainDe, positionsDe, rappelsDe, vaguesDe, GENRES, BASES } from '../js/terrain.js';
 import { graineDe } from '../js/hasard.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
 const splits = lireSplits();
 exiger('des splits à lire', splits.length > 0);
-const fautes = { joueurs: 0, morts: 0, lignes: 0, place: 0, tours: 0, ordre: 0, nexus: 0, combat: 0, bataille: 0, gank: 0, poussee: 0, rejoue: 0 };
+const fautes = { rappels: 0, sbires: 0, joueurs: 0, morts: 0, lignes: 0, place: 0, tours: 0, ordre: 0, nexus: 0, combat: 0, bataille: 0, gank: 0, poussee: 0, rejoue: 0 };
 const vus = {};
 let parties = 0, moments = 0;
 const dans = e => e.x >= 0 && e.x <= 100 && e.y >= 0 && e.y <= 100;
@@ -58,11 +60,21 @@ for (let g = 1; g <= 8; g++) {
         if (pos.length !== 2 || pos.some(eq => eq.length !== 5 || !eq.every(dans))) fautes.joueurs++;
         pos.forEach((eq, camp) => eq.forEach((x, i) => {
           if (x.mort && Math.hypot(x.x - BASES[camp][0], x.y - BASES[camp][1]) > 5) fautes.morts++;
-          const recent = f.fil.some(e => e.quoi === 'elim' && e.t <= t && t - e.t < 1 && ((e.camp === camp && [e.tueur, ...e.aides].includes(i)) || (e.camp !== camp && e.victime === i)));
-          if (t < LIGNES_FIN && !x.mort && !recent && i === 0 && !(x.x < 14 || x.y < 14)) fautes.lignes++;
+          // Dans le coup : un combat de la dernière minute, ou celui vers lequel il marche (la demi-minute qui vient).
+          const recent = f.fil.some(e => e.quoi === 'elim' && e.t - t <= 0.6 && t - e.t < 1 && ((e.camp === camp && [e.tueur, ...e.aides].includes(i)) || (e.camp !== camp && e.victime === i)));
+          if (t < LIGNES_FIN && !x.mort && !x.corps && !recent && i === 0 && !(x.x < 14 || x.y < 14)) fautes.lignes++;
         }));
       }
       if (JSON.stringify(positionsDe(T, f, 20)) !== JSON.stringify(positionsDe(terrainDe(f, ['A', 'B'], graine), f, 20))) fautes.rejoue++;
+      // Les rappels : en phase de lignes, jamais pendant un combat du joueur ; au rappel, il est à sa fontaine.
+      const rappels = rappelsDe(T, f, graine);
+      rappels.forEach((eq, camp) => eq.forEach((ts, i) => ts.forEach(r => {
+        if (r >= LIGNES_FIN || r < 5) fautes.rappels++;
+        const p = positionsDe(T, f, r + 0.3, rappels)[camp][i];
+        if (!p.mort && !p.corps && Math.hypot(p.x - BASES[camp][0], p.y - BASES[camp][1]) > 5 && !f.fil.some(e => e.quoi === 'elim' && Math.abs(e.t - r) < 1.5)) fautes.rappels++;
+      })));
+      // Les sbires : dans la carte, seulement pendant la partie.
+      if (!vaguesDe(T, f, 10).every(dans) || vaguesDe(T, f, 0.5).length || vaguesDe(T, f, f.duree).length) fautes.sbires++;
       const perdant = 1 - f.gagnant;
       const ouverte = ['haut', 'milieu', 'bas'].some(l => T.tours.filter(t => t.camp === perdant && t.ligne === l).every(t => t.tombe !== null));
       if (!ouverte || T.tours.filter(t => t.camp === perdant && t.ligne === null).some(t => t.tombe === null)) fautes.nexus++;
@@ -87,6 +99,8 @@ exiger('chaque événement du fil est placé, dans la carte', !fautes.place, `${
 exiger('les dix joueurs ont leur place, dans la carte', !fautes.joueurs);
 exiger('un mort attend à sa fontaine', !fautes.morts);
 exiger('en phase de lignes, le haut tient sa ligne', !fautes.lignes);
+exiger('un rappel en phase de lignes, à sa fontaine', !fautes.rappels);
+exiger('les sbires marchent dans la carte, pendant la partie', !fautes.sbires);
 exiger('les tours tombées sont celles de la feuille', !fautes.tours);
 exiger('une ligne tombe dans l\'ordre', !fautes.ordre);
 exiger('le nexus tombe par une ligne ouverte', !fautes.nexus);

@@ -665,7 +665,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .tf-croix.camp-0 { fill: var(--camp-bleu); }
 .tf-croix.camp-1 { fill: var(--camp-rouge); }
 /* Les dix joueurs : l'icône du champion dans un anneau aux couleurs du camp, le nom dessous ; ils glissent d'une place à l'autre. */
-.tf-joueur { transition: transform 0.6s var(--e-sortie), opacity var(--t-lent); }
+.tf-joueur { transition: transform 0.1s linear, opacity var(--t-lent); }
 .tf-joueur.mort { opacity: 0.3; }
 .tf-anneau { fill: var(--fond-3); stroke-width: 0.7; }
 .tf-joueur.camp-0 .tf-anneau { stroke: var(--camp-bleu); }
@@ -705,3 +705,13 @@ button:disabled { opacity: 0.45; cursor: default; }
 .coach-pouvoirs li { display: grid; padding-left: var(--esp-2); border-left: 2px solid var(--filet); color: var(--encre-3); }
 .coach-pouvoirs li.ouvert { border-left-color: var(--bon); color: var(--encre); }
 .coach-pouvoirs b { font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+/* La Faille qui vit : les sbires, le trait d'un coup, un mort qui gît, un joueur qui rentre à la base. */
+.tf-sbire.camp-0 { fill: color-mix(in srgb, var(--camp-bleu) 80%, var(--encre)); }
+.tf-sbire.camp-1 { fill: color-mix(in srgb, var(--camp-rouge) 80%, var(--encre)); }
+.tf-coup { stroke-width: 0.8; stroke-linecap: round; }
+.tf-coup.camp-0 { stroke: var(--camp-bleu); }
+.tf-coup.camp-1 { stroke: var(--camp-rouge); }
+.tf-joueur.corps { opacity: 0.45; filter: grayscale(1); }
+.tf-joueur.rappel .tf-anneau { stroke: var(--bleu); stroke-dasharray: 1 0.6; }
+.dt-kma small { display: block; text-align: right; font-size: var(--t-1); color: var(--or); }
+.tf-joueur.serre .tf-nom { display: none; }
