@@ -204,9 +204,34 @@ export const LIENS = {
 /** Les liens actifs d'un cinq ({ rôle : contrat }). */
 export const liensDe = cinq => Object.keys(LIENS).filter(id => LIENS[id][4](cinq));
 
-/** Les effets de ton cinq : ta stratégie (js/strategie.js), les cartes du plan et les liens d'origine, sommés par le moteur. */
-export function effetsDeToi(R, liens = [], strategie = null) {
-  return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), ...liens.map(id => LIENS[id][3])]);
+/*
+ * LE STAFF : les adjoints du coach (Cap 82-0, V21). Un adjoint est un
+ * ÉCHANGE, un système de jeu : ce que ton cinq gagne et ce qu'il donne, sur
+ * les canaux, à chaque partie. Il change la forme de la partie, pas sa force :
+ * sur une équipe ordinaire, ni cadeau ni piège (check_rogue) ; il paie quand
+ * il s'emboîte avec ta stratégie, tes cartes, ton coach.
+ *   [icône, nom, ce qu'il donne, ce qu'il coûte]
+ * Trois au plus (ADJOINTS_MAX) ; un parmi trois, gratuit, aux journées
+ * JOURNEES_ADJOINTS de chaque split (js/partie.js).
+ */
+export const ADJOINTS = {
+  fermier: ['🌾', 'Le maître de la ferme', { ligne: 0.08 }, { combat: -0.05 }],
+  escarmoucheur: ['🗡️', 'L\'entraîneur des escarmouches', { combat: 0.05, rythme: 1.1 }, { ligne: -0.08 }],
+  dragons: ['🐉', 'Le maître des dragons', { dragons: 1.2 }, { heraut: -1.2, nashor: -0.5 }],
+  nashor: ['🟣', 'L\'analyste du Nashor', { nashor: 1.2 }, { dragons: -0.9 }],
+  ingenieur: ['🏰', 'L\'ingénieur de siège', { siege: 1.18, split: 0.8 }, { combat: -0.04 }],
+  tardif: ['⏳', 'Le gardien du tardif', { tardif: 0.3, fin: 0.9 }, { ligne: -0.06 }],
+  debut: ['⚡', 'Le préparateur du début', { ligne: 0.06, fin: 1.15 }, { tardif: -0.25 }],
+  vision: ['👁️', 'Le coach de vision', { objectifs: 0.12, rythme: 0.88 }, { ligne: -0.05 }],
+};
+export const ADJOINTS_MAX = 3;
+
+/** Ce qu'un adjoint fait sur les canaux : son gain et son prix, ensemble. */
+export const effetDeLAdjoint = id => sommerEffets([ADJOINTS[id][2], ADJOINTS[id][3]]);
+
+/** Les effets de ton cinq : ta stratégie (js/strategie.js), les cartes du plan, les liens d'origine et ton staff, sommés par le moteur. */
+export function effetsDeToi(R, liens = [], strategie = null, staff = []) {
+  return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), ...liens.map(id => LIENS[id][3]), ...staff.flatMap(id => [ADJOINTS[id][2], ADJOINTS[id][3]])]);
 }
 
 /** (Avant la version 4) les pouvoirs de ton coach que sa confiance a ouverts : un par palier. */

@@ -20,7 +20,8 @@ import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee,
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS } from './rogue.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
+import { hasard, graineDe } from './hasard.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
@@ -42,7 +43,7 @@ const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [
 export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null } = {}) {
   const fx = effetDe(deb, exig);
   const P = {
-    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx, coach, talents: [],
+    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx, coach, talents: [], staff: [], enTrop: null,
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
@@ -123,8 +124,30 @@ export function taSerie(L) {
   return lot.find(s => (s.a === 0 || s.b === 0) && s.gagnant === null) || null;
 }
 
-/** L'événement que la partie attend (un événement de la gestion, un talent du coach), ou null. */
-export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) : null);
+/*
+ * LE STAFF (version 4) : aux journées JOURNEES_ADJOINTS de chaque split, ton
+ * coach se voit offrir un adjoint parmi trois (pas déjà au staff), tirés de la
+ * graine de la run ; tu en prends un, ou personne. Le staff tient
+ * ADJOINTS_MAX ; un de plus, et « qui part ? » attend.
+ */
+export const JOURNEES_ADJOINTS = [6, 12];
+export function adjointsOfferts(P, cle) {
+  const de = hasard(graineDe(P.graine, `adjoints-${cle}`));
+  const libres = Object.keys(ADJOINTS).filter(id => !P.staff.includes(id));
+  for (let i = libres.length - 1; i > 0; i--) { const k = Math.floor(de() * (i + 1)); [libres[i], libres[k]] = [libres[k], libres[i]]; }
+  return libres.slice(0, 3);
+}
+function adjointEnAttente(P) {
+  if (P.v < 4 || !P.L || P.L.series) return null;
+  if (P.enTrop) return { cle: `${P.run.n}-quiPart-${P.staff.length}`, id: 'quiPart', choix: [...P.staff, P.enTrop] };
+  const j = JOURNEES_ADJOINTS.find(x => P.L.jour >= x && !(`${P.run.n}-adjoint-${x}` in P.decisions));
+  if (j === undefined) return null;
+  const cle = `${P.run.n}-adjoint-${j}`;
+  return { cle, id: 'adjoint', choix: [...adjointsOfferts(P, cle), 'aucun'] };
+}
+
+/** L'événement que la partie attend (un événement de la gestion, un talent du coach, un adjoint pour le staff), ou null. */
+export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) || adjointEnAttente(P) : null);
 
 /*
  * Joue ce qui vient avec ton plan de jeu, ta partie repêchée d'abord (`rp` :
@@ -140,7 +163,7 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   const options = rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {};
   if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
   else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
-  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
+  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq), P.staff);
   L.equipes[0].pouvoirs = pouvoirsDeLaPartie(P);
   jouer(L);
   if (s && s.gagnant !== null) noterJoue(P.R, s.gagnant === 0);
@@ -292,6 +315,16 @@ const ACTIONS = {
     P.decisions[e.cle] = a.choix;
     // Un talent : le pouvoir choisi grandit, ouvert ou pas encore.
     if (e.id === 'talent') { P.talents.push(a.choix); return null; }
+    // Un adjoint : il entre au staff ; un de trop, et « qui part ? » attend. Qui part : le choisi quitte le staff.
+    if (e.id === 'adjoint') {
+      if (a.choix !== 'aucun') { if (P.staff.length < ADJOINTS_MAX) P.staff.push(a.choix); else P.enTrop = a.choix; }
+      return null;
+    }
+    if (e.id === 'quiPart') {
+      P.staff = [...P.staff, P.enTrop].filter(id => id !== a.choix);
+      P.enTrop = null;
+      return null;
+    }
     const fait = EVENEMENTS[e.id].choix[a.choix][2];
     if (fait.commanditaire) P.L.commanditaire = fait.commanditaire;
     if (fait.jetons) P.R.primes.push({ cle: e.cle, jetons: fait.jetons });

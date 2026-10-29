@@ -16,7 +16,7 @@ import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie } from './partie.js';
 import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
-import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES, COACHS, XP, TALENT, pouvoirsDuPersonnage } from './rogue.js';
+import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX, pouvoirsDuPersonnage } from './rogue.js';
 import { carteDuCoach } from './boutique.js';
 import { iconeChampion } from './images.js';
 import { classement } from './sim.js';
@@ -121,6 +121,15 @@ export function vueBureau(P, ctx) {
     const grandis = pouvoirsDuPersonnage(P.R.coach.id, 5, ev.choix);
     out.push(message(co.ico, co.nom, 'Un talent · à choisir', esc(`Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`),
       `<div class="choix">${ev.choix.map(id => { const x = grandis.find(g => g.id === id); return `<button data-choix="${id}"><b>${esc(x.nom)}</b><small>${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></button>`; }).join('')}</div>`));
+  } else if (ev && (ev.id === 'adjoint' || ev.id === 'quiPart')) {
+    // Le staff : un adjoint parmi trois, ou qui part quand il y en a un de trop.
+    const co = COACHS[P.R.coach.id];
+    const bouton = id => (id === 'aucun' ? '<button data-choix="aucun"><b>Personne cette fois</b><small>Le staff reste comme il est.</small></button>'
+      : `<button data-choix="${id}"><b>${ADJOINTS[id][0]} ${esc(ADJOINTS[id][1])}</b><small>${echange(id)}</small></button>`);
+    const [titre, texte] = ev.id === 'adjoint'
+      ? ['Un adjoint pour ton staff · à choisir', `Trois candidats, gratuits. Chacun est un échange : ce qu'il donne, ce qu'il coûte, à chaque partie. Ton staff : ${P.staff.length}/${ADJOINTS_MAX}.`]
+      : ['Qui part ? · à trancher', `Le staff tient ${ADJOINTS_MAX} adjoints : un des ${ADJOINTS_MAX + 1} s'en va.`];
+    out.push(message(co.ico, co.nom, titre, esc(texte), `<div class="choix">${ev.choix.map(bouton).join('')}</div>`));
   } else if (ev) {
     const E = EVENEMENTS[ev.id];
     out.push(message(E.ico, E.qui, `${E.titre} · à trancher`, esc(E.texte),
@@ -149,7 +158,8 @@ export function vueBureau(P, ctx) {
     const ok = parties.filter(Boolean).length;
     out.push(message('💼', nom, `${ico} Ton commanditaire`, esc(`Objectif : ${objectif}. ${ok} partie${ok > 1 ? 's' : ''} réussie${ok > 1 ? 's' : ''} sur ${parties.length} : +${ok * jetons} 🪙 jusqu'ici.`)));
   }
-  for (const [cle, choix] of Object.entries(P.decisions).filter(([k]) => k.startsWith(`${P.run.n}-`) && k.split('-')[1] !== 'commanditaire')) {
+  // Les décisions déjà prises de la gestion (le commanditaire, les adjoints et les talents se disent ailleurs).
+  for (const [cle, choix] of Object.entries(P.decisions).filter(([k]) => k.startsWith(`${P.run.n}-`) && k.split('-')[1] !== 'commanditaire' && EVENEMENTS[k.split('-')[1]])) {
     const E = EVENEMENTS[cle.split('-')[1]];
     out.push(message(E.ico, E.qui, E.titre, esc(`Tu as choisi : ${E.choix[choix][0].toLowerCase()}. ${E.choix[choix][1]}`)));
   }
@@ -209,12 +219,18 @@ function lEntrainement(P, ctx, qui) {
     ${corps}${faits.length ? `<p class="sous">Déjà entraînés : ${faits.join(' · ')}.</p>` : ''}`;
 }
 
-/* TON COACH, le personnage (version 4) : son niveau, son expérience, ses pouvoirs et ses talents. */
+/* Un adjoint en mots : ce qu'il donne, ce qu'il coûte. */
+const echange = id => esc(`Donne : ${dire(ADJOINTS[id][2], 0.1).join(', ')}. Coûte : ${dire(ADJOINTS[id][3], 0.1).join(', ')}.`);
+
+/* TON COACH, le personnage (version 4) : son niveau, son expérience, ses pouvoirs et ses talents ; son staff. */
 function tonCoach(P) {
   if (P.v < 4 || !P.R.coach) return '';
   const c = coachDeLaPartie(P);
   return `<h3>Ton coach</h3><div class="coach-carte">${carteDuCoach(c.id, { niveau: c.n, talents: P.talents, xp: c.xp, prochain: c.prochain })}</div>
-    <p class="sous">L'expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre, et ${XP.couleur} de plus par série gagnée avec une carte de sa couleur au plan.</p>`;
+    <p class="sous">L'expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre, et ${XP.couleur} de plus par série gagnée avec une carte de sa couleur au plan.</p>
+    <h3>Son staff · ${P.staff.length}/${ADJOINTS_MAX}</h3>
+    ${P.staff.length ? `<ul class="liens">${P.staff.map(id => `<li class="actif"><b>${ADJOINTS[id][0]} ${esc(ADJOINTS[id][1])}</b><small>${echange(id)}</small></li>`).join('')}</ul>` : ''}
+    <p class="sous">Un adjoint parmi trois, gratuit, aux journées 6 et 12 de chaque split ; chacun est un échange, qui paie quand il s'emboîte avec ta stratégie, tes cartes, ton coach.</p>`;
 }
 
 /** L'EFFECTIF : ton plan de match, ton cinq et ton banc (leurs stats chez toi), les liens, l'entraînement. `qui` : le rôle ouvert à l'entraînement. */

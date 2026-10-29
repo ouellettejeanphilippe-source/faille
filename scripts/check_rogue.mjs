@@ -16,6 +16,7 @@
  *   talents) a le droit de peser plus, jusqu'à PERSONNAGE_MAX : c'est la récompense
  *   d'une run qui a duré (Cap 82-0) ;
  *   un pouvoir joue dans 25 à 75 % des parties, et se VOIT dans celles où il joue ;
+ *   un adjoint (un échange) n'est ni un cadeau ni un piège : MAX_V.peu, et il se voit sur sa signature ;
  *   une rare, une légendaire se VOIENT sur la feuille :
  *     ±1 min de durée, ou ±2 éliminations, ou ±0,6 tour, ou ±0,3 objectif par
  *     partie, ou ±0,3 objectif de plus pour elle que pour l'adversaire ;
@@ -33,7 +34,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
-import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { CARTES, COACHS, PACKS, JETONS, LIENS, ADJOINTS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, effetDeLAdjoint, pouvoirsDeToi, pouvoirsDuPersonnage, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { STRATEGIES, effetDeStrategie, fitDe } from '../js/strategie.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
@@ -122,6 +123,18 @@ if (splits.length) {
     borne(`${ico} ${nom} (${rarete}) : victoires de plus par saison`, m.dv, -MAX_V[rarete], MAX_V[rarete]);
     if (rarete === 'rare' || rarete === 'legendaire') exiger(`${ico} ${nom} se voit sur la feuille`, voit(m.forme), ecrire(m.forme));
     else informer(`${ico} ${nom} : la forme`, `${ecrire(m.forme)} · coach : ${couleurDe(id) || 'neutre'}`);
+  }
+
+  /* Les adjoints, des échanges : ni cadeau ni piège sur une équipe ordinaire, et chacun se voit sur sa signature. */
+  const SIGNE_ADJOINT = {
+    fermier: ['nos_tours', 0.1], escarmoucheur: ['k', 0.5], dragons: ['nos_dragons', 0.3], nashor: ['nos_barons', 0.1],
+    ingenieur: ['nos_tours', 0.5], tardif: ['duree', 0.15], debut: ['duree', -0.15], vision: ['k', -0.8],
+  };
+  for (const [id, [ico, nom]] of Object.entries(ADJOINTS)) {
+    const m = mesurer({ effet: effetDeLAdjoint(id) });
+    borne(`${ico} ${nom} (un adjoint) : victoires de plus`, m.dv, -MAX_V.peu, MAX_V.peu);
+    const [cle, seuil] = SIGNE_ADJOINT[id];
+    exiger(`${ico} ${nom} se voit : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
   }
 
   /* Les liens d'origine, comme des cartes de leur rareté. */
