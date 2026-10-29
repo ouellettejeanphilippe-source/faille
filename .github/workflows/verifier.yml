@@ -15,3 +15,16 @@ jobs:
           node-version: 22
       - name: Les vérifications rapides
         run: node scripts/tout.mjs
+
+      - name: Installer Playwright (Chromium)
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.47.2
+          npx playwright install --with-deps chromium
+
+      # Le parcours complet à 390 px, par les boutons : le titre, le repêchage, le split, le direct et la Faille,
+      # les sections, les séries, le bilan, le menu, l'export et l'import, la reprise. Zéro erreur console.
+      - name: Le test de fumée à 390 px
+        run: |
+          python3 -m http.server 8000 >/dev/null 2>&1 &
+          for i in $(seq 1 20); do curl -sf http://localhost:8000/ >/dev/null && break; sleep 0.5; done
+          node scripts/smoke.mjs http://localhost:8000

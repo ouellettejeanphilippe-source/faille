@@ -62,7 +62,7 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] `js/rogue.js`, `js/boutique.js` : les jetons recomptés des résultats, trois packs, quinze cartes de plan de jeu, quatre coachs et leurs paliers de confiance — MOTEUR.md §8.
 - [x] `check_rogue` : chaque carte, chaque coach au palier III, chaque classe et le repêchage mesurés en paires (12 ligues, 120 paires) ; les bornes par rareté, la visibilité des rares ; les packs rejouent, les jetons se recomptent.
 - [x] Une partie de rogue sur plusieurs splits : les mandats et la sauvegarde (jalon 4).
-- [ ] Les médailles et les déblocages entre deux runs (Cap 82-0 : écussons, vestiaire des déblocages).
+- [x] Les médailles et les déblocages entre deux runs (Cap 82-0 : écussons, vestiaire des déblocages) — jalon 6.
 - [ ] Ce que l'écran annonce, en chiffres de la mesure (« ≈ +2 éliminations par partie », `check_chiffres` de Cap 82-0) ; pour l'instant, la direction de chaque canal, en mots.
 - [ ] Le pivot du tardif, mesuré sur la ligne du temps des parties (Oracle's Elixir) : ses deux cartes coûtent encore un peu.
 
@@ -76,7 +76,7 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [x] Les commanditaires (repris de Teamfight Manager) : un sur trois, choisi avant la première journée ; chacun paie les parties qui remplissent son objectif, lu sur la vraie feuille contre le tempo réel de tes splits — `check_gestion`.
 - [x] Les liens d'origine (repris de LoL Esports Manager) : duos et vestiaires qui ont joué ensemble pour vrai, par les canaux, mesurés en paires — `check_rogue`, MOTEUR.md §9.
 - [x] L'entraînement des champions (repris de Teamfight Manager) : un joueur travaille un champion que les autres jouaient à son rôle dans son split ; quatre journées plus tard, il entre au bassin, « entraîné » — `check_gestion`.
-- [ ] Le joueur qui vieillit : un gardé devient sa version du split réel suivant où il a joué.
+- [x] Le joueur qui vieillit : un gardé devient sa version du split réel suivant où il a joué — jalon 6, `check_gestion`.
 - [ ] Les objectifs du proprio avec leurs chances (« Probable · Jouable · Coriace », Cap 82-0) et d'autres événements (dilemmes en cours de split).
 - [ ] Les échanges avec les équipes de la ligue (un joueur contre un joueur), en plus des agents libres.
 - [ ] Le banc qui joue une série au lieu d'une saison : choisir ton cinq au repêchage des champions selon les bassins.
@@ -91,6 +91,30 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - [ ] Contrer l'identité de l'adversaire : contester son objectif favori.
 - [ ] La maîtrise d'une stratégie qui monte avec les parties jouées (Cap 82-0).
 
+## Jalon 6 — le jeu complet (Cap 82-0)
+
+JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en cours de route : *pendant la simulation, montrer ce qui se passe sur la Faille, genre plongée, bataille du Nashor, combat d'équipe, poussée de côté*.
+
+- [x] `js/menu.js`, `js/sauvegardes.js` : l'écran titre (Continuer, Nouvelle run), le menu en pleine partie, plusieurs parties sauvegardées, chacune exportée en fichier et importée ; la partie unique d'avant entre une fois dans l'index — smoke.
+- [x] `js/meta.js` : le méta entre les runs, rien de compté — chaque partie résumée (ses splits, leurs trophées, galons et records, ses cartes) ; les médailles 🏅 (par split joué, mandat rempli, ronde de séries, titre, run gagnée), le rang à vie, huit déblocages posés au départ d'une run par les règles qui existent (jetons, coach, pack offert, relance, agent libre, gardé, mandat pardonné), ton club (nom, couleur) — `check_meta`.
+- [x] `js/partie.js` : la sauvegarde v2 garde les déblocages et le club de son départ ; la v1 se relit — `check_gestion` (une run sur deux avec tous les déblocages).
+- [x] `js/palmares.js` : les stats de chaque joueur dans ta ligue, les meneurs, cinq trophées par split (chacun par une colonne), six galons (seuils mesurés sur le moteur : chacun dans 5 à 80 % des splits), les records de ta run ; gravés au bilan — `check_meta`.
+- [x] La collection (`js/vitrine.js`) : chaque joueur passé chez toi (signé, pigé au marché, sorti d'un pack, vieilli), une copie par run ; ses finitions (Base, Argent, Or, Holo) et ses galons gravés ; l'album d'un split, équipe par équipe — `check_meta`.
+- [x] Le palmarès : le panthéon (le meilleur de toutes tes runs), les trophées de tes joueurs, tes runs.
+- [x] Les packs de joueurs (`js/gestion.js`) : trois vrais joueurs tirés par leur niveau (recrues, pros, légendes), un seul signé, sans frais, avant la journée suivante, jusqu'à la date limite ; les trois à la collection — `check_gestion` (les niveaux sortent selon leurs chances).
+- [x] Le joueur qui vieillit : un gardé devient sa version du plus proche split réel plus récent, le plafond tient avec elle — `check_gestion`.
+- [x] Le split en quatre sections, comme Cap 82-0 : le Bureau (la boîte où se règle une décision, hier soir, le dépisteur, le proprio, le commanditaire), l'Effectif (ton plan, tes joueurs et leurs stats chez toi, les liens, l'entraînement), le Marché (agents libres, packs de joueurs, plan de jeu), la Ligue (classement, calendrier, meneurs, séries) ; la barre du bas — smoke.
+- [x] Le direct (`js/direct.js`) : une partie rejouée dans le temps, son pointage, la courbe de l'or (la feuille la garde, sans dé), le fil.
+- [x] Le commentateur (`js/commentaire.js`) : des phrases montées pièce par pièce, tirées en paquet, la même graine les redit — `check_commentaire`.
+- [x] La Faille au direct (`js/terrain.js`) : la carte dessinée (trois lignes, la rivière, les fosses, les 22 tours), les éliminations où elles arrivent (le moteur garde la ligne d'une élimination de la phase de lignes), et chaque moment nommé et lu dans la feuille — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille du dragon, de l'âme et du Nashor, le Nashor en douce, le héraut qui charge, la poussée de côté, l'assaut final — `check_terrain`.
+- [x] La page des règles (`js/regles.js`), chaque chiffre lu de sa constante ; les sons, synthétisés (`js/sons.js`), qui se coupent au menu.
+- [x] `scripts/smoke.mjs` : le parcours entier à 390 px, du titre à la reprise d'une partie rechargée, zéro erreur console ; dans l'Action `verifier.yml`.
+- [x] Les exigences 🔺 après un premier titre (Cap 82-0, `js/meta.js`) : six crans, chacun ajouté aux autres par une règle qui existe (le mandat, les jetons de départ, le plafond porté par l'effectif, les relances, les gardés, le prix des packs) ; chaque cran paie 25 % de médailles de plus, et gagner au plus haut ouvre le suivant — `check_meta`, `check_gestion`.
+- [x] Le repêchage des champions à chaque partie d'une série de séries, comme en vrai : ta série se joue partie par partie (`jouerRonde(L, toi)`), un repêchage et ta stratégie avant chacune, le perdant au bleu ; chaque partie garde son dé — `check_graine` (partie par partie comme d'un bloc), `check_gestion`. Une sauvegarde d'avant (version 2) garde l'ancienne règle et se rejoue pareil.
+- [x] Les pouvoirs du coach (Cap 82-0, V21), phase par phase : chaque palier de confiance ouvre un pouvoir qui lit la partie au début d'une phase (lignes, milieu, fin) et la frappe le temps de la phase ; le moteur reste neutre sans pouvoir ; douze pouvoirs mesurés en paires — `check_rogue`, MOTEUR.md § 11.
+- [x] La Faille détaillée (JP : *avec les champions et nom joueur ?*, *plus détaillé la faille avec jungle et cie*) : les bois et leurs murs, six camps par côté, les crabes, les inhibiteurs ; les dix joueurs, l'icône de leur champion et leur nom, qui bougent selon la phase et les combats (un mort à sa fontaine) ; le tableau des dix joueurs et leur K/M/A en direct — `check_terrain`, smoke.
+- [ ] Le coach-personnage complet : l'expérience et les niveaux plutôt que la confiance, les talents, un coach choisi au départ de la run.
+
 ## Journal
 
 - 2026-10-10 — Jalon 0 : le dépôt, la coquille, le script Leaguepedia, les vérifications rapides et la CI.
@@ -103,3 +127,6 @@ Chaque item : son fichier, ce qu'il apporte, le script qui le prouve. Coche au f
 - 2026-10-11 — Jalon 4, la gestion de Cap 82-0 : la run sur plusieurs splits et son mandat, la sauvegarde par journal d'actions, la roulette à relances, le marché et le banc, la boîte de réception ; `check_gestion` joue des runs entières et les rejoue.
 - 2026-10-11 — Ce que font les jeux de gestion de LoL, à la manière de Faille : les commanditaires (Teamfight Manager), les liens d'origine (LoL Esports Manager), l'entraînement des champions.
 - 2026-10-11 — Jalon 5 : la stratégie au centre. Les objectifs comptent dans le moteur (recalibré sur ce que valent dragons, Nashor et hérauts dans les vraies parties) ; sept stratégies dont le gain suit le fit des joueurs, mesurées en paires.
+- 2026-10-29 — Jalon 6, le jeu complet de Cap 82-0 : l'écran titre et les parties, le méta (médailles, déblocages, rang, ton club), la collection et le palmarès, les packs de joueurs, le joueur qui vieillit, les trophées et les galons, le split en quatre sections, le direct et son commentateur, et la Faille où se voient les ganks, les plongées, les combats et les poussées ; le test de fumée en CI.
+- 2026-10-29 — Les exigences 🔺 après un premier titre ; ta série de séries partie par partie, un repêchage avant chacune.
+- 2026-10-29 — Les pouvoirs du coach, phase par phase ; la Faille détaillée au direct, ses dix joueurs, leurs champions et leur K/M/A.

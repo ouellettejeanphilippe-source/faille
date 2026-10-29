@@ -24,21 +24,31 @@ data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vr
 data/champions.json   les champions joués : nom → id de Data Dragon (leurs images) et leurs classes
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
-js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, les écrans
-js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde
-js/gestion.js         les règles du DG : relances, marché et banc, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          la boîte de réception, le marché et l'effectif, le bilan d'un split
+js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
+js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, les déblocages, le club, le journal)
+js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
+js/bureau.js          les sections Bureau (la boîte, hier soir), Effectif et agents libres ; la stratégie ; le bilan d'un split
+js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
+js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
+js/sauvegardes.js     les parties (un index, une clé chacune, l'export et l'import), le méta et les options, dans le stockage
+js/menu.js            l'écran titre, le menu, les parties, le départ d'une run
+js/vitrine.js         les déblocages et ton club, le palmarès, la collection et ses albums
+js/regles.js          la page des règles, chaque chiffre lu de sa constante
+js/direct.js          une partie en direct : la Faille, le pointage, la courbe de l'or, le fil
+js/terrain.js         la Faille du direct : chaque événement à sa place, chaque moment nommé (gank, plongée, combat, bataille, poussée…)
+js/commentaire.js     le commentateur du direct : des phrases montées pièce par pièce, tirées en paquet
+js/sons.js            les sons, synthétisés (Web Audio)
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
 js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
 js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
 js/strategie.js       la stratégie : sept plans de match, leur fit sur les joueurs, l'identité des vraies équipes (MOTEUR.md §10)
-js/split.js           l'écran du split : la journée, le classement, les séries, la feuille d'une série
+js/split.js           la Ligue (classement, calendrier, meneurs, séries), hier soir, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
 js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs, les liens d'origine (MOTEUR.md §8, §9)
-js/boutique.js        l'écran de la boutique
+js/boutique.js        le Marché : les packs de joueurs, le plan de jeu (cartes, coach, packs de cartes)
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
 js/util.js            les petits outils partagés
@@ -52,7 +62,9 @@ scripts/verdict.mjs        le juge partagé : chaque script pose son code de sor
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
 scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, feuilles, rogue)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue)
+scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise
+scripts/lib/robot.mjs      un DG robot qui joue des runs entières (check_meta)
 ```
 
 ## Règles fermes
@@ -90,6 +102,15 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Un lien d'origine passe par les canaux et se mesure en paires, comme une carte — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
 - La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.
 
+**Le méta et le direct (jalon 6)**
+- Le méta ne compte rien : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et la même partie notée deux fois ne paie qu'une fois — `check_meta`.
+- Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une finition ou un galon ne change rien au jeu.
+- Un trophée, un galon, un record se lisent dans les feuilles, par une colonne, jamais par un vote ; les seuils des galons sont mesurés sur le moteur — `check_meta`.
+- Le direct rejoue la feuille, il ne décide rien ; le commentateur et la Faille tirent leur hasard de `hasard()`, et la même graine redit la même partie — `check_commentaire`, `check_terrain`.
+- Un pouvoir du coach lit ce qui est déjà joué au début d'une phase (lignes, milieu, fin) et frappe la phase par les canaux ; il ne tire aucun dé ; seul, il reste sous 1,5 victoire, joue dans 25 à 75 % des parties et se voit sur sa signature — `check_rogue`, MOTEUR.md § 11.
+- Au direct, les dix joueurs et leur champion se placent d'après la feuille (la phase, qui vient de tuer, d'aider ou de tomber, un mort à sa fontaine) — `check_terrain`.
+- La Faille est lue de la feuille : un moment ne se nomme que si la feuille le porte (un gank, le jungler ; un combat, trois éliminations ; une poussée, personne ne meurt autour) ; seule la place est illustrative, et cohérente (une ligne tombe dans l'ordre, le nexus par une ligne ouverte) — `check_terrain`. La carte est un dessin à nous, jamais celle du jeu.
+
 **Les images**
 - Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
 - Champions : Data Dragon, demandé à Riot, gardé par le travailleur de service.
@@ -98,7 +119,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **L'interface**
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
-- Toute commande visible doit fonctionner.
+- Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
+- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; une décision se règle dans la boîte.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
 
@@ -122,15 +144,20 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **carte** : la fiche d'un joueur, habillée selon l'époque (le client d'origine, la saison 4, hextech, l'esport).
 - **bassin** : les champions qu'un joueur a joués dans le split, avec ses parties et sa fiche sur chacun.
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
-- **repêchage** : les bannissements et les champions d'une série ; le **confort** est ce qu'un joueur perd loin de son plus joué.
+- **repêchage** : les bannissements et les champions d'une série de saison, ou d'une partie d'une série de séries ; le **confort** est ce qu'un joueur perd loin de son plus joué.
 - **canal** : une prise du moteur par où passe un effet (ligne, combat, objectifs, tardif, rythme, siège, fin, confort).
 - **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et ceux qu'on **garde**.
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
 - **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
-- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
+- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0. Un **pouvoir** : ce qu'un palier du coach ouvre ; il joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient.
+- **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
+- **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run) et sa **finition** (Base, Argent, Or, Holo) ; un **album** par split.
+- **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
+- **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.
+- **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau.
 
 ## Tester
 
-`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; l'Action `verifier.yml` le fait à chaque PR.
+`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px (Playwright, installé à part ; `CHROMIUM=<chemin>` pour un Chromium déjà là). L'Action `verifier.yml` fait les deux à chaque PR.

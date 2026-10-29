@@ -26,7 +26,7 @@
  * libre se montre par son niveau, comme au vestiaire.
  */
 import { hasard, graineDe, piger } from './hasard.js';
-import { PLAFOND, signable } from './cotes.js';
+import { PLAFOND, TARIFS, signable } from './cotes.js';
 
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 
@@ -34,6 +34,8 @@ const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 export const RELANCES = { split: ['Autre split', 2], equipe: ['Autre équipe', 2], passer: ['Passer', 2] };
 const ESSAIS = 20;
 
+/** Le plafond d'un effectif : le sien (les exigences le serrent), sinon PLAFOND. */
+export const plafondDe = eff => eff.plafond ?? PLAFOND;
 /** Les rôles encore vides d'un effectif. */
 export const libresDe = eff => ROLES.filter(r => !eff.cinq[r]);
 /** Ce que coûte l'effectif : le cinq et le banc. */
@@ -42,7 +44,7 @@ export const masseDe = eff => [...Object.values(eff.cinq), eff.banc].filter(Bool
 /** Les joueurs d'un vestiaire qu'on peut signer : un rôle vide, et le reste du plafond paie les cases vides. */
 export function signables(eff, equipe, profils) {
   const l = libresDe(eff);
-  const reste = PLAFOND - masseDe(eff);
+  const reste = plafondDe(eff) - masseDe(eff);
   return equipe.joueurs.filter(j => l.includes(j.r) && signable(profils.get(j).cout, reste, l.length));
 }
 
@@ -100,23 +102,24 @@ export function placements(eff, c) {
     out.push({ place: 'titulaire', sort, descend: eff.banc ? null : t, masse: masse + c.cout - (sort ? sort.cout : 0) });
   }
   out.push({ place: 'banc', sort: eff.banc, descend: null, masse: masse + c.cout - (eff.banc ? eff.banc.cout : 0) });
-  return out.filter(p => p.masse <= PLAFOND);
+  return out.filter(p => p.masse <= plafondDe(eff));
 }
 
 /** La clé d'un contrat : son split, son équipe, son nom, son rôle (un joueur peut en tenir deux dans un split). */
 export const cleDe = ref => `${ref.id}|${ref.e}|${ref.n}|${ref.r}`;
 
 /**
- * LES AGENTS LIBRES de la journée : MARCHE.offre joueurs tirés du dé du split
- * et de la journée, Pilier au plus, ni à toi ni titulaires d'une équipe de la
- * ligue, et qui ont une place sous ton plafond. `lire` comme pour tirer.
+ * LES AGENTS LIBRES de la journée : `n` joueurs (MARCHE.offre, plus le
+ * dépisteur d'un déblocage) tirés du dé du split et de la journée, Pilier au
+ * plus, ni à toi ni titulaires d'une équipe de la ligue, et qui ont une place
+ * sous ton plafond. `lire` comme pour tirer.
  */
-export async function agentsLibres(L, ids, lire, eff, adversaires) {
+export async function agentsLibres(L, ids, lire, eff, adversaires, n = MARCHE.offre) {
   const de = hasard(graineDe(L.graine, `marche-${L.jour}`));
   const pris = new Set([...Object.values(eff.cinq), eff.banc].filter(Boolean).map(c => cleDe(c.ref)));
   const titulaires = new Set(adversaires.map(a => `${a.id}|${a.e}`));
   const offre = [];
-  for (let essai = 0; offre.length < MARCHE.offre && essai < 60; essai++) {
+  for (let essai = 0; offre.length < n && essai < 20 * n; essai++) {
     const id = piger(ids, de);
     const { split, profils } = await lire(id);
     const e = piger(split.equipes, de);
@@ -132,6 +135,76 @@ export async function agentsLibres(L, ids, lire, eff, adversaires) {
   return offre;
 }
 
+/*
+ * ---- LES PACKS DE JOUEURS (Cap 82-0, js/packs.js : le joueur se tire par son
+ * niveau, comme dans une vraie boîte, les ordinaires souvent, les vedettes
+ * rarement). Trois vrais joueurs ; tu en signes un sous ton plafond, sans
+ * frais de marché, avant la journée suivante ; les trois entrent à ta
+ * collection. Ils se vendent jusqu'à la date limite, comme le marché.
+ * Les chances, sur 100, par niveau (du plus cher au moins cher, TARIFS).
+ */
+export const PACKS_JOUEURS = {
+  recrues: { nom: 'Pack recrues', prix: 12, n: 3, cotes: [0.5, 3.5, 16, 35, 45] },
+  pros: { nom: 'Pack pros', prix: 22, n: 3, cotes: [1.5, 7.5, 25, 36, 30] },
+  legendes: { nom: 'Pack légendes', prix: 36, n: 3, cotes: [5, 15, 35, 30, 15] },
+};
+const HAUSSE_JOUEURS = 0.1;
+
+/** Le prix d'un pack de joueurs, haussé de 10 % par pack de joueurs déjà acheté. */
+export const prixPackJoueurs = (R, id) => Math.round(PACKS_JOUEURS[id].prix * (1 + HAUSSE_JOUEURS * R.achats.filter(a => a.quoi === 'joueurs').length) * (1 + (R.cherte || 0)));
+
+/** « 1 pack sur N » pour chaque niveau d'un pack de joueurs : [[niveau, N]], du plus cher au moins cher. */
+export const chancesJoueurs = id => TARIFS.map(([niveau], k) => [niveau, Math.max(1, Math.round(1 / (1 - (1 - PACKS_JOUEURS[id].cotes[k] / 100) ** PACKS_JOUEURS[id].n)))]);
+
+/**
+ * LE TIRAGE D'UN PACK DE JOUEURS : du dé de la partie et du numéro du pack,
+ * donc une partie reprise ouvre le même pack. Pour chaque carte, un niveau
+ * selon les chances, puis un split et un joueur de ce niveau dans ce split,
+ * jamais un des tiens ni deux fois le même. `lire` comme pour tirer.
+ */
+export async function tirerPackJoueurs(R, id, ids, lire, eff) {
+  const de = hasard(graineDe(R.graine, `joueurs-${R.achats.filter(a => a.quoi === 'joueurs').length}`));
+  const pris = new Set([...Object.values(eff.cinq), eff.banc].filter(Boolean).map(c => cleDe(c.ref)));
+  const out = [];
+  for (let i = 0; i < PACKS_JOUEURS[id].n; i++) {
+    let x = de() * 100;
+    const k = PACKS_JOUEURS[id].cotes.findIndex(p => (x -= p) < 0);
+    const niveaux = TARIFS.slice(k < 0 ? TARIFS.length - 1 : k).map(([n]) => n);
+    // Le niveau tiré d'abord ; un split sans lui en donne un plus modeste.
+    for (let essai = 0; essai < 20; essai++) {
+      const sid = piger(ids, de);
+      const { split, profils } = await lire(sid);
+      const tous = split.equipes.flatMap(e => e.joueurs.map(j => ({ ref: { id: sid, e: e.nom, n: j.n, r: j.r }, niveau: profils.joueurs.get(j).niveau })))
+        .filter(x2 => !pris.has(cleDe(x2.ref)));
+      const niveau = niveaux.find(n => tous.some(x2 => x2.niveau === n));
+      if (!niveau || (niveau !== niveaux[0] && essai < 10)) continue;
+      const j = piger(tous.filter(x2 => x2.niveau === niveau), de);
+      pris.add(cleDe(j.ref));
+      out.push(j.ref);
+      break;
+    }
+  }
+  return out;
+}
+
+/*
+ * ---- LE JOUEUR QUI VIEILLIT. Entre deux splits de ta run, un gardé devient sa
+ * version du plus proche split réel plus récent où il a joué à son rôle (le
+ * nom et le rôle du shard) ; sinon il reste tel quel. Sa nouvelle version a
+ * son niveau, son coût, son bassin et sa carte à lui.
+ * `index` : [{ id, annee }] (data/index.json) ; `lire` comme pour tirer.
+ */
+export async function prochaineVersion(index, lire, c) {
+  const annee = (index.find(s => s.id === c.ref.id) || {}).annee;
+  const plusTard = index.filter(s => s.annee > annee).sort((a, b) => a.annee - b.annee || (a.id < b.id ? -1 : 1));
+  for (const s of plusTard) {
+    const { split } = await lire(s.id);
+    const la = split.equipes.flatMap(e => e.joueurs.filter(j => j.n === c.n && j.r === c.r).map(j => ({ e, j }))).sort((a, b) => b.j.pj - a.j.pj)[0];
+    if (la) return { id: s.id, e: la.e.nom, n: la.j.n, r: la.j.r };
+  }
+  return null;
+}
+
 /* ---- LE PROPRIO : le mandat du split, les objectifs de six journées ---- */
 export const MANDATS = [
   ['series', 'faire les séries'],
@@ -139,8 +212,8 @@ export const MANDATS = [
   ['finale', 'atteindre la finale'],
   ['titre', 'gagner le split'],
 ];
-/** Le mandat du split n de la run (1, 2…) : plus haut à chaque split, le titre dès le quatrième. */
-export const mandatDe = n => MANDATS[Math.min(n, MANDATS.length) - 1];
+/** Le mandat du split n de la run (1, 2…) : plus haut à chaque split, le titre dès le quatrième ; `cran` le monte d'autant (les exigences). */
+export const mandatDe = (n, cran = 0) => MANDATS[Math.min(n + cran, MANDATS.length) - 1];
 
 /** Le mandat est-il rempli ? Les deux premiers attendent en demie : ils l'atteignent d'office. */
 export function mandatRempli(L, cle) {

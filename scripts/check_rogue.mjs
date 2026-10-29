@@ -11,7 +11,9 @@
  *
  * Les bornes, par saison de 18 parties :
  *   une carte rapporte au plus MAX_V[rareté] victoires, dans un sens ou l'autre ;
- *   une rare, une légendaire et un coach au palier III se VOIENT sur la feuille :
+ *   un pouvoir de coach, MAX_V.rare, et le coach entier (ses trois), MAX_V.legendaire ;
+ *   un pouvoir joue dans 25 à 75 % des parties, et se VOIT dans celles où il joue ;
+ *   une rare, une légendaire se VOIENT sur la feuille :
  *     ±1 min de durée, ou ±2 éliminations, ou ±0,6 tour, ou ±0,3 objectif par
  *     partie, ou ±0,3 objectif de plus pour elle que pour l'adversaire ;
  *   le repêchage automatique (les bannissements des deux côtés) ne penche pas :
@@ -28,7 +30,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
-import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { CARTES, COACHS, PACKS, JETONS, LIENS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, pouvoirsDeToi, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { STRATEGIES, effetDeStrategie, fitDe } from '../js/strategie.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
@@ -49,10 +51,11 @@ const ligues = Array.from({ length: LIGUES }, (_, l) => ligueDEssai(splits, EQUI
  * `effet` : une source sur les canaux (portée par l'équipe), ou `serie` :
  * (L, s, traitees) → pose s.effets avant la journée (le repêchage).
  */
-function passe(l, traitee, { effet = null, serie = null }) {
-  // `effet` : une source, ou une fonction de l'équipe (une stratégie, qui dépend de ses joueurs).
+function passe(l, traitee, { effet = null, serie = null, pouvoirs = null }) {
+  // `effet` : une source, ou une fonction de l'équipe (une stratégie, qui dépend de ses joueurs) ; `pouvoirs` : ceux d'un coach.
   const sur = e => (typeof effet === 'function' ? effet(e) : effet);
-  const L = creerSplit(ligues[l].map((e, i) => (effet && traitee(i) ? { ...e, effets: sur(e) } : e)), { graine: 7000 + l, rondes: 2, bo: 1 });
+  const porter = e => ({ ...e, ...(effet ? { effets: sur(e) } : {}), ...(pouvoirs ? { pouvoirs } : {}) });
+  const L = creerSplit(ligues[l].map((e, i) => ((effet || pouvoirs) && traitee(i) ? porter(e) : e)), { graine: 7000 + l, rondes: 2, bo: 1 });
   while (L.jour < L.journees.length) {
     if (serie) for (const s of L.journees[L.jour]) serie(L, s, traitee);
     jouerJournee(L);
@@ -70,9 +73,14 @@ const profil = (f, nous) => ({
 });
 const SIGNATURES = ['nos_dragons', 'nos_barons', 'nos_herauts', 'nos_tours'];
 
-/** ΔV moyen (par saison de 18), et l'écart de forme contre les équipes non traitées. */
+/**
+ * ΔV moyen (par saison de 18), et l'écart de forme contre les équipes non
+ * traitées. `opts.pouvoir` : la forme ne se lit que dans les parties où ce
+ * pouvoir a joué (et `joue` dit dans quelle part des parties).
+ */
 function mesurer(opts) {
   const dv = [], parEquipe = [], forme = Object.fromEntries([...Object.keys(VISIBLE), ...SIGNATURES].map(c => [c, []]));
+  let jouees = 0, toutes = 0;
   for (let l = 0; l < LIGUES; l++) {
     const pair = i => i % 2 === 0, impair = i => i % 2 === 1;
     const A = passe(l, pair, opts), B = passe(l, impair, opts), O = passe(l, () => false, {});
@@ -84,12 +92,17 @@ function mesurer(opts) {
       const o = O.journees.flat()[k];
       s.parties.forEach((p, n) => {
         const nous = pair(p.bleu) ? 0 : 1;
+        if (opts.pouvoir) {
+          toutes++;
+          if (!p.feuille.pouvoirs.some(x => x.camp === nous && x.id === opts.pouvoir)) return;
+          jouees++;
+        }
         const x = profil(p.feuille, nous), y = profil(o.parties[n].feuille, nous);
         for (const c of Object.keys(forme)) forme[c].push(x[c] - y[c]);
       });
     });
   }
-  return { dv: moyenne(dv), parEquipe, forme: Object.fromEntries(Object.entries(forme).map(([c, xs]) => [c, moyenne(xs)])) };
+  return { dv: moyenne(dv), parEquipe, joue: toutes ? jouees / toutes : null, forme: Object.fromEntries(Object.entries(forme).map(([c, xs]) => [c, moyenne(xs)])) };
 }
 const voit = f => Object.entries(VISIBLE).some(([c, s]) => Math.abs(f[c]) >= s);
 const ecrire = f => `durée ${f.duree.toFixed(2)} min, élim. ${f.k.toFixed(2)}, tours ${f.tours.toFixed(2)}, objectifs ${f.objectifs.toFixed(2)} (les siens ${f.nosObjectifs.toFixed(2)})`;
@@ -133,11 +146,27 @@ if (splits.length) {
     informer(`${ico} ${nom} : en moyenne`, `${m.dv.toFixed(2)} victoire par saison · ${ecrire(m.forme)}`);
   }
 
-  /* Les coachs, au palier III, sans carte. */
+  /*
+   * Les coachs : chaque pouvoir seul, puis les trois ensemble (le palier III), sans carte. Un pouvoir ne frappe
+   * qu'une phase : il se voit sur SA signature, les parties où il joue, comme une stratégie.
+   */
+  const SIGNE_POUVOIR = {
+    traque: ['k', 0.5], curee: ['duree', -0.5], carnage: ['k', 0.5],
+    controle: ['nos_dragons', 0.25], vision: ['nos_herauts', 0.1], baron: ['nos_barons', 0.15],
+    ferme: ['k', -0.5], endurance: ['duree', 0.5], dernierMot: ['k', 0.5],
+    siege: ['nos_tours', 0.3], beton: ['nos_herauts', 0.1], percee: ['duree', -0.5],
+  };
   for (const [id, co] of Object.entries(COACHS)) {
-    const m = mesurer({ effet: co.paliers[2] });
-    borne(`${co.ico} ${co.nom} au palier III : victoires de plus`, m.dv, -MAX_V.legendaire, MAX_V.legendaire);
-    exiger(`${co.ico} ${co.nom} au palier III se voit sur la feuille`, voit(m.forme), ecrire(m.forme));
+    for (const x of co.pouvoirs) {
+      const m = mesurer({ pouvoirs: [x], pouvoir: x.id });
+      borne(`${co.ico} ${x.nom} (${x.condition}) : victoires de plus`, m.dv, -MAX_V.rare, MAX_V.rare);
+      borne(`${co.ico} ${x.nom} : la part des parties où il joue`, m.joue, 0.25, 0.75);
+      const [cle, seuil] = SIGNE_POUVOIR[x.id];
+      exiger(`${co.ico} ${x.nom} se voit les parties où il joue : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
+    }
+    const m = mesurer({ pouvoirs: co.pouvoirs });
+    borne(`${co.ico} ${co.nom}, ses trois pouvoirs : victoires de plus`, m.dv, -MAX_V.legendaire, MAX_V.legendaire);
+    informer(`${co.ico} ${co.nom}, ses trois pouvoirs : la forme`, ecrire(m.forme));
     const cartes = Object.keys(CARTES).filter(c => couleurDe(c) === id);
     exiger(`${co.ico} ${co.nom} a au moins deux cartes de sa couleur`, cartes.length >= 2, cartes.join(', '));
   }
@@ -219,7 +248,7 @@ if (splits.length) {
   basculer(R, R.cartes[0]);
   engager(L, R, couleurDe(R.cartes[0]) || 'stratege');
   while (L.jour < L.journees.length) {
-    L.equipes[0] = { ...L.equipes[0], effets: effetsDeToi(R) };
+    L.equipes[0] = { ...L.equipes[0], effets: effetsDeToi(R), pouvoirs: pouvoirsDeToi(R) };
     jouerJournee(L);
     noterJoue(R, 1);
   }

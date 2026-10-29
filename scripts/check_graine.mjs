@@ -37,11 +37,12 @@ if (splits.length) {
   // L'empreinte d'un split : chaque partie, sa durée, son vainqueur, ses éliminations ; puis le champion.
   const empreinte = L => JSON.stringify([...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])]
     .map(s => s.parties.map(p => [p.bleu, p.feuille.duree, p.feuille.gagnant, p.feuille.equipes.map(e => e.k)])).concat([L.series && L.series.champion]));
-  const jouer = (graine, entreDeux) => {
+  // `toi` : une équipe dont les séries se jouent partie par partie (ton cinq), comme d'un bloc.
+  const jouer = (graine, entreDeux, toi = null) => {
     const L = creerSplit(equipes, { graine, rondes: 2, bo: 1 });
     while (jouerJournee(L)) entreDeux();
     creerSeries(L);
-    while (jouerRonde(L)) entreDeux();
+    while (jouerRonde(L, toi)) entreDeux();
     return empreinte(L);
   };
   const ailleurs = hasard(5);
@@ -49,6 +50,8 @@ if (splits.length) {
   exiger('la même graine, le même split', bloc === jouer(82, () => {}), `${equipes.length} équipes, saison et séries`);
   exiger('au jour le jour comme d\'un bloc', bloc === jourParJour, 'du hasard tiré ailleurs entre chaque journée');
   exiger('une autre graine, un autre split', bloc !== jouer(83, () => {}));
+  const parPartie = [0, 1, 2, 3].map(toi => jouer(82, () => { for (let i = 0; i < 5; i++) ailleurs(); }, toi));
+  exiger('une série de séries partie par partie comme d\'un bloc', parPartie.every(x => x === bloc), 'quatre équipes, du hasard entre chaque partie');
   const L = creerSplit(equipes, { graine: 82, rondes: 2, bo: 1 });
   jouerJournee(L);
   exiger('les journées à venir ne sont pas jouées', L.journees.slice(1).flat().every(s => !s.parties.length && s.gagnant === null));

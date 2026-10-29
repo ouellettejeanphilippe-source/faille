@@ -17,6 +17,12 @@
    5. la carte d'un joueur (ses quatre époques)
    6. le split : la journée, le classement, la feuille d'une série
    7. la boutique et le repêchage
+   8. le bureau du DG : le mandat, la boîte, le marché, le bilan, les relances
+   9. la stratégie
+  10. la barre du bas et les sous-onglets ; hier soir, le calendrier
+  11. l'écran titre, le menu, les parties, le départ
+  12. la vitrine : déblocages, palmarès, collection, album
+  13. le direct
    ===================================================================== */
 
 /* ---- Barlow Condensed (fonts/, OFL 1.1) : les chiffres, les titres, les boutons ---- */
@@ -50,6 +56,13 @@
   --argent: #c4cbd4;
   --or-palier: #ffd23a;
   --platine: #9fe3ea;
+  /* Les deux camps de la Faille, au direct. */
+  --camp-bleu: #5aa2ff;
+  --camp-rouge: #ff6b6b;
+  /* Les finitions d'une carte de ta collection. */
+  --fin-argent: #c4cbd4;
+  --fin-or: #ffd23a;
+  --fin-holo: linear-gradient(120deg, #9fe3ea, #c99bff 35%, #ffd23a 65%, #7cf0b0);
   /* Les raretés d'une carte de plan de jeu. */
   --peu-commune: #5fb760;
   --rare: #4f8fe0;
@@ -78,6 +91,7 @@
   --corps: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   /* La coquille. */
   --tete-h: 56px;
+  --nav-h: 60px;
   --large: 960px;
   --safe-bas: env(safe-area-inset-bottom, 0px);
 }
@@ -153,6 +167,7 @@ img.absente { display: none; }
 /* ---- Un écran : une bande de titre, un corps, la barre d'action collée en bas ---- */
 main { max-width: var(--large); margin: 0 auto; padding: 0 var(--esp-4); }
 .ecran-tete { padding: var(--esp-5) 0 var(--esp-3); border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-3); }
+.ecran-tete.compacte { padding-top: var(--esp-4); margin-bottom: 0; }
 .ecran-tete h1, .couche > h2 {
   font-size: var(--t-6); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase;
   background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -181,6 +196,10 @@ h3 { margin: var(--esp-5) 0 var(--esp-2); padding-bottom: var(--esp-1); border-b
 }
 .actionbar > button { flex: 1 1 0; min-width: 0; padding: 0 var(--esp-2); font-size: var(--t-2); }
 .actionbar > .go { flex: 1 1 100%; min-height: 52px; font-size: var(--t-4); }
+/* Au split, la barre d'action se pose au-dessus de la barre du bas. */
+.actionbar.avec-nav { bottom: calc(var(--nav-h) + var(--safe-bas)); }
+body:has(#nav:not([hidden])) main { padding-bottom: calc(var(--nav-h) + var(--safe-bas)); }
+body:has(#nav:not([hidden])) footer { margin-bottom: calc(var(--nav-h) + var(--safe-bas)); }
 
 footer { max-width: var(--large); margin: var(--esp-5) auto 0; padding: var(--esp-4); border-top: 1px solid var(--filet); color: var(--encre-3); font-size: var(--t-1); }
 
@@ -377,6 +396,9 @@ button:disabled { opacity: 0.45; cursor: default; }
 .jeu-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .jeu-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .jeu-id small { color: var(--encre-2); font-size: var(--t-1); }
+.jeu-id .pouvoir { color: var(--encre-3); }
+.jeu-id .pouvoir.ouvert { color: var(--bon); }
+.jeu-id .pouvoir b { font: inherit; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .prix { flex: none; font: 800 var(--t-4)/1 var(--display); color: var(--or); }
 .rarete-peu { box-shadow: inset 3px 0 0 var(--peu-commune), var(--relief); }
 .rarete-rare { box-shadow: inset 3px 0 0 var(--rare), var(--relief); }
@@ -458,3 +480,209 @@ button:disabled { opacity: 0.45; cursor: default; }
 .demande { font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); }
 .demande b { font-size: var(--t-3); color: var(--encre); }
 .strategie .fait { font-size: var(--t-1); }
+
+/* =====================================================================
+   10. LA BARRE DU BAS — quatre portes au split : Bureau, Effectif, Marché, Ligue ; les sous-onglets ; hier soir, le calendrier
+   ===================================================================== */
+.navbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 max(0px, calc((100% - var(--large)) / 2)) var(--safe-bas);
+  background: var(--fond-1); border-top: 1px solid var(--filet);
+}
+.navtab {
+  position: relative; flex-direction: column; gap: 4px; min-width: 0; min-height: var(--nav-h); padding: var(--esp-1) 2px;
+  border: 0; border-radius: 0; background: none; color: var(--encre-3); font-size: var(--t-1);
+}
+.navtab .ico { width: 22px; height: 22px; }
+.navtab-lbl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.navtab.on { color: var(--noir); background: var(--encre); }
+.navtab:hover:not(.on) { box-shadow: none; color: var(--encre); }
+/* Le Bureau dit qu'une décision l'attend, d'où qu'on soit. */
+.navtab.a-traiter::after { content: ""; position: absolute; top: 8px; left: calc(50% + 10px); width: 8px; height: 8px; border-radius: 50%; background: var(--mauvais); }
+/* Les sous-onglets : l'ouvert est un bloc plein et clair, les autres sont creux. */
+.sousnav { display: flex; gap: var(--esp-1); margin: var(--esp-3) 0 0; overflow-x: auto; scrollbar-width: none; }
+.sousnav::-webkit-scrollbar { display: none; }
+.soustab { flex: none; min-height: 40px; padding: 0 var(--esp-3); border-color: transparent; background: none; color: var(--encre-3); font-size: var(--t-2); }
+.soustab.on { color: var(--noir); background: var(--encre); border-color: var(--encre); }
+/* Les petits boutons d'une rangée (regarder, la feuille, porter, acheter). */
+.mini { min-height: 36px; padding: 0 var(--esp-2); font-size: var(--t-1); }
+.mini.lien { border-color: transparent; background: none; color: var(--club-vif); padding-left: 0; }
+.mini.on { border-color: var(--bon); color: var(--bon); }
+.bon { color: var(--bon); }
+.mauvais { color: var(--mauvais); }
+/* Hier soir : le résultat, puis une rangée par partie et sa vedette. */
+.hier { padding: var(--esp-2) var(--esp-3); background: var(--panneau); border: 1px solid var(--filet); border-left: 3px solid var(--mauvais); border-radius: var(--r-2); box-shadow: var(--relief); }
+.hier.gagne { border-left-color: var(--bon); }
+.hier-tete { margin: 0 0 var(--esp-1); font-size: var(--t-2); color: var(--encre-2); }
+.hier-tete b { font: 800 var(--t-5)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre); margin-right: var(--esp-1); }
+.hier-tete small { color: var(--encre-3); }
+.hier-parties { list-style: none; margin: 0; padding: 0; }
+.hier-partie { display: flex; align-items: center; gap: var(--esp-2); padding: var(--esp-1) 0; border-top: 1px solid var(--filet); }
+.hier-res, .cal-res { flex: none; width: 28px; text-align: center; font: 800 var(--t-4)/1 var(--display); color: var(--encre-3); }
+.hier-id { flex: 1; min-width: 0; display: grid; }
+.hier-id b { font: 800 var(--t-3)/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.hier-id small { color: var(--encre-2); font-size: var(--t-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Le calendrier : tes séries, jouées puis à venir. */
+.calendrier { list-style: none; margin: 0; padding: 0; }
+.cal { display: flex; align-items: center; gap: var(--esp-2); min-height: 44px; padding: var(--esp-1) var(--esp-2); border-bottom: 1px solid var(--filet); }
+.cal[data-serie] { cursor: pointer; }
+.cal-prochaine { background: var(--club-sourd); box-shadow: inset 3px 0 0 var(--club-vif); }
+/* Ton effectif : ses stats chez toi, sous son split. */
+.qui .chez-toi { color: var(--encre); font-variant-numeric: tabular-nums; white-space: normal; }
+.case[data-contrat] { cursor: pointer; }
+.qui .vieillit { color: var(--or); }
+.medailles-run { margin: var(--esp-4) 0; padding: var(--esp-3); border: 1px solid var(--or); border-radius: var(--r-2); color: var(--or); font: 800 var(--t-4)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* =====================================================================
+   11. L'ÉCRAN TITRE, LE MENU, LES PARTIES, LE DÉPART
+   ===================================================================== */
+.menu-btn { flex: none; width: 44px; padding: 0; border-color: transparent; background: transparent; }
+.titre { display: grid; gap: var(--esp-3); padding: var(--esp-5) 0; text-align: center; }
+.titre-sur { margin: var(--esp-5) 0 0; font: 700 var(--t-2)/1 var(--display); letter-spacing: 0.2em; text-transform: uppercase; color: var(--encre-3); }
+.titre-nom { font-size: calc(var(--t-7) * 1.6); line-height: 0.9; letter-spacing: 0.08em; text-transform: uppercase; background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 24px color-mix(in srgb, var(--club-vif) 45%, transparent)); }
+.titre-rang { margin: 0 0 var(--esp-3); color: var(--encre-2); font-size: var(--t-2); }
+.titre-rang b { color: var(--or); font: 800 var(--t-4)/1 var(--display); }
+.titre-actions { display: grid; gap: var(--esp-2); max-width: 420px; width: 100%; margin: 0 auto; }
+.titre-actions button { min-height: 52px; font-size: var(--t-4); }
+.titre-continuer { flex-direction: column; gap: 4px; min-height: 64px; }
+.titre-continuer small { font: 700 var(--t-1)/1.2 var(--display); letter-spacing: 0.06em; opacity: 0.8; }
+.menu-liens { list-style: none; display: grid; gap: var(--esp-2); max-width: 420px; width: 100%; margin: var(--esp-3) auto 0; padding: 0; text-align: left; }
+.menu-liens button { width: 100%; justify-content: flex-start; font-size: var(--t-3); }
+.parties, .articles, .runs, .albums, .trophees { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-2); }
+.partie-ligne, .article, .run-ligne, .trophee {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--esp-2) var(--esp-3); padding: var(--esp-2) var(--esp-3);
+  background: var(--panneau); border: 1px solid var(--filet); border-radius: var(--r-2); box-shadow: var(--relief);
+}
+.partie-ligne.actif { border-color: var(--club-vif); }
+.partie-gestes { display: flex; gap: var(--esp-1); flex: 1 1 100%; }
+.partie-gestes button { flex: 1 1 0; min-height: 36px; padding: 0 var(--esp-1); font-size: var(--t-1); }
+.bouton-fichier { display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid var(--filet); border-radius: var(--r-1); background: var(--fond-1); cursor: pointer; font: 800 var(--t-3)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.bouton-fichier input { display: none; }
+.puces { display: flex; flex-wrap: wrap; gap: var(--esp-1); }
+.puce { min-height: 40px; padding: 0 var(--esp-3); font-size: var(--t-2); }
+.puce.on { border-color: var(--bon); color: var(--bon); background: color-mix(in srgb, var(--bon) 10%, var(--fond-1)); }
+.pastille { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--pastille); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+.regles-liste { margin: 0; padding-left: var(--esp-4); color: var(--encre-2); font-size: var(--t-2); }
+.regles-liste li { margin: var(--esp-1) 0; }
+
+/* =====================================================================
+   12. LA VITRINE — les déblocages, le palmarès, la collection et ses albums
+   ===================================================================== */
+.article .jeu-id, .run-ligne .jeu-id, .trophee .jeu-id, .partie-ligne .jeu-id { flex: 1 1 0; }
+.article.acquis { border-color: color-mix(in srgb, var(--bon) 50%, var(--filet)); }
+.prix.acquis { color: var(--bon); font-size: var(--t-2); }
+.trophee .jeu-ico { font-size: var(--t-5); }
+.album-ligne { width: 100%; display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-2) var(--esp-3); text-align: left; background: var(--panneau); border-radius: var(--r-2); box-shadow: var(--relief); font: 400 var(--t-3)/1.35 var(--corps); letter-spacing: 0; text-transform: none; }
+.album-piste { flex: 0 0 72px; }
+.album-equipe h3 { display: flex; align-items: center; gap: var(--esp-2); }
+.album-equipe h3 img { width: 24px; height: 24px; object-fit: contain; }
+.album-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-1); }
+.album-carte { display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-1) var(--esp-2); border: 1px solid var(--filet); border-radius: var(--r-1); cursor: pointer; }
+.album-carte.vide { opacity: 0.35; cursor: default; border-style: dashed; }
+.album-carte .galons { color: var(--or); }
+.album-carte.fin-argent { border-color: var(--fin-argent); }
+.album-carte.fin-or { border-color: var(--fin-or); box-shadow: 0 0 12px -4px var(--fin-or); }
+.album-carte.fin-holo { border: 2px solid transparent; background: linear-gradient(var(--fond-1), var(--fond-1)) padding-box, var(--fin-holo) border-box; }
+/* La carte d'un joueur de ta collection : sa finition sur le cadre, ses galons gravés dessous. */
+.carte.fin-argent { border-color: var(--fin-argent); }
+.carte.fin-or { border-color: var(--fin-or); box-shadow: 0 0 28px -6px var(--fin-or), var(--ombre); }
+.carte.fin-holo { border: 3px solid transparent; background: linear-gradient(var(--c-fond-plein, #0a0d14), var(--c-fond-plein, #0a0d14)) padding-box, var(--fin-holo) border-box; }
+.carte-id p.carte-finition { color: var(--c-accent); font-weight: 700; }
+.carte-chez-toi { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--c-bord); font-size: var(--t-2); color: var(--c-texte); }
+.carte-galons { list-style: none; margin: 0; padding: 0 12px; display: grid; gap: 4px; font-size: var(--t-2); color: var(--c-pale); }
+.carte-galons b { color: var(--c-texte); }
+
+/* =====================================================================
+   13. LE DIRECT — le pointage, la courbe de l'or, le fil du commentateur
+   ===================================================================== */
+.direct-tete { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--esp-2); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); }
+.dt-equipe { display: grid; gap: 2px; min-width: 0; }
+.dt-equipe.rouge { text-align: right; }
+.dt-equipe small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; }
+.dt-equipe.bleu small { color: var(--camp-bleu); }
+.dt-equipe.rouge small { color: var(--camp-rouge); }
+.dt-equipe b { font: 800 var(--t-4)/1.05 var(--display); letter-spacing: 0.04em; text-transform: uppercase; overflow-wrap: anywhere; }
+.dt-equipe.dt-toi b { color: var(--club-vif); }
+.dt-equipe.gagne b { color: var(--or); }
+.dt-obj { font-size: var(--t-1); color: var(--encre-2); white-space: nowrap; }
+.dt-centre { display: grid; justify-items: center; gap: 2px; }
+.dt-k { font: 800 var(--t-6)/1 var(--display); font-variant-numeric: tabular-nums; background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dt-k span { margin: 0 4px; }
+.dt-horloge { font: 800 var(--t-3)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.dt-or { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.04em; color: var(--or); white-space: nowrap; }
+.dt-courbe { display: block; width: 100%; height: 44px; margin: var(--esp-2) 0; background: var(--fond-1); border-radius: var(--r-1); }
+.dt-courbe line { stroke: var(--filet); stroke-width: 0.5; }
+.dt-courbe polyline { fill: none; stroke: var(--or); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.dt-fin { margin: var(--esp-2) 0; padding: var(--esp-2) var(--esp-3); border: 1px solid var(--filet); border-radius: var(--r-2); font-size: var(--t-2); }
+.dt-fin b { font: 800 var(--t-4)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; display: block; }
+.dt-fin.bon { border-color: var(--bon); }
+.dt-fin.mauvais { border-color: var(--mauvais); }
+.dt-fil { list-style: none; margin: 0; padding: 0; }
+.dt-ligne { display: flex; gap: var(--esp-2); padding: var(--esp-2) 0 var(--esp-2) var(--esp-2); border-bottom: 1px solid var(--filet); font-size: var(--t-2); animation: entree var(--t-lent) var(--e-sortie); }
+.dt-ligne.bleu { box-shadow: inset 3px 0 0 var(--camp-bleu); }
+.dt-ligne.rouge { box-shadow: inset 3px 0 0 var(--camp-rouge); }
+.dt-ligne.nexus { font-weight: 700; color: var(--or); }
+/* La Faille du direct : un dessin à nous, pas la carte du jeu — trois lignes, la rivière, deux fosses, deux bases. */
+.tf { margin: var(--esp-2) 0 0; }
+.tf-carte { display: block; width: 100%; max-width: 420px; max-height: 38vh; aspect-ratio: 1; margin: 0 auto; }
+.tf-sol { fill: color-mix(in srgb, var(--bon) 6%, var(--fond-1)); stroke: var(--filet); stroke-width: 0.4; }
+.tf-riviere { stroke: color-mix(in srgb, var(--bleu) 30%, transparent); stroke-width: 7; stroke-linecap: round; fill: none; }
+.tf-ligne { fill: none; stroke: color-mix(in srgb, var(--encre-3) 45%, transparent); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
+.tf-fosse { fill: var(--fond-2); stroke: var(--filet); stroke-width: 0.6; }
+.tf-base { opacity: 0.55; }
+.tf-base.camp-0, .tf-tour.camp-0 { fill: var(--camp-bleu); }
+.tf-base.camp-1, .tf-tour.camp-1 { fill: var(--camp-rouge); }
+.tf-tour { stroke: var(--noir); stroke-width: 0.4; }
+.tf-tour.tombee { fill: none; stroke: var(--encre-3); stroke-dasharray: 0.6 0.6; }
+.tf-boum { fill: none; stroke-width: 0.8; }
+.tf-boum.camp-0 { stroke: var(--camp-bleu); }
+.tf-boum.camp-1 { stroke: var(--camp-rouge); }
+.tf-ico { font-size: 6px; text-anchor: middle; dominant-baseline: central; }
+.tf-zone { fill: none; stroke-width: 0.8; stroke-dasharray: 2 1.2; animation: zone 1.2s var(--e-sortie) infinite; transform-box: fill-box; transform-origin: center; }
+.tf-zone.camp-0 { stroke: var(--camp-bleu); }
+.tf-zone.camp-1 { stroke: var(--camp-rouge); }
+@keyframes zone { from { transform: scale(0.7); opacity: 1; } to { transform: scale(1.15); opacity: 0.35; } }
+.tf-action { margin: var(--esp-2) 0 0; padding: var(--esp-2) var(--esp-3); min-height: 44px; border-left: 3px solid var(--filet); background: var(--fond-1); border-radius: var(--r-1); font: 800 var(--t-3)/1.25 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre-2); }
+.tf-action.camp-0 { border-left-color: var(--camp-bleu); color: var(--encre); }
+.tf-action.camp-1 { border-left-color: var(--camp-rouge); color: var(--encre); }
+.dt-ligne.dt-moment { font: 800 var(--t-2)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre); background: var(--fond-1); }
+/* La Faille détaillée : les bois de chaque camp, leurs camps (les deux buffs plus gros), les crabes de la rivière, les inhibiteurs. */
+.tf-bois { stroke: none; }
+.tf-bois.camp-0 { fill: color-mix(in srgb, var(--camp-bleu) 9%, var(--fond-2)); }
+.tf-bois.camp-1 { fill: color-mix(in srgb, var(--camp-rouge) 9%, var(--fond-2)); }
+.tf-mur { fill: var(--noir); stroke: var(--noir); stroke-width: 1.4; stroke-linejoin: round; opacity: 0.75; }
+.tf-camp { fill: var(--fond-3); stroke: var(--encre-3); stroke-width: 0.35; }
+.tf-camp-bleu { fill: color-mix(in srgb, var(--bleu) 55%, var(--fond-3)); }
+.tf-camp-rouge { fill: color-mix(in srgb, var(--mauvais) 55%, var(--fond-3)); }
+.tf-crabe { fill: color-mix(in srgb, var(--bleu) 40%, var(--fond-3)); stroke: var(--encre-3); stroke-width: 0.3; }
+.tf-fosse-ico { font-size: 4px; text-anchor: middle; dominant-baseline: central; opacity: 0.45; }
+.tf-inhib { stroke: var(--noir); stroke-width: 0.35; }
+.tf-inhib.camp-0 { fill: var(--camp-bleu); }
+.tf-inhib.camp-1 { fill: var(--camp-rouge); }
+.tf-inhib.tombee { fill: none; stroke: var(--encre-3); stroke-dasharray: 0.6 0.6; }
+.tf-croix { font-size: 3.4px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.tf-croix.camp-0 { fill: var(--camp-bleu); }
+.tf-croix.camp-1 { fill: var(--camp-rouge); }
+/* Les dix joueurs : l'icône du champion dans un anneau aux couleurs du camp, le nom dessous ; ils glissent d'une place à l'autre. */
+.tf-joueur { transition: transform 0.6s var(--e-sortie), opacity var(--t-lent); }
+.tf-joueur.mort { opacity: 0.3; }
+.tf-anneau { fill: var(--fond-3); stroke-width: 0.7; }
+.tf-joueur.camp-0 .tf-anneau { stroke: var(--camp-bleu); }
+.tf-joueur.camp-1 .tf-anneau { stroke: var(--camp-rouge); }
+.tf-init { font: 800 2.2px var(--display); fill: var(--encre); text-anchor: middle; dominant-baseline: central; }
+.tf-nom { font: 700 3.3px var(--display); fill: var(--encre); text-anchor: middle; paint-order: stroke; stroke: var(--noir); stroke-width: 0.6px; letter-spacing: 0.02em; }
+@media (prefers-reduced-motion: reduce) { .tf-joueur { transition: none; } }
+/* Le tableau des dix joueurs : bleu à gauche, rouge à droite ; un mort pâlit. */
+.dt-joueurs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-2); margin: var(--esp-2) 0; }
+.dt-camp { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.dt-camp li { display: flex; align-items: center; gap: var(--esp-1); min-width: 0; padding: 2px var(--esp-1); background: var(--fond-1); border-radius: var(--r-1); }
+.dt-camp.bleu li { box-shadow: inset 2px 0 0 var(--camp-bleu); }
+.dt-camp.rouge li { box-shadow: inset 2px 0 0 var(--camp-rouge); }
+.dt-camp li.mort { opacity: 0.4; }
+.dt-champ { flex: none; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--fond-3); font: 800 var(--t-1)/1 var(--display); }
+.dt-champ img { width: 100%; height: 100%; object-fit: cover; }
+.dt-qui { flex: 1; min-width: 0; display: grid; line-height: 1.1; }
+.dt-qui b { font: 800 var(--t-1)/1.15 var(--display); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-qui small { font-size: var(--t-1); color: var(--encre-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-kma { flex: none; font: 800 var(--t-1)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre-2); }

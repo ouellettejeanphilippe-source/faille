@@ -13,6 +13,8 @@
  */
 import { esc, virgule, pts } from './util.js';
 import { imageLP, iconeChampion, illustration } from './images.js';
+import { GALONS } from './palmares.js';
+import { finitionDe } from './meta.js';
 
 const ERES = [[2023, 'ere-esport'], [2017, 'ere-hextech'], [2014, 'ere-saison4'], [0, 'ere-origine']];
 export const ROLES = { haut: 'Haut', jungle: 'Jungle', milieu: 'Milieu', bas: 'Bas', soutien: 'Soutien' };
@@ -34,8 +36,15 @@ export const icones = (champions, j, n = 3) => j.champs.slice(0, n).map(([c]) =>
   return src ? `<img class="ico-champ" src="${src}" alt="${esc(c)}" title="${esc(c)}" loading="lazy">` : `<span class="ico-champ">${esc(c.slice(0, 2))}</span>`;
 }).join('');
 
-/** La carte entière. `refus` : pourquoi il ne se signe pas (le rôle est comblé, trop cher), ou null. */
-export function carte({ split, equipe, j, profil, champions, refus }) {
+/**
+ * La carte entière. `refus` : pourquoi il ne se signe pas (le rôle est
+ * comblé, trop cher), ou null ; `bouton` : faux hors du vestiaire (aucun
+ * « Signer ») ; `collection` : { copies, galons } quand elle est à ta
+ * collection (sa finition, ses galons gravés) ; `chezToi` : ses stats dans ta
+ * ligue, en une ligne.
+ */
+export function carte({ split, equipe, j, profil, champions, refus, bouton = true, collection = null, chezToi = null }) {
+  const finition = collection ? finitionDe(collection.copies) : '';
   const fond = illustration(champions, j.champs[0] && j.champs[0][0]);
   const stats = [
     ['Parties', `${j.pj} (${j.v}-${j.pj - j.v})`],
@@ -49,7 +58,9 @@ export function carte({ split, equipe, j, profil, champions, refus }) {
     const src = iconeChampion(champions, c);
     return `<li>${src ? `<img src="${src}" alt="" loading="lazy">` : '<span class="ico-vide"></span>'}<b>${esc(c)}</b><small>${pj} · ${v}-${pj - v}</small></li>`;
   }).join('');
-  return `<article class="carte ${ere(split.annee)}">
+  const graves = collection && collection.galons.length
+    ? `<h4>Ses galons</h4><ul class="carte-galons">${collection.galons.map(g => `<li>${GALONS[g.id][0]} <b>${esc(GALONS[g.id][1])}</b> · ${esc(g.quoi)} · run ${g.run}</li>`).join('')}</ul>` : '';
+  return `<article class="carte ${ere(split.annee)}${finition ? ` fin-${finition.toLowerCase()}` : ''}">
     <header class="carte-tete"${fond ? ` style="--illus:url('${fond}')"` : ''}>
       ${equipe.logo ? `<img class="carte-logo" src="${imageLP(equipe.logo)}" alt="">` : ''}
       <span class="carte-split">${esc(equipe.nom)} · ${esc(split.nom)}</span>
@@ -60,11 +71,14 @@ export function carte({ split, equipe, j, profil, champions, refus }) {
         <h3>${esc(j.n)}</h3>
         <p>${ROLES[j.r]} · <b>${profil.niveau}</b> · ${pts(profil.cout)}</p>
         <p>${profil.badges.map(badge).join('')}</p>
+        ${collection ? `<p class="carte-finition">${esc(finition)} · ${collection.copies} copie${collection.copies > 1 ? 's' : ''}</p>` : ''}
       </div>
     </div>
     <dl class="carte-stats">${stats.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    ${chezToi ? `<p class="carte-chez-toi">Chez toi : ${esc(chezToi)}</p>` : ''}
     <h4>Bassin de champions</h4>
     <ul class="bassin">${bassin}</ul>
-    <button class="go signer-carte"${refus ? ' disabled' : ''}>${refus || `Signer · ${pts(profil.cout)}`}</button>
+    ${graves}
+    ${bouton ? `<button class="go signer-carte"${refus ? ' disabled' : ''}>${refus || `Signer · ${pts(profil.cout)}`}</button>` : ''}
   </article>`;
 }
