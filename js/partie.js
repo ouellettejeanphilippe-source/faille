@@ -20,13 +20,13 @@ import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee,
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS } from './rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 3;
+export const VERSION = 4;
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 /* Le club d'une partie sans club (une sauvegarde d'avant le méta). */
 const CLUB_DEPART = { nom: 'Ton cinq', code: 'TOI', couleur: null };
@@ -36,12 +36,13 @@ const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [
 /**
  * Une partie neuve. `deb` : les déblocages du méta (js/meta.js), posés au
  * départ et gardés dans la sauvegarde ; `club` : { nom, code, couleur } ;
- * `exig` : le cran des exigences (0 : aucune).
+ * `exig` : le cran des exigences (0 : aucune) ; `coach` : le coach-personnage
+ * qui fait la run (un id de COACHS, js/rogue.js).
  */
-export function nouvellePartie(graine, { deb = [], club = null, exig = 0 } = {}) {
+export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null } = {}) {
   const fx = effetDe(deb, exig);
   const P = {
-    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx,
+    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx, coach, talents: [],
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
@@ -50,6 +51,7 @@ export function nouvellePartie(graine, { deb = [], club = null, exig = 0 } = {})
     cartes: [], cadeau: null, offrePack: null,
   };
   if (fx.jetons) P.R.primes.push({ cle: 'depart', jetons: fx.jetons });
+  if (coach) P.R.coach = { id: coach, depuis: 0 };
   return P;
 }
 
@@ -62,8 +64,26 @@ export const mandatDuSplit = (P, n = P.run.n) => mandatDe(n, P.fx.mandat);
 /** Combien d'agents libres le dépisteur trouve par journée. */
 export const offreDe = P => MARCHE.offre + P.fx.offre;
 
-/** Ce que coûte le prochain coach : rien pour le premier de la run avec le coach fidèle (un déblocage). */
+/** (Avant la version 4) ce que coûte le prochain coach : rien pour le premier de la run avec le déblocage du coach. */
 export const prixDuCoach = P => (P.fx.coachGratuit && !P.R.achats.some(x => x.quoi === 'coach') ? 0 : PRIX_COACH);
+
+/** Le coach-personnage (version 4) : son expérience, son niveau, ce qui manque pour le suivant. */
+export function coachDeLaPartie(P) {
+  const xp = xpDe(P.L, P.R, P.fx.xp);
+  return { id: P.R.coach && P.R.coach.id, xp, ...niveauDe(xp) };
+}
+
+/* Les pouvoirs que ton coach joue maintenant : son niveau et ses talents ; avant la version 4, ses paliers de confiance. */
+const pouvoirsDeLaPartie = P => (P.v >= 4 ? (P.R.coach ? pouvoirsDuPersonnage(P.R.coach.id, coachDeLaPartie(P).n, P.talents) : []) : pouvoirsDeToi(P.R));
+
+/* Un talent à choisir : un par niveau de NIVEAU_DES_TALENTS atteint, sur un des trois pouvoirs qui n'en a pas encore. */
+function talentEnAttente(P) {
+  if (P.v < 4 || !P.R.coach) return null;
+  const dus = NIVEAU_DES_TALENTS.filter(n => coachDeLaPartie(P).n >= n).length;
+  if (P.talents.length >= dus) return null;
+  const choix = COACHS[P.R.coach.id].pouvoirs.map(x => x.id).filter(id => !P.talents.includes(id));
+  return choix.length ? { cle: `talent-${P.talents.length}`, id: 'talent', choix } : null;
+}
 
 /* Un joueur passe chez toi : sa carte entre à ta collection (une fois par partie). */
 function collectionner(P, ref) {
@@ -103,8 +123,8 @@ export function taSerie(L) {
   return lot.find(s => (s.a === 0 || s.b === 0) && s.gagnant === null) || null;
 }
 
-/** L'événement que la partie attend, ou null. */
-export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) : null);
+/** L'événement que la partie attend (un événement de la gestion, un talent du coach), ou null. */
+export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) : null);
 
 /*
  * Joue ce qui vient avec ton plan de jeu, ta partie repêchée d'abord (`rp` :
@@ -121,9 +141,9 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
   else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
   L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
-  L.equipes[0].pouvoirs = pouvoirsDeToi(P.R);
+  L.equipes[0].pouvoirs = pouvoirsDeLaPartie(P);
   jouer(L);
-  if (s && s.gagnant !== null) noterJoue(P.R, 1);
+  if (s && s.gagnant !== null) noterJoue(P.R, s.gagnant === 0);
   finirEntrainement(P);
 }
 
@@ -213,7 +233,11 @@ const ACTIONS = {
     return exiger(ouvrirPack(P.L, P.R, a.id), 'pas assez de jetons');
   },
   plan(P, a) { exiger(basculer(P.R, a.carte), 'le plan est plein'); },
-  coach(P, a) { exiger(P.etape === 'split' && engager(P.L, P.R, a.id, prixDuCoach(P)), 'pas assez de jetons'); },
+  // Avant la version 4, un coach s'achetait ; depuis, ton coach fait la run.
+  coach(P, a) {
+    exiger(P.v < 4, 'ton coach fait la run');
+    exiger(P.etape === 'split' && engager(P.L, P.R, a.id, prixDuCoach(P)), 'pas assez de jetons');
+  },
   marche(P, a, ctx) {
     exiger(P.etape === 'split' && marcheOuvert(P.L), 'le marché est fermé');
     const c = contratDe(ctx, a.ref);
@@ -266,6 +290,8 @@ const ACTIONS = {
     const e = exiger(enAttente(P), 'aucun événement');
     exiger(e.choix.includes(a.choix), 'ce choix n\'est pas offert');
     P.decisions[e.cle] = a.choix;
+    // Un talent : le pouvoir choisi grandit, ouvert ou pas encore.
+    if (e.id === 'talent') { P.talents.push(a.choix); return null; }
     const fait = EVENEMENTS[e.id].choix[a.choix][2];
     if (fait.commanditaire) P.L.commanditaire = fait.commanditaire;
     if (fait.jetons) P.R.primes.push({ cle: e.cle, jetons: fait.jetons });
@@ -341,11 +367,14 @@ export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t ==
   ...(a.refs || []).map(x => x.id), ...Object.values(a.vieux || {}).map(x => x.id)]).filter(Boolean))];
 
 /** La sauvegarde : la graine, les déblocages et le club du départ, et le journal ; rien de compté. */
-export const sauvegarde = P => ({ v: P.v, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, log: P.log });
+export const sauvegarde = P => ({ v: P.v, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, log: P.log });
 
-/** Rejoue une sauvegarde (une d'avant le méta, la version 1, n'a ni déblocages ni club ; avant la 3, une série de séries se jouait d'un bloc). */
+/**
+ * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
+ * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance.
+ */
 export function rejouer(sv, ctx) {
-  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0 });
+  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null });
   P.v = sv.v || 1;
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;

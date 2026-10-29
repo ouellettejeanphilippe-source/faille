@@ -11,7 +11,9 @@
  *   le départ   ton club, ta couleur, tes déblocages, puis « Commencer la run ».
  */
 import { esc } from './util.js';
-import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, EXIGENCES, PRIME_EXIGENCE, deblocagesDe, possede, exigenceMax, exigenceDe } from './meta.js';
+import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, EXIGENCES, PRIME_EXIGENCE, deblocagesDe, possede, exigenceMax, exigenceDe, coachDe } from './meta.js';
+import { COACHS } from './rogue.js';
+import { carteDuCoach } from './boutique.js';
 
 const date = ms => new Date(ms).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -67,8 +69,9 @@ export function ecranParties(ix) {
     <label class="bouton-fichier">Importer un fichier<input type="file" id="importer" accept=".json,application/json"></label>`;
 }
 
-/** Le départ d'une run : ton club, ta couleur, tes déblocages. */
+/** Le départ d'une run : ton coach, ton club, ta couleur, tes déblocages, tes exigences. */
 export function ecranDepart(m) {
+  const coachs = Object.keys(COACHS).map(id => `<li><button class="coach-choix${coachDe(m) === id ? ' on' : ''}" data-coach-choisi="${id}">${carteDuCoach(id)}</button></li>`).join('');
   const club = Object.entries(CLUBS).filter(([id]) => possede(m, 'club', id)).map(([id, c]) => `<button class="puce${m.club === id ? ' on' : ''}" data-porter="club:${id}">${esc(c.nom)}</button>`).join('');
   const couleur = Object.entries(COULEURS).filter(([id]) => possede(m, 'couleur', id)).map(([id, c]) => `<button class="puce${m.couleur === id ? ' on' : ''}" data-porter="couleur:${id}"><span class="pastille" style="--pastille:${c.hex}"></span>${esc(c.nom)}</button>`).join('');
   const deb = deblocagesDe(m).map(id => `<li class="trophee"><span class="jeu-ico">${DEBLOCAGES[id].ico}</span><span class="jeu-id"><b>${esc(DEBLOCAGES[id].nom)}</b><small>${esc(DEBLOCAGES[id].mot)}</small></span></li>`).join('');
@@ -79,6 +82,9 @@ export function ecranDepart(m) {
     <p class="sous">${cran ? `${EXIGENCES.slice(0, cran).map(x => `${esc(x.nom)} : ${esc(x.mot)}`).join(' · ')}. Tes médailles valent ${Math.round(100 * PRIME_EXIGENCE * cran)} % de plus.` : 'Gagne une run à un cran pour ouvrir le suivant.'}</p>` : '';
   return `<h2>Une nouvelle run</h2>
     <p class="sous">La roulette sort des splits et des équipes ; tu bâtis ton cinq sous le plafond et le proprio fixe ton mandat, split après split. Un titre gagne la run.</p>
+    <h3>Ton coach</h3>
+    <p class="sous">Il fait la run au complet. Il gagne de l'expérience avec tes victoires — plus encore à sa couleur — et ouvre ses pouvoirs aux niveaux 1, 3 et 5 ; aux niveaux 2 et 4, un talent fait grandir celui que tu choisis.</p>
+    <ul class="coachs">${coachs}</ul>
     <h3>Ton club</h3><div class="puces">${club}</div>
     <h3>Ta couleur</h3><div class="puces">${couleur}</div>
     <h3>Tes déblocages</h3>${deb ? `<ul class="trophees">${deb}</ul>` : '<p class="sous">Aucun encore : tes médailles en achètent, au menu.</p>'}

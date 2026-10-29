@@ -30,7 +30,7 @@ exiger('des splits à lire', C.ids.length > 0, `${C.ids.length} splits`);
 const m = nouveauMeta();
 const parties = [];
 for (let g = 1; g <= 6; g++) {
-  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m) });
+  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m), coach: 'stratege' });
   parties.push(P);
   noter(m, `p${g}`, P, g);
   if (g === 3) for (const id of Object.keys(DEBLOCAGES)) acheter(m, `deb:${id}`);

@@ -14,9 +14,10 @@
 import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
-import { taSerie, enAttente, gardesDe, mandatDuSplit } from './partie.js';
+import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie } from './partie.js';
 import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
-import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES } from './rogue.js';
+import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES, COACHS, XP, TALENT, pouvoirsDuPersonnage } from './rogue.js';
+import { carteDuCoach } from './boutique.js';
 import { iconeChampion } from './images.js';
 import { classement } from './sim.js';
 import { hierSoir } from './split.js';
@@ -114,7 +115,13 @@ export function vueBureau(P, ctx) {
   const L = P.L;
   const out = [];
   const ev = enAttente(P);
-  if (ev) {
+  if (ev && ev.id === 'talent') {
+    // Un talent : ton coach monte de niveau, un de ses pouvoirs grandit — ce qu'il ferait alors, en mots.
+    const co = COACHS[P.R.coach.id];
+    const grandis = pouvoirsDuPersonnage(P.R.coach.id, 5, ev.choix);
+    out.push(message(co.ico, co.nom, 'Un talent · à choisir', esc(`Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`),
+      `<div class="choix">${ev.choix.map(id => { const x = grandis.find(g => g.id === id); return `<button data-choix="${id}"><b>${esc(x.nom)}</b><small>${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></button>`; }).join('')}</div>`));
+  } else if (ev) {
     const E = EVENEMENTS[ev.id];
     out.push(message(E.ico, E.qui, `${E.titre} · à trancher`, esc(E.texte),
       `<div class="choix">${ev.choix.map(c => `<button data-choix="${c}"><b>${esc(E.choix[c][0])}</b><small>${esc(E.choix[c][1])}</small></button>`).join('')}</div>`));
@@ -202,6 +209,14 @@ function lEntrainement(P, ctx, qui) {
     ${corps}${faits.length ? `<p class="sous">Déjà entraînés : ${faits.join(' · ')}.</p>` : ''}`;
 }
 
+/* TON COACH, le personnage (version 4) : son niveau, son expérience, ses pouvoirs et ses talents. */
+function tonCoach(P) {
+  if (P.v < 4 || !P.R.coach) return '';
+  const c = coachDeLaPartie(P);
+  return `<h3>Ton coach</h3><div class="coach-carte">${carteDuCoach(c.id, { niveau: c.n, talents: P.talents, xp: c.xp, prochain: c.prochain })}</div>
+    <p class="sous">L'expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre, et ${XP.couleur} de plus par série gagnée avec une carte de sa couleur au plan.</p>`;
+}
+
 /** L'EFFECTIF : ton plan de match, ton cinq et ton banc (leurs stats chez toi), les liens, l'entraînement. `qui` : le rôle ouvert à l'entraînement. */
 export function vueEffectif(P, ctx, qui) {
   const st = statsDuSplit(P.L);
@@ -209,6 +224,7 @@ export function vueEffectif(P, ctx, qui) {
   const cinq = Object.entries(ROLES).map(([r, mot]) => caseEffectif(mot, P.eff.cinq[r], st)).join('');
   const banc = caseEffectif('Banc', b, st, b ? `<span class="case-gestes"><button data-geste="permuter">Faire jouer</button><button data-geste="relacher">Relâcher</button></span>` : '');
   return `${panneauStrategie(P)}
+    ${tonCoach(P)}
     <h3>Ton effectif · ${masseDe(P.eff)} / ${plafondDe(P.eff)} pts</h3>
     <p class="sous">Touche un joueur pour sa carte. Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.</p>
     <ol class="alignement">${cinq}${banc}</ol>

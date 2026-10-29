@@ -686,3 +686,22 @@ button:disabled { opacity: 0.45; cursor: default; }
 .dt-qui b { font: 800 var(--t-1)/1.15 var(--display); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dt-qui small { font-size: var(--t-1); color: var(--encre-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dt-kma { flex: none; font: 800 var(--t-1)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre-2); }
+/* Le coach-personnage : sa tête et son niveau, la barre de son expérience, ses trois pouvoirs (ouverts en vert, ⭐ grandi d'un talent). */
+.coachs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-2); }
+.coach-choix, .coach-carte {
+  width: 100%; display: grid; justify-items: stretch; gap: var(--esp-1); padding: var(--esp-2) var(--esp-3); text-align: left;
+  background: var(--panneau); border: 1px solid var(--filet); border-radius: var(--r-2); box-shadow: var(--relief);
+  font: 400 var(--t-2)/1.35 var(--corps); letter-spacing: 0; text-transform: none;
+}
+.coach-choix.on { border-color: var(--bon); background: color-mix(in srgb, var(--bon) 10%, var(--fond-1)); }
+.coach-tete { display: flex; align-items: center; gap: var(--esp-2); }
+.coach-tete b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.coach-niveau { margin-left: auto; font: 800 var(--t-3)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--or); }
+.coach-piste { height: 6px; }
+/* Ces barres-là se remplissent de la gauche (la jauge du plafond, elle, dit ce qui reste, de la droite). */
+.coach-piste .rempli, .album-piste .rempli { margin-left: 0; }
+.coach-carte small, .coach-choix small { color: var(--encre-2); font-size: var(--t-1); }
+.coach-pouvoirs { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.coach-pouvoirs li { display: grid; padding-left: var(--esp-2); border-left: 2px solid var(--filet); color: var(--encre-3); }
+.coach-pouvoirs li.ouvert { border-left-color: var(--bon); color: var(--encre); }
+.coach-pouvoirs b { font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }

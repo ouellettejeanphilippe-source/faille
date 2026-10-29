@@ -53,6 +53,9 @@ etape('l\'écran titre', await visible('#titre'));
 await page.click('#t-nouvelle');
 await pause(200);
 etape('le départ d\'une run', await visible('#depart') && !!(await page.$('#d-commencer')));
+await page.click('#depart [data-coach-choisi="stratege"]');
+await pause(150);
+etape('un coach se choisit au départ', !!(await page.$('#depart [data-coach-choisi="stratege"].on')));
 await page.click('#d-commencer');
 await pause(300);
 
@@ -118,6 +121,7 @@ await pause(200);
 /* 5. Les sections. */
 await page.click('.navtab[data-section="effectif"]');
 await pause(300);
+etape('ton coach à l\'Effectif : son niveau, ses pouvoirs', !!(await page.$('#vue .coach-carte .coach-niveau')) && (await page.$$('#vue .coach-pouvoirs li')).length === 3);
 await page.click('#vue [data-contrat]');
 await pause(300);
 etape('la carte d\'un joueur de ton effectif, ses stats chez toi', !!(await page.$('#carte .carte-chez-toi')));

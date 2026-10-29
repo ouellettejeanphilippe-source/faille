@@ -11,12 +11,17 @@
  *   les packs    tirés du dé de la ligue et du numéro de l'achat : une même
  *                partie ouvre les mêmes packs ; une carte ne se tire qu'une fois ;
  *   le plan      trois cartes actives au plus, changées entre deux journées ;
- *   le coach     un seul en poste, un personnage (Cap 82-0, V21) ; sa confiance
- *                monte à chaque série jouée avec une carte de sa couleur au plan
- *                (la couleur d'une carte se lit sur ses canaux, couleurDe), et
- *                chaque palier ouvre un de ses trois POUVOIRS : chacun lit la
- *                partie au début d'une phase (lignes, milieu, fin) et la frappe
- *                le temps de la phase, quand sa condition tient (js/sim.js).
+ *   le coach     un personnage (Cap 82-0, V21), choisi au départ de la run, qui
+ *                la fait au complet : son EXPÉRIENCE se recompte des résultats
+ *                (comme les jetons), et une série gagnée avec une carte de sa
+ *                couleur au plan en vaut une de plus (la couleur d'une carte se
+ *                lit sur ses canaux, couleurDe) ; son NIVEAU (1 à 5) ouvre ses
+ *                trois POUVOIRS aux niveaux 1, 3 et 5, et un TALENT aux
+ *                niveaux 2 et 4 fait grandir celui que tu choisis. Un pouvoir lit
+ *                la partie au début d'une phase (lignes, milieu, fin) et la
+ *                frappe le temps de la phase, quand sa condition tient (js/sim.js).
+ *                Une partie d'avant la version 4 garde l'ancienne règle : un
+ *                coach acheté, ses paliers de confiance.
  *
  * Une carte change la FORME de la partie (la durée, les éliminations, les
  * tours) plus que sa force : check_rogue borne ce qu'elle rapporte en
@@ -30,7 +35,7 @@ export const JETONS = { depart: 20, victoire: 4, defaite: 1, ronde: 20 };
 export const PLAN = 3;
 const HAUSSE = 0.1;            // chaque pack acheté hausse le suivant de 10 %
 export const PRIX_COACH = 12;
-const SEUILS = [3, 6, 9];      // les séries jouées avec sa couleur : confiance I, II, III
+const SEUILS = [3, 6, 9];      // (avant la version 4) les séries jouées avec sa couleur : confiance I, II, III
 export const RARETES = { commune: 'Commune', peu: 'Peu commune', rare: 'Rare', legendaire: 'Légendaire' };
 
 /* LES CARTES : [icône, nom, rareté, effets sur les canaux]. */
@@ -204,12 +209,49 @@ export function effetsDeToi(R, liens = [], strategie = null) {
   return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), ...liens.map(id => LIENS[id][3])]);
 }
 
-/** Les pouvoirs de ton coach que sa confiance a ouverts : un par palier. */
+/** (Avant la version 4) les pouvoirs de ton coach que sa confiance a ouverts : un par palier. */
 export const pouvoirsDeToi = R => (R.coach ? COACHS[R.coach.id].pouvoirs.slice(0, confiance(R).palier) : []);
 
-/** Note les séries que ton cinq vient de jouer, avec le plan qui les a jouées. */
-export function noterJoue(R, n) {
-  for (let i = 0; i < n; i++) R.joue.push({ plan: [...R.plan] });
+/*
+ * LE COACH, UN PERSONNAGE (version 4). Son expérience : ce que rapportent tes
+ * résultats (XP), recompté des splits finis et de celui en cours, plus une par
+ * série gagnée avec une carte de sa couleur au plan ; `depart` : ce qu'un
+ * déblocage lui donne. Ses niveaux (SEUILS_NIVEAU), ses pouvoirs aux niveaux
+ * NIVEAU_DES_POUVOIRS, ses talents aux niveaux NIVEAU_DES_TALENTS : un talent
+ * fait grandir un pouvoir de TALENT (moitié), ouvert ou pas encore.
+ */
+export const XP = { serie: 1, ronde: 2, titre: 3, couleur: 1 };
+export const SEUILS_NIVEAU = [0, 8, 20, 36, 56];
+export const NIVEAU_DES_POUVOIRS = [1, 3, 5];
+export const NIVEAU_DES_TALENTS = [2, 4];
+export const TALENT = 0.5;
+
+/** L'expérience de ton coach : le départ, les résultats de la run (les splits finis, celui en cours), ses séries gagnées à sa couleur. */
+export function xpDe(L, R, depart = 0) {
+  if (!R.coach) return 0;
+  const gains = [...R.reports, ...(L ? [gainsDe(L)] : [])].reduce((s, g) => s + g.v * XP.serie + g.rondes * XP.ronde + (g.titre || 0) * XP.titre, 0);
+  const couleur = R.joue.filter(x => x.gagne && x.plan.some(c => couleurDe(c) === R.coach.id)).length * XP.couleur;
+  return depart + gains + couleur;
+}
+
+/** Le niveau (1 à 5) que vaut une expérience, et ce qui manque pour le suivant. */
+export function niveauDe(xp) {
+  const n = SEUILS_NIVEAU.filter(s => xp >= s).length;
+  return { n, prochain: SEUILS_NIVEAU[n] ?? null };
+}
+
+/* Un pouvoir grandi de son talent : chaque canal de moitié plus loin du neutre. */
+const grandir = effet => Object.fromEntries(Object.entries(effet).map(([c, v]) => [c, MULTIPLIE.has(c) ? v ** (1 + TALENT) : v * (1 + TALENT)]));
+
+/** Les pouvoirs que joue le coach `id` à ce niveau, ses talents (des ids de pouvoirs) compris. */
+export function pouvoirsDuPersonnage(id, niveau, talents = []) {
+  return COACHS[id].pouvoirs.filter((_, k) => niveau >= NIVEAU_DES_POUVOIRS[k])
+    .map(x => (talents.includes(x.id) ? { ...x, effet: grandir(x.effet) } : x));
+}
+
+/** Note la série que ton cinq vient de jouer, avec le plan qui l'a jouée et si elle est gagnée. */
+export function noterJoue(R, gagne) {
+  R.joue.push({ plan: [...R.plan], gagne });
 }
 
 /*

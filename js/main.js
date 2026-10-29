@@ -36,7 +36,8 @@ import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION } from './partie.js';
 import { phraseMandat, aTraiter, vueBureau, vueEffectif, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
-import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence } from './meta.js';
+import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe } from './meta.js';
+import { COACHS } from './rogue.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
 import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
@@ -240,6 +241,9 @@ async function toucherMenu(ev) {
     const [genre, id] = b.dataset.porter.split(':');
     if (porter(G.meta, genre, id)) ecrireMeta(G.meta);
     rendre();
+  } else if (b.dataset.coachChoisi) {
+    if (COACHS[b.dataset.coachChoisi]) { G.meta.coach = b.dataset.coachChoisi; ecrireMeta(G.meta); }
+    rendre();
   } else if (b.dataset.exigence !== undefined) {
     if (choisirExigence(G.meta, Number(b.dataset.exigence))) ecrireMeta(G.meta);
     rendre();
@@ -294,7 +298,7 @@ async function reprendre(id) {
 /* LA RUN NEUVE : ton club et tes déblocages, posés au départ et gardés dans sa sauvegarde. */
 function nouvelle() {
   G.pid = idNeuf();
-  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta), exig: exigenceDe(G.meta) });
+  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta), exig: exigenceDe(G.meta), coach: coachDe(G.meta) });
   garder();
   entrer();
 }
