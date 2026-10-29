@@ -104,7 +104,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 
 **Le méta et le direct (jalon 6)**
 - Le méta ne compte rien : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et la même partie notée deux fois ne paie qu'une fois — `check_meta`.
-- Un déblocage passe par une règle qui existe, posé au départ de la run et gardé dans sa sauvegarde ; jamais par le moteur. Une finition ou un galon ne change rien au jeu.
+- Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une finition ou un galon ne change rien au jeu.
 - Un trophée, un galon, un record se lisent dans les feuilles, par une colonne, jamais par un vote ; les seuils des galons sont mesurés sur le moteur — `check_meta`.
 - Le direct rejoue la feuille, il ne décide rien ; le commentateur et la Faille tirent leur hasard de `hasard()`, et la même graine redit la même partie — `check_commentaire`, `check_terrain`.
 - La Faille est lue de la feuille : un moment ne se nomme que si la feuille le porte (un gank, le jungler ; un combat, trois éliminations ; une poussée, personne ne meurt autour) ; seule la place est illustrative, et cohérente (une ligne tombe dans l'ordre, le nexus par une ligne ouverte) — `check_terrain`. La carte est un dessin à nous, jamais celle du jeu.
@@ -150,7 +150,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
 - **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack**, **coach** et son **palier** : comme dans Cap 82-0.
-- **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**.
+- **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
 - **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run) et sa **finition** (Base, Argent, Or, Holo) ; un **album** par split.
 - **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
 - **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.

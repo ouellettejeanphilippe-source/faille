@@ -60,7 +60,7 @@ export function ecranPalmares(m) {
   }).join('');
   const lignes = runs.map(r => {
     const titres = r.passes.filter(p => p.champion).length;
-    return `<li class="run-ligne"><span class="jeu-id"><b>${esc(r.club ? r.club.nom : 'Ton cinq')} · ${r.passes.length} split${r.passes.length > 1 ? 's' : ''}</b>
+    return `<li class="run-ligne"><span class="jeu-id"><b>${esc(r.club ? r.club.nom : 'Ton cinq')}${r.exig ? ` · 🔺 ${r.exig}` : ''} · ${r.passes.length} split${r.passes.length > 1 ? 's' : ''}</b>
       <small>${date(r.debut)} · ${FINS[r.fin] || 'En cours'}${titres ? ` · ${titres} titre${titres > 1 ? 's' : ''}` : ''} · ${r.passes.map(p => `${p.fiche[0]}-${p.fiche[1]}`).join(', ')}</small></span><span class="prix">${r.medailles} 🏅</span></li>`;
   }).join('');
   return `<h2>Le palmarès</h2>

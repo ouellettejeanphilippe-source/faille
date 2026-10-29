@@ -42,10 +42,27 @@ export const DEBLOCAGES = {
   sursis: { ico: '🕊️', nom: 'Le proprio patient', mot: 'le premier mandat manqué d\'une run ne la finit pas', prix: 20, rang: 3, effet: { sursis: 1 } },
 };
 
-/** Ce que posent des déblocages, sommés : { jetons, coachGratuit, cadeau, relances, offre, gardes, sursis }. */
-export function effetDe(deb) {
-  const e = { jetons: 0, coachGratuit: 0, cadeau: 0, relances: 0, offre: 0, gardes: 0, sursis: 0 };
-  for (const id of deb) if (DEBLOCAGES[id]) for (const [k, v] of Object.entries(DEBLOCAGES[id].effet)) e[k] += v;
+/*
+ * LES EXIGENCES 🔺 (Cap 82-0, l'Ascension de Slay the Spire) : après un
+ * premier titre, une run peut partir plus haut. Chaque cran ajoute sa
+ * contrainte à celles d'avant, par une règle qui existe, et ses médailles
+ * valent PRIME_EXIGENCE de plus par cran. Gagner au plus haut ouvre le suivant.
+ */
+export const EXIGENCES = [
+  { nom: 'Le proprio pressé', mot: 'chaque mandat monte d\'un cran : la demi-finale dès le premier split', effet: { mandat: 1 } },
+  { nom: 'La bourse serrée', mot: '10 jetons de moins au départ', effet: { jetons: -10 } },
+  { nom: 'Le plafond serré', mot: 'un point de moins sous le plafond', effet: { plafond: -1 } },
+  { nom: 'La roulette avare', mot: 'une relance de moins de chaque sorte', effet: { relances: -1 } },
+  { nom: 'Le vestiaire mince', mot: 'un joueur de moins gardé entre deux splits', effet: { gardes: -1 } },
+  { nom: 'Les packs chers', mot: 'les packs coûtent un quart de plus', effet: { cherte: 0.25 } },
+];
+export const PRIME_EXIGENCE = 0.25;
+
+/** Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, coachGratuit, cadeau, relances, offre, gardes, sursis, mandat, plafond, cherte }. */
+export function effetDe(deb, exig = 0) {
+  const e = { jetons: 0, coachGratuit: 0, cadeau: 0, relances: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0 };
+  const sources = [...deb.filter(id => DEBLOCAGES[id]).map(id => DEBLOCAGES[id].effet), ...EXIGENCES.slice(0, exig).map(x => x.effet)];
+  for (const src of sources) for (const [k, v] of Object.entries(src)) e[k] += v;
   return e;
 }
 
@@ -81,7 +98,7 @@ export const COULEURS = {
 const ARTICLES = { deb: DEBLOCAGES, club: CLUBS, couleur: COULEURS };
 const article = cle => { const [genre, id] = cle.split(':'); return ARTICLES[genre] && ARTICLES[genre][id] ? { genre, id, ...ARTICLES[genre][id] } : null; };
 
-export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille' });
+export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille', exig: 0 });
 
 /** Le club que portera la prochaine run : { nom, code, couleur }. */
 export function clubDe(m) {
@@ -93,10 +110,27 @@ export function clubDe(m) {
 export const deblocagesDe = m => m.achats.filter(c => c.startsWith('deb:')).map(c => c.slice(4)).filter(id => DEBLOCAGES[id]);
 export const possede = (m, genre, id) => (genre !== 'deb' && ARTICLES[genre][id].prix === 0) || m.achats.includes(`${genre}:${id}`);
 
-/* Les médailles d'une partie résumée. */
+/* Les médailles d'une partie résumée, la prime de ses exigences comprise. */
 export function medaillesDeLaPartie(r) {
-  return r.passes.reduce((s, p) => s + MEDAILLES.split + (p.rempli ? MEDAILLES.mandat : 0) + (p.rondes || 0) * MEDAILLES.ronde + (p.champion ? MEDAILLES.titre : 0), 0)
+  const base = r.passes.reduce((s, p) => s + MEDAILLES.split + (p.rempli ? MEDAILLES.mandat : 0) + (p.rondes || 0) * MEDAILLES.ronde + (p.champion ? MEDAILLES.titre : 0), 0)
     + (r.fin === 'gagnee' ? MEDAILLES.run : 0);
+  return Math.round(base * (1 + PRIME_EXIGENCE * (r.exig || 0)));
+}
+
+/** Le plus haut cran d'exigences ouvert : un de plus que le plus haut gagné ; aucun avant un premier titre. */
+export function exigenceMax(m) {
+  const gagnees = Object.values(m.parties).filter(r => r.fin === 'gagnee');
+  return gagnees.length ? Math.min(EXIGENCES.length, Math.max(...gagnees.map(r => r.exig || 0)) + 1) : 0;
+}
+
+/** Le cran d'exigences que portera la prochaine run (celui choisi, borné par ce qui est ouvert). */
+export const exigenceDe = m => Math.min(m.exig || 0, exigenceMax(m));
+
+/** Choisit le cran d'exigences de la prochaine run ; faux s'il n'est pas ouvert. */
+export function choisirExigence(m, n) {
+  if (!(n >= 0 && n <= exigenceMax(m))) return false;
+  m.exig = n;
+  return true;
 }
 
 /** Les médailles : gagnées à vie, dépensées, et ce qui reste. */
@@ -145,7 +179,7 @@ export function porter(m, genre, id) {
  * bilan), sa fin, et les cartes passées chez toi.
  */
 export const resumeDe = (P, debut) => ({
-  graine: P.graine, debut, club: P.club, deb: P.deb, fin: P.run.fin, n: P.run.n,
+  graine: P.graine, debut, club: P.club, deb: P.deb, exig: P.exig, fin: P.run.fin, n: P.run.n,
   passes: P.run.passes, cartes: P.cartes,
 });
 

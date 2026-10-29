@@ -25,17 +25,17 @@ import { hasard, graineDe } from './hasard.js';
 import { esc, pts } from './util.js';
 import { imageLP } from './images.js';
 import { brancherRetour } from './pile.js';
-import { profilsDuSplit, PLAFOND, TARIFS } from './cotes.js';
+import { profilsDuSplit, TARIFS } from './cotes.js';
 import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { jetonsDe, liensDe, LIENS } from './rogue.js';
 import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
-import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
+import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION } from './partie.js';
 import { phraseMandat, aTraiter, vueBureau, vueEffectif, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
-import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe } from './meta.js';
+import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence } from './meta.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
 import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
@@ -141,10 +141,11 @@ function majTete() {
   $('#nav').hidden = !enJeu || P.etape !== 'split';
   if (!enJeu) { $('#teteEtat').textContent = 'Le jeu de gestion des splits'; return; }
   const L = P.L;
-  const reste = PLAFOND - masseDe(P.eff);
-  $('#jaugeReste').textContent = `${reste} / ${PLAFOND}`;
+  const plafond = plafondDe(P.eff);
+  const reste = plafond - masseDe(P.eff);
+  $('#jaugeReste').textContent = `${reste} / ${plafond}`;
   $('#jaugeReste').className = `tete-ch-v${reste <= 3 ? ' serre' : ''}`;
-  $('#jaugeRempli').style.width = `${(100 * reste) / PLAFOND}%`;
+  $('#jaugeRempli').style.width = `${(100 * reste) / plafond}%`;
   $('#teteJetons .tete-ch-v').textContent = jetonsDe(L, P.R);
   if (P.etape === 'bati') $('#teteEtat').textContent = `Split ${P.run.n} · ${5 - libresDe(P.eff).length} / 5 signés`;
   else if (!L) $('#teteEtat').textContent = `Bilan du split ${P.run.n}`;
@@ -238,6 +239,9 @@ async function toucherMenu(ev) {
     const [genre, id] = b.dataset.porter.split(':');
     if (porter(G.meta, genre, id)) ecrireMeta(G.meta);
     rendre();
+  } else if (b.dataset.exigence !== undefined) {
+    if (choisirExigence(G.meta, Number(b.dataset.exigence))) ecrireMeta(G.meta);
+    rendre();
   } else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
   else if (b.dataset.reprendre) reprendre(b.dataset.reprendre);
   else if (b.dataset.exporter) telecharger(b.dataset.exporter);
@@ -289,7 +293,7 @@ async function reprendre(id) {
 /* LA RUN NEUVE : ton club et tes déblocages, posés au départ et gardés dans sa sauvegarde. */
 function nouvelle() {
   G.pid = idNeuf();
-  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta) });
+  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta), exig: exigenceDe(G.meta) });
   garder();
   entrer();
 }
@@ -311,7 +315,7 @@ function entrer() {
 /* ---- LE REPÊCHAGE DE TON CINQ ---- */
 function rendreBati() {
   const P = G.P;
-  $('#bati-mandat').textContent = phraseMandat(P.run.n);
+  $('#bati-mandat').textContent = phraseMandat(P);
   $('#alignement').innerHTML = Object.entries(ROLES).map(([r, mot]) => {
     const j = P.eff.cinq[r];
     return `<li class="case${j ? ' pleine' : ''}"><span class="case-role">${mot}</span>${j ? vignette(j) : ''}<span class="qui">${j
@@ -322,7 +326,7 @@ function rendreBati() {
   $('#roulette').lastChild.textContent = P.tirage ? 'Revoir le vestiaire' : 'Tourner la roulette';
   $('#jouer').hidden = !complet;
   const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);
-  $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${PLAFOND}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
+  $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${plafondDe(P.eff)}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
   if (!$('#vestiaire').hidden) rendreVestiaire();
 }
 
@@ -341,7 +345,7 @@ function rendreVestiaire() {
   $('#vestiaire-bandeau').innerHTML = `${v.equipe.logo ? `<img src="${imageLP(v.equipe.logo)}" alt="">` : ''}
     <span class="bandeau-id"><small>${esc(v.split.nom)} · ${v.equipe.v}-${v.equipe.d} en parties</small><h2>${esc(v.equipe.nom)}</h2></span>`;
   $('#vestiaire-libres').textContent = l.map(r => ROLES[r]).join(', ');
-  $('#vestiaire-max').textContent = `jusqu'à ${pts(PLAFOND - masseDe(P.eff) - (l.length - 1))}`;
+  $('#vestiaire-max').textContent = `jusqu'à ${pts(plafondDe(P.eff) - masseDe(P.eff) - (l.length - 1))}`;
   $('#vestiaire-liste').innerHTML = v.equipe.joueurs.map((j, i) => {
     const p = v.profils.joueurs.get(j);
     const non = refus(v, j);
@@ -434,7 +438,7 @@ function rendreSplit() {
   const saison = L.jour < L.journees.length;
   const attend = !!enAttente(P);
   $('#split-titre').textContent = titreSplit(L);
-  $('#split-mandat').textContent = phraseMandat(P.run.n);
+  $('#split-mandat').textContent = phraseMandat(P);
   $('#decision').hidden = !attend || G.section === 'bureau';
   $('#journee').hidden = !saison || attend;
   $('#journee').disabled = false;

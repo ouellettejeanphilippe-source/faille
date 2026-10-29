@@ -31,9 +31,9 @@ import { profilsDuSplit, PLAFOND, TARIFS } from '../js/cotes.js';
 import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion } from '../js/gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe } from '../js/partie.js';
-import { DEBLOCAGES } from '../js/meta.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion } from '../js/gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit } from '../js/partie.js';
+import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
 import { confort } from '../js/repechage.js';
 import { STRATEGIES } from '../js/strategie.js';
 import { exiger, informer, verdict } from './verdict.mjs';
@@ -60,7 +60,7 @@ const empreinte = P => JSON.stringify({
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -71,7 +71,8 @@ const refuse = (P, a) => {
 const tenter = (P, a) => { try { appliquer(P, a, ctx); return true; } catch { return false; } };
 const surveiller = P => {
   bilan.actions++;
-  if (masseDe(P.eff) > PLAFOND) faute(`plafond dépassé : ${masseDe(P.eff)} après ${JSON.stringify(P.log[P.log.length - 1]).slice(0, 80)} (${P.etape})`);
+  if (masseDe(P.eff) > plafondDe(P.eff)) faute(`plafond dépassé : ${masseDe(P.eff)} après ${JSON.stringify(P.log[P.log.length - 1]).slice(0, 80)} (${P.etape})`);
+  if (plafondDe(P.eff) !== PLAFOND + P.fx.plafond) faute(`le plafond de la run s'est perdu : ${plafondDe(P.eff)}`);
   if (jetonsDe(P.L, P.R) < 0) faute('jetons sous zéro');
   for (const k of Object.keys(RELANCES)) if (P.relances[k] > relancesMax(P, k)) faute(`relances ${k} : ${P.relances[k]}`);
 };
@@ -82,8 +83,13 @@ const agir = (P, a) => { const r = appliquer(P, a, ctx); surveiller(P); return r
 
 async function unRun(graine) {
   const de = hasard(graine);
-  // Une run sur deux avec tous les déblocages du méta : les règles tiennent avec eux.
-  const P = nouvellePartie(graine, { deb: graine % 2 ? [] : Object.keys(DEBLOCAGES), club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' } });
+  // Une run sur deux avec tous les déblocages du méta, une sur trois au plus haut des exigences : les règles tiennent avec eux.
+  const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
+  const P = nouvellePartie(graine, { deb: graine % 2 ? [] : Object.keys(DEBLOCAGES), club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig });
+  if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'demie' || Object.keys(RELANCES).some(k => relancesMax(P, k) !== RELANCES[k][1] - (graine % 2 ? 1 : 0)) || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
+    faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
+  }
+  if (exig) bilan.exigences++;
   let milieu = null;
   while (P.etape !== 'fin' && P.run.n <= SPLITS_MAX) {
     // LE REPÊCHAGE : un tour par case, parfois une relance.
@@ -255,6 +261,7 @@ exiger('les commanditaires ont payé', bilan.commandite > 0, `${bilan.commandite
 exiger('des entraînements sont entrés au bassin', bilan.entraines > 0, `${bilan.entraines} champions entraînés`);
 exiger('des packs de joueurs ouverts et signés', bilan.packs > 0 && bilan.signesPack > 0, `${bilan.packs} packs, ${bilan.signesPack} signatures`);
 exiger('des gardés ont vieilli', bilan.vieillis > 0, `${bilan.vieillis} joueurs`);
+exiger('des runs au plus haut des exigences', bilan.exigences > 0, `${bilan.exigences} runs à 🔺 ${EXIGENCES.length}`);
 
 /* LES CHANCES D'UN PACK : 300 cartes de chaque pack, leurs niveaux contre leurs chances. */
 for (const [id, pk] of Object.entries(PACKS_JOUEURS)) {

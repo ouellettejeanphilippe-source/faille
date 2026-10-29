@@ -21,7 +21,7 @@ import { repecher } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
@@ -35,15 +35,16 @@ const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [
 
 /**
  * Une partie neuve. `deb` : les déblocages du méta (js/meta.js), posés au
- * départ et gardés dans la sauvegarde ; `club` : { nom, code, couleur }.
+ * départ et gardés dans la sauvegarde ; `club` : { nom, code, couleur } ;
+ * `exig` : le cran des exigences (0 : aucune).
  */
-export function nouvellePartie(graine, { deb = [], club = null } = {}) {
-  const fx = effetDe(deb);
+export function nouvellePartie(graine, { deb = [], club = null, exig = 0 } = {}) {
+  const fx = effetDe(deb, exig);
   const P = {
-    graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, fx,
+    graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx,
     run: { n: 1, passes: [], fin: null, sursis: 0 },
-    R: nouveauRogue(graine),
-    eff: { cinq: {}, banc: null },
+    R: { ...nouveauRogue(graine), cherte: fx.cherte },
+    eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
     tirage: null, relances: relancesNeuves(),
     L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null, strategie: null,
     cartes: [], cadeau: null, offrePack: null,
@@ -56,6 +57,8 @@ export function nouvellePartie(graine, { deb = [], club = null } = {}) {
 export const relancesMax = (P, k) => RELANCES[k][1] + P.fx.relances;
 /** Combien de joueurs restent d'un split à l'autre. */
 export const gardesDe = P => GARDES + P.fx.gardes;
+/** Le mandat du split n de la run, monté par les exigences : [clé, en mots]. */
+export const mandatDuSplit = (P, n = P.run.n) => mandatDe(n, P.fx.mandat);
 /** Combien d'agents libres le dépisteur trouve par journée. */
 export const offreDe = P => MARCHE.offre + P.fx.offre;
 
@@ -263,7 +266,7 @@ const ACTIONS = {
   bilan(P) {
     exiger(P.etape === 'split' && P.L.series && P.L.series.champion !== null, 'le split n\'est pas fini');
     const L = P.L;
-    const [cle] = mandatDe(P.run.n);
+    const [cle] = mandatDuSplit(P);
     const rempli = mandatRempli(L, cle);
     const champion = L.series.champion === 0;
     const c = classement(L);
@@ -297,13 +300,13 @@ const ACTIONS = {
       return v;
     });
     exiger(gardes.length === a.cles.length && gardes.length <= gardesDe(P), `${gardesDe(P)} joueurs au plus`);
-    const eff = { cinq: {}, banc: null };
+    const eff = { cinq: {}, banc: null, plafond: P.eff.plafond };
     for (const c of gardes) {
       if (eff.cinq[c.r]) eff.banc = c;
       else eff.cinq[c.r] = c;
     }
     // Ce qui reste du plafond doit encore payer les cases vides, au moins cher.
-    exiger(signable(0, PLAFOND - masseDe(eff), libresDe(eff).length + 1), 'ils coûtent trop : le cinq ne se compléterait pas');
+    exiger(signable(0, plafondDe(eff) - masseDe(eff), libresDe(eff).length + 1), 'ils coûtent trop : le cinq ne se compléterait pas');
     P.eff = eff;
     P.run.n++;
     P.relances = relancesNeuves();
@@ -328,11 +331,11 @@ export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t ==
   ...(a.refs || []).map(x => x.id), ...Object.values(a.vieux || {}).map(x => x.id)]).filter(Boolean))];
 
 /** La sauvegarde : la graine, les déblocages et le club du départ, et le journal ; rien de compté. */
-export const sauvegarde = P => ({ v: VERSION, graine: P.graine, deb: P.deb, club: P.club, log: P.log });
+export const sauvegarde = P => ({ v: VERSION, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, log: P.log });
 
 /** Rejoue une sauvegarde (une d'avant le méta, la version 1, n'a ni déblocages ni club). */
 export function rejouer(sv, ctx) {
-  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null });
+  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0 });
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;
 }

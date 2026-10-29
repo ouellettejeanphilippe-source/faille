@@ -11,7 +11,7 @@
  *   le départ   ton club, ta couleur, tes déblocages, puis « Commencer la run ».
  */
 import { esc } from './util.js';
-import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, deblocagesDe, possede } from './meta.js';
+import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, EXIGENCES, PRIME_EXIGENCE, deblocagesDe, possede, exigenceMax, exigenceDe } from './meta.js';
 
 const date = ms => new Date(ms).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -72,10 +72,16 @@ export function ecranDepart(m) {
   const club = Object.entries(CLUBS).filter(([id]) => possede(m, 'club', id)).map(([id, c]) => `<button class="puce${m.club === id ? ' on' : ''}" data-porter="club:${id}">${esc(c.nom)}</button>`).join('');
   const couleur = Object.entries(COULEURS).filter(([id]) => possede(m, 'couleur', id)).map(([id, c]) => `<button class="puce${m.couleur === id ? ' on' : ''}" data-porter="couleur:${id}"><span class="pastille" style="--pastille:${c.hex}"></span>${esc(c.nom)}</button>`).join('');
   const deb = deblocagesDe(m).map(id => `<li class="trophee"><span class="jeu-ico">${DEBLOCAGES[id].ico}</span><span class="jeu-id"><b>${esc(DEBLOCAGES[id].nom)}</b><small>${esc(DEBLOCAGES[id].mot)}</small></span></li>`).join('');
+  const max = exigenceMax(m);
+  const cran = exigenceDe(m);
+  const exig = max ? `<h3>Les exigences 🔺</h3>
+    <div class="puces">${Array.from({ length: max + 1 }, (_, n) => `<button class="puce${cran === n ? ' on' : ''}" data-exigence="${n}">${n ? `🔺 ${n}` : 'Aucune'}</button>`).join('')}</div>
+    <p class="sous">${cran ? `${EXIGENCES.slice(0, cran).map(x => `${esc(x.nom)} : ${esc(x.mot)}`).join(' · ')}. Tes médailles valent ${Math.round(100 * PRIME_EXIGENCE * cran)} % de plus.` : 'Gagne une run à un cran pour ouvrir le suivant.'}</p>` : '';
   return `<h2>Une nouvelle run</h2>
     <p class="sous">La roulette sort des splits et des équipes ; tu bâtis ton cinq sous le plafond et le proprio fixe ton mandat, split après split. Un titre gagne la run.</p>
     <h3>Ton club</h3><div class="puces">${club}</div>
     <h3>Ta couleur</h3><div class="puces">${couleur}</div>
     <h3>Tes déblocages</h3>${deb ? `<ul class="trophees">${deb}</ul>` : '<p class="sous">Aucun encore : tes médailles en achètent, au menu.</p>'}
+    ${exig}
     <div class="actionbar"><button id="d-commencer" class="go">Commencer la run</button></div>`;
 }

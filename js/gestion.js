@@ -34,6 +34,8 @@ const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 export const RELANCES = { split: ['Autre split', 2], equipe: ['Autre équipe', 2], passer: ['Passer', 2] };
 const ESSAIS = 20;
 
+/** Le plafond d'un effectif : le sien (les exigences le serrent), sinon PLAFOND. */
+export const plafondDe = eff => eff.plafond ?? PLAFOND;
 /** Les rôles encore vides d'un effectif. */
 export const libresDe = eff => ROLES.filter(r => !eff.cinq[r]);
 /** Ce que coûte l'effectif : le cinq et le banc. */
@@ -42,7 +44,7 @@ export const masseDe = eff => [...Object.values(eff.cinq), eff.banc].filter(Bool
 /** Les joueurs d'un vestiaire qu'on peut signer : un rôle vide, et le reste du plafond paie les cases vides. */
 export function signables(eff, equipe, profils) {
   const l = libresDe(eff);
-  const reste = PLAFOND - masseDe(eff);
+  const reste = plafondDe(eff) - masseDe(eff);
   return equipe.joueurs.filter(j => l.includes(j.r) && signable(profils.get(j).cout, reste, l.length));
 }
 
@@ -100,7 +102,7 @@ export function placements(eff, c) {
     out.push({ place: 'titulaire', sort, descend: eff.banc ? null : t, masse: masse + c.cout - (sort ? sort.cout : 0) });
   }
   out.push({ place: 'banc', sort: eff.banc, descend: null, masse: masse + c.cout - (eff.banc ? eff.banc.cout : 0) });
-  return out.filter(p => p.masse <= PLAFOND);
+  return out.filter(p => p.masse <= plafondDe(eff));
 }
 
 /** La clé d'un contrat : son split, son équipe, son nom, son rôle (un joueur peut en tenir deux dans un split). */
@@ -149,7 +151,7 @@ export const PACKS_JOUEURS = {
 const HAUSSE_JOUEURS = 0.1;
 
 /** Le prix d'un pack de joueurs, haussé de 10 % par pack de joueurs déjà acheté. */
-export const prixPackJoueurs = (R, id) => Math.round(PACKS_JOUEURS[id].prix * (1 + HAUSSE_JOUEURS * R.achats.filter(a => a.quoi === 'joueurs').length));
+export const prixPackJoueurs = (R, id) => Math.round(PACKS_JOUEURS[id].prix * (1 + HAUSSE_JOUEURS * R.achats.filter(a => a.quoi === 'joueurs').length) * (1 + (R.cherte || 0)));
 
 /** « 1 pack sur N » pour chaque niveau d'un pack de joueurs : [[niveau, N]], du plus cher au moins cher. */
 export const chancesJoueurs = id => TARIFS.map(([niveau], k) => [niveau, Math.max(1, Math.round(1 / (1 - (1 - PACKS_JOUEURS[id].cotes[k] / 100) ** PACKS_JOUEURS[id].n)))]);
@@ -210,8 +212,8 @@ export const MANDATS = [
   ['finale', 'atteindre la finale'],
   ['titre', 'gagner le split'],
 ];
-/** Le mandat du split n de la run (1, 2…) : plus haut à chaque split, le titre dès le quatrième. */
-export const mandatDe = n => MANDATS[Math.min(n, MANDATS.length) - 1];
+/** Le mandat du split n de la run (1, 2…) : plus haut à chaque split, le titre dès le quatrième ; `cran` le monte d'autant (les exigences). */
+export const mandatDe = (n, cran = 0) => MANDATS[Math.min(n + cran, MANDATS.length) - 1];
 
 /** Le mandat est-il rempli ? Les deux premiers attendent en demie : ils l'atteignent d'office. */
 export function mandatRempli(L, cle) {

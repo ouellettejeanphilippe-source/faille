@@ -8,7 +8,7 @@ import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT
 import { GARDES } from './partie.js';
 import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, chances } from './rogue.js';
 import { BANS } from './repechage.js';
-import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS } from './meta.js';
+import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
 import { STRATEGIES } from './strategie.js';
 
@@ -59,6 +59,7 @@ export function ecranRegles() {
     `Les rangs, à vie : ${RANGS.map(([n, r]) => `${esc(r)} ${n}`).join(' · ')}.`,
     `Les déblocages : ${Object.values(DEBLOCAGES).map(d => `${d.ico} ${esc(d.nom)} ${d.prix}`).join(' · ')}.`,
     `La collection : une copie par run où le joueur est passé chez toi ; ${FINITIONS.map(([n, f]) => `${n} ${esc(f)}`).join(' · ')}.`,
+    `Les exigences 🔺, après un premier titre : un cran à la fois, chacun ajouté à ceux d'avant — ${EXIGENCES.map((x, k) => `${k + 1}. ${esc(x.nom)} (${esc(x.mot)})`).join(' ; ')}. Chaque cran paie ${Math.round(100 * PRIME_EXIGENCE)} % de médailles de plus ; gagner au plus haut ouvre le suivant.`,
   ])}
     <h3>Les trophées et les galons</h3>
     ${liste([

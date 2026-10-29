@@ -102,8 +102,8 @@ export function jetonsDe(L, R) {
 }
 
 const packsOuverts = R => R.achats.filter(a => a.quoi === 'pack').length;
-/** Le prix d'un pack, haussé par ceux déjà achetés (un pack offert ne hausse rien). */
-export const prixDuPack = (R, id) => Math.round(PACKS[id].prix * (1 + HAUSSE * R.achats.filter(a => a.quoi === 'pack' && a.prix).length));
+/** Le prix d'un pack, haussé par ceux déjà achetés (un pack offert ne hausse rien) et par la cherté des exigences (`R.cherte`). */
+export const prixDuPack = (R, id) => Math.round(PACKS[id].prix * (1 + HAUSSE * R.achats.filter(a => a.quoi === 'pack' && a.prix).length) * (1 + (R.cherte || 0)));
 
 /** « 1 pack sur N » pour chaque rareté qu'un pack peut donner, au moins une fois. */
 export function chances(id) {

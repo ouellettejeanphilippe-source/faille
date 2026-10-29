@@ -17,7 +17,7 @@
  *   node scripts/check_meta.mjs
  */
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
-import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, finitionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe } from '../js/meta.js';
+import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, finitionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence } from '../js/meta.js';
 import { statsDuSplit, tropheesDuSplit, galonsDuSplit, recordsDuSplit, meneurs, MENEURS, GALONS } from '../js/palmares.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
 import { contexte, jouerUneRun } from './lib/robot.mjs';
@@ -58,6 +58,18 @@ moyen.parties.x = { debut: 0, fin: 'perdue', passes: [{ n: 1, rempli: true, cham
 exiger('un rang trop bas refuse', refusAchat(moyen, 'deb:sursis') !== null && medailles(moyen).reste >= DEBLOCAGES.bourse.prix, `${medailles(moyen).gagnees} 🏅, ${rangDe(moyen).nom}`);
 exiger('un club se porte une fois acheté', !porter(pauvre, 'club', 'lynx') && acheter(riche, 'club:lynx') && porter(riche, 'club', 'lynx') && clubDe(riche).nom === 'Les Lynx');
 exiger('les effets des déblocages se somment', effetDe(['bourse', 'mecene']).jetons === 25 && effetDe([]).gardes === 0);
+
+/* LES EXIGENCES : fermées avant un titre, puis un cran à la fois ; chacune s'ajoute aux autres ; la prime en médailles. */
+const ex = nouveauMeta();
+exiger('aucune exigence avant un premier titre', exigenceMax(ex) === 0 && !choisirExigence(ex, 1));
+ex.parties.a = { debut: 0, fin: 'gagnee', exig: 0, passes: [{ n: 1, rempli: true, champion: true, rondes: 3 }], cartes: [] };
+exiger('un titre ouvre le premier cran, pas le deuxième', exigenceMax(ex) === 1 && choisirExigence(ex, 1) && !choisirExigence(ex, 2) && exigenceDe(ex) === 1);
+ex.parties.b = { debut: 1, fin: 'gagnee', exig: 1, passes: [{ n: 1, rempli: true, champion: true, rondes: 3 }], cartes: [] };
+exiger('gagner au plus haut ouvre le suivant', exigenceMax(ex) === 2);
+const tout = effetDe([], EXIGENCES.length);
+exiger('les crans s\'additionnent', tout.mandat === 1 && tout.plafond === -1 && tout.relances === -1 && tout.gardes === -1 && tout.jetons === -10 && tout.cherte > 0 && effetDe([], 1).plafond === 0);
+exiger('un cran paie sa prime en médailles', medaillesDeLaPartie(ex.parties.b) === Math.round(medaillesDeLaPartie(ex.parties.a) * (1 + PRIME_EXIGENCE)),
+  `${medaillesDeLaPartie(ex.parties.a)} → ${medaillesDeLaPartie(ex.parties.b)} 🏅`);
 
 /* LA COLLECTION */
 const col = collectionDe(m);

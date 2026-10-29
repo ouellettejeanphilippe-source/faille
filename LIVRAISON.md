@@ -109,7 +109,7 @@ JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en co
 - [x] La Faille au direct (`js/terrain.js`) : la carte dessinée (trois lignes, la rivière, les fosses, les 22 tours), les éliminations où elles arrivent (le moteur garde la ligne d'une élimination de la phase de lignes), et chaque moment nommé et lu dans la feuille — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille du dragon, de l'âme et du Nashor, le Nashor en douce, le héraut qui charge, la poussée de côté, l'assaut final — `check_terrain`.
 - [x] La page des règles (`js/regles.js`), chaque chiffre lu de sa constante ; les sons, synthétisés (`js/sons.js`), qui se coupent au menu.
 - [x] `scripts/smoke.mjs` : le parcours entier à 390 px, du titre à la reprise d'une partie rechargée, zéro erreur console ; dans l'Action `verifier.yml`.
-- [ ] Les exigences 🔺 après un premier titre (Cap 82-0 : le plafond, le mandat, les jetons de départ, un cran à la fois).
+- [x] Les exigences 🔺 après un premier titre (Cap 82-0, `js/meta.js`) : six crans, chacun ajouté aux autres par une règle qui existe (le mandat, les jetons de départ, le plafond porté par l'effectif, les relances, les gardés, le prix des packs) ; chaque cran paie 25 % de médailles de plus, et gagner au plus haut ouvre le suivant — `check_meta`, `check_gestion`.
 - [ ] Le repêchage des champions à chaque partie d'une série de séries (le perdant choisit son côté), comme en vrai.
 - [ ] Le coach-personnage de Cap 82-0 (son niveau, ses pouvoirs par phase de partie), mesuré en paires.
 

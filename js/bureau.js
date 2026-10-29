@@ -12,10 +12,9 @@
  * Une décision se règle dans la boîte, sur place.
  */
 import { esc, virgule } from './util.js';
-import { PLAFOND } from './cotes.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
-import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, mandatDe, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, placements, cleDe } from './gestion.js';
-import { taSerie, enAttente, gardesDe } from './partie.js';
+import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
+import { taSerie, enAttente, gardesDe, mandatDuSplit } from './partie.js';
 import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
 import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES } from './rogue.js';
 import { iconeChampion } from './images.js';
@@ -29,10 +28,11 @@ const message = (ico, qui, titre, texte, extra = '') => `<li class="message"><sp
 const rangMot = k => (k === 1 ? '1er' : `${k}e`);
 
 /** Le mandat du split en cours, en une phrase. */
-export function phraseMandat(n) {
-  const [, mot] = mandatDe(n);
-  const suite = n < MANDATS.length ? ` Au split suivant : ${mandatDe(n + 1)[1]}.` : '';
-  return `Split ${n} de ta run : le proprio veut ${mot}.${suite} Un titre gagne la run.`;
+export function phraseMandat(P) {
+  const n = P.run.n;
+  const [cle, mot] = mandatDuSplit(P);
+  const suite = cle !== MANDATS[MANDATS.length - 1][0] ? ` Au split suivant : ${mandatDuSplit(P, n + 1)[1]}.` : '';
+  return `Split ${n} de ta run${P.exig ? ` (🔺 ${P.exig})` : ''} : le proprio veut ${mot}.${suite} Un titre gagne la run.`;
 }
 
 /* ---- LA STRATÉGIE ---- */
@@ -122,7 +122,7 @@ export function vueBureau(P, ctx) {
     out.push(message('🎁', 'Le proprio', 'Un cadeau pour ta run', esc(`Un pack argent offert : ${P.cadeau.map(c => `${CARTES[c][0]} ${CARTES[c][1]}`).join(', ')}. Ils sont au Marché, à la boutique, prêts pour ton plan de jeu.`)));
   }
   out.push(prochaine(P, ctx));
-  out.push(message('🏢', 'Le proprio', 'Ton mandat', esc(phraseMandat(P.run.n))));
+  out.push(message('🏢', 'Le proprio', 'Ton mandat', esc(phraseMandat(P))));
   const o = objectifsDe(L).filter(x => x.etat !== 'avenir').pop();
   if (o) {
     const sur = `${o.fin - o.debut} séries`;
@@ -208,7 +208,7 @@ export function vueEffectif(P, ctx, qui) {
   const cinq = Object.entries(ROLES).map(([r, mot]) => caseEffectif(mot, P.eff.cinq[r], st)).join('');
   const banc = caseEffectif('Banc', b, st, b ? `<span class="case-gestes"><button data-geste="permuter">Faire jouer</button><button data-geste="relacher">Relâcher</button></span>` : '');
   return `${panneauStrategie(P)}
-    <h3>Ton effectif · ${masseDe(P.eff)} / ${PLAFOND} pts</h3>
+    <h3>Ton effectif · ${masseDe(P.eff)} / ${plafondDe(P.eff)} pts</h3>
     <p class="sous">Touche un joueur pour sa carte. Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.</p>
     <ol class="alignement">${cinq}${banc}</ol>
     ${lesLiens(P)}
@@ -236,7 +236,7 @@ export function vueAgents(P, offre) {
         <span class="places">${places}</span></li>`;
     }).join('')}</ul>`;
   }
-  return `<p class="etat">Masse : ${masseDe(P.eff)} / ${PLAFOND} pts · 🪙 ${jetons}${P.bons ? ' · le club paie ta prochaine signature' : ` · ${MARCHE.prix} 🪙 la signature`}${marcheOuvert(L) ? ` · jusqu'à la journée ${dateLimite(L)}` : ''}</p>
+  return `<p class="etat">Masse : ${masseDe(P.eff)} / ${plafondDe(P.eff)} pts · 🪙 ${jetons}${P.bons ? ' · le club paie ta prochaine signature' : ` · ${MARCHE.prix} 🪙 la signature`}${marcheOuvert(L) ? ` · jusqu'à la journée ${dateLimite(L)}` : ''}</p>
     <h3>Les agents libres · journée ${L.jour + 1}</h3>
     ${agents}`;
 }
@@ -259,7 +259,7 @@ export function ecranBilan(P, gardes, vieux = new Map()) {
     ${palmaresDuBilan(pass)}`;
   if (P.etape === 'fin') {
     const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${MANDATS.find(([k]) => k === p.mandat)[1]}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
-    const med = medaillesDeLaPartie({ passes: P.run.passes, fin: P.run.fin });
+    const med = medaillesDeLaPartie({ passes: P.run.passes, fin: P.run.fin, exig: P.exig });
     return `${tete}<h3>${P.run.fin === 'gagnee' ? `La run est gagnée en ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}` : 'La run est finie'}</h3>
       <ol class="classement">${lignes}</ol>
       <p class="medailles-run">🏅 ${med} médaille${med > 1 ? 's' : ''} pour ta run : elles achètent des déblocages et ton club, au menu.</p>
@@ -278,5 +278,5 @@ export function ecranBilan(P, gardes, vieux = new Map()) {
   return `${tete}<h3>Ceux qui restent · ${gardes.size}/${max}</h3>
     <p class="sous">Garde jusqu'à ${max} joueurs : ils gardent leur place sous le plafond, la roulette comble le reste. Un joueur qui a joué le Mondial suivant y vieillit : il devient sa version de ce split-là.</p>
     <ol class="alignement">${cases}</ol>
-    <div class="actionbar"><button id="bilan-suivant" class="go">Split ${pass.n + 1} : ${mandatDe(pass.n + 1)[1]}</button></div>`;
+    <div class="actionbar"><button id="bilan-suivant" class="go">Split ${pass.n + 1} : ${mandatDuSplit(P, pass.n + 1)[1]}</button></div>`;
 }
