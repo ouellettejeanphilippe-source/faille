@@ -287,7 +287,9 @@ const VU_DANS_LE_COUP = 0.75;
 const APPROCHE = 0.6;                  // on marche vers un combat la dernière demi-minute
 const RAPPEL = [0.15, 0.55];           // la canalisation, puis le temps à la base
 const autour = ([x, y], i, r = 2.6) => [borner(x + r * Math.cos((i * 2 * Math.PI) / 5)), borner(y + r * Math.sin((i * 2 * Math.PI) / 5))];
-const RONDE = (camp, t) => [pointSur('milieu', camp ? 0.6 : 0.4), camp ? [63, 58] : [58, 64], pointSur('milieu', camp ? 0.58 : 0.42), camp ? [42, 36] : [36, 42]][Math.floor(t / 2.5) % 4];
+/* Où un camp se tient groupé, à tour de rôle, quand rien ne presse : le milieu, la rivière du dragon, la rivière du Nashor — chacun de son côté. */
+const RONDE = (camp, t) => [pointSur('milieu', camp ? 0.62 : 0.38), camp ? [72, 56] : [56, 74], pointSur('milieu', camp ? 0.6 : 0.4), camp ? [44, 27] : [27, 44]][Math.floor(t / 2.5) % 4];
+const POUSSEE_VUE = 2;                 // le haut part vers la tour qu'il fera tomber, jusqu'à deux minutes avant
 
 /** Les rappels de la phase de lignes : [camp][rôle] → les minutes où il rentre (une ou deux fois, hors des combats). */
 export function rappelsDe(T, f, graine) {
@@ -317,8 +319,11 @@ export function positionsDe(T, f, t, rappels = null) {
       if (r === 'soutien') return { p: autour(pointSur('bas', u + (camp ? 0.03 : -0.03) + vague), 1, 1.5), rappel: rp !== undefined };
       return { p: pointSur(r, u + vague), rappel: rp !== undefined };
     }
-    // Après les lignes : le haut pousse sa ligne vers l'autre camp, les autres tournent ensemble.
-    if (r === 'haut') return { p: pointSur('haut', camp ? 0.42 : 0.58) };
+    // Après les lignes : le haut pousse une ligne de côté — celle de la tour qu'il va faire tomber, sinon la sienne —, les autres tournent ensemble.
+    if (r === 'haut') {
+      const cible = T.actions.find(a => a.genre === 'poussee' && a.camp === camp && a.t >= t && a.t - t < POUSSEE_VUE);
+      return { p: cible ? [cible.x, cible.y] : pointSur('haut', camp ? 0.42 : 0.58) };
+    }
     const prochain = T.evenements.find(e => (e.quoi === 'dragon' || e.quoi === 'nashor' || e.quoi === 'heraut') && e.t >= t && e.t - t < 1.5);
     const groupe = prochain ? [prochain.x + (camp ? 4 : -4), prochain.y + (camp ? -4 : 4)] : RONDE(camp, t);
     return { p: autour(groupe, i) };
@@ -330,8 +335,8 @@ export function positionsDe(T, f, t, rappels = null) {
     [e.tueur, ...e.aides].filter(i => !e.ligne || DE_LA_LIGNE[e.ligne].includes(ROLES5[i])).forEach(i => { pos[e.camp][i] = { p: autour([e.x, e.y], i, 2) }; });
     pos[1 - e.camp][e.victime] = { p: autour([e.x, e.y], e.victime, 1.2) };
   }
-  // La poussée de côté : le haut au pied de la tour qu'il fait tomber.
-  for (const a of T.actions) if (a.genre === 'poussee' && a.t - t <= APPROCHE && t - a.t < VU_DANS_LE_COUP) pos[a.camp][0] = { p: [a.x, a.y] };
+  // La poussée de côté : le haut reste un moment au pied de la tour qu'il vient de faire tomber.
+  for (const a of T.actions) if (a.genre === 'poussee' && a.t <= t && t - a.t < VU_DANS_LE_COUP) pos[a.camp][0] = { p: [a.x, a.y] };
   // Tombé : un instant là où il est tombé, puis à sa fontaine le temps de revenir.
   for (const e of T.evenements) {
     if (e.quoi !== 'elim' || e.t > t || t - e.t >= RETOUR(e.t)) continue;
