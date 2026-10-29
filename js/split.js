@@ -65,7 +65,7 @@ export function hierSoir(L) {
     const champ = rp ? rp.choix[f.gagnant === x ? nous : 1 - nous][v.r] : null;
     return `<li class="hier-partie"><span class="hier-res ${f.gagnant === x ? 'bon' : 'mauvais'}">${f.gagnant === x ? 'V' : 'D'}</span>
       <span class="hier-id"><b>${horloge(f.duree)} · ${f.equipes[x].k}-${f.equipes[1 - x].k}</b><small>⭐ ${esc(v.n)} ${v.k}/${v.m}/${v.a}${champ ? ` · ${esc(champ)}` : ''}</small></span>
-      <button class="mini" data-direct="${s.cle}|${k}">▶ Regarder</button></li>`;
+      <button class="mini" data-sommaire="${s.cle}|${k}">Sommaire</button><button class="mini" data-direct="${s.cle}|${k}">▶</button></li>`;
   }).join('');
   const mot = enCours ? (s.v[nous] === s.v[1 - nous] ? 'Égalité' : gagne ? 'Tu mènes' : 'Tu tires de l\'arrière') : gagne ? 'Victoire' : 'Défaite';
   return `<div class="hier${gagne ? ' gagne' : ''}"><p class="hier-tete"><b>${mot} ${s.v[nous]}-${s.v[1 - nous]}</b> contre ${esc(eux.nom)}${eux.split ? ` <small>${esc(eux.split)}</small>` : ''}${enCours ? ` · en ${s.bo} parties` : ''}</p>

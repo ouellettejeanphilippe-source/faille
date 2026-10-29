@@ -27,7 +27,8 @@ img/lp/               les photos des joueurs et les logos des équipes, HORS DU 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, les déblocages, le club, le journal)
 js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          les sections Bureau (la boîte, hier soir), Effectif et agents libres ; la stratégie ; le bilan d'un split
+js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), l'Effectif (ton cinq, le tableau de tes joueurs), les agents libres ; la stratégie ; le bilan d'un split
+js/soir.js            « Ce soir » avant une partie (l'affiche, la forme, le face-à-face, leur cinq), le sommaire d'une partie jouée ; la une, les nouvelles, autour de la ligue
 js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
 js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
 js/sauvegardes.js     les parties (un index, une clé chacune, l'export et l'import), le méta et les options, dans le stockage
@@ -122,7 +123,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
-- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; une décision se règle dans la boîte.
+- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; le Bureau en quatre onglets (Boîte, Proprio, Coach, Vestiaire), une maison par sujet ; une décision se règle dans la boîte.
+- Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
 
@@ -158,7 +160,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run) et sa **finition** (Base, Argent, Or, Holo) ; un **album** par split.
 - **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
 - **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.
-- **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau.
+- **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau ; **ce soir** : la partie qui vient, son affiche et son face-à-face ; le **sommaire** : une partie jouée, en un écran ; **la une** : le fait le plus lourd d'hier soir, dit par une voix ; les **nouvelles** : qui est en feu, qui est en panne.
 
 ## Tester
 

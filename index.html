@@ -26,11 +26,9 @@
   <header class="topbar">
     <div class="topbar-inner">
       <button type="button" class="retour-btn" id="retourBtn" data-retour hidden><svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Retour</button>
+      <span class="ecusson-tete" id="teteEcusson" aria-hidden="true"></span>
       <div class="tete-id"><b class="tete-nom" id="teteNom">Faille</b><span class="tete-etat" id="teteEtat">—</span></div>
       <div class="tete-chiffres">
-        <div class="tete-ch" id="teteFiche" hidden><span class="tete-ch-l">Fiche</span><b class="tete-ch-v"></b></div>
-        <div class="tete-ch" id="teteRang" hidden><span class="tete-ch-l">Rang</span><b class="tete-ch-v"></b></div>
-        <div class="tete-ch" id="teteJetons" hidden><span class="tete-ch-l">Jetons</span><b class="tete-ch-v"></b></div>
         <div class="tete-ch jauge" id="jauge" hidden><span class="tete-ch-l">Plafond restant</span><b class="tete-ch-v" id="jaugeReste">—</b><span class="piste" aria-hidden="true"><span class="rempli" id="jaugeRempli"></span></span></div>
       </div>
       <button type="button" class="menu-btn" id="menuBtn" hidden aria-label="Menu"><svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg></button>
@@ -52,15 +50,16 @@
 
     <!-- LE SPLIT, en quatre sections (la barre du bas) : le Bureau, l'Effectif, le Marché, la Ligue. L'action principale reste en bas, au-dessus de la barre. -->
     <section id="split" class="ecran" hidden>
-      <div class="ecran-tete compacte"><h1 id="split-titre"></h1><p id="split-mandat" class="mandat"></p></div>
+      <div id="bande"></div>
       <nav class="sousnav" id="sousnav" hidden></nav>
       <div id="vue"></div>
       <div class="actionbar avec-nav">
         <button id="decision" class="go" hidden>Une décision t'attend</button>
-        <button id="journee" class="go">Journée suivante</button>
+        <button id="journee" class="go">Jouer ce soir</button>
         <button id="series" class="go" hidden>Lancer les séries</button>
         <button id="ronde" class="go" hidden>Ronde suivante</button>
         <button id="bilan-ouvrir" class="go" hidden>Le bilan du split</button>
+        <button id="regarder" hidden>▶ Regarder</button>
         <button id="jusqua" title="Jusqu'aux séries, ou jusqu'à la prochaine décision"><svg class="ico" aria-hidden="true"><use href="#i-saut"/></svg>Jusqu'aux séries</button>
       </div>
     </section>
@@ -83,6 +82,8 @@
     <section id="repechage" class="couche" hidden></section>
     <section id="strategie" class="couche" hidden></section>
     <section id="album" class="couche" hidden></section>
+    <section id="soir" class="couche" hidden></section>
+    <section id="sommaire" class="couche" hidden></section>
     <section id="feuille" class="couche" hidden></section>
     <section id="direct" class="couche" hidden></section>
     <section id="carte" class="couche" hidden></section>

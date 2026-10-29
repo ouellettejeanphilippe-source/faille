@@ -31,18 +31,20 @@ import { tempoDuSplit, equipeReelle, classement } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { attendRepechage, repechageDe } from './repechage.js';
-import { jetonsDe, liensDe, LIENS } from './rogue.js';
+import { liensDe, LIENS, COACHS } from './rogue.js';
 import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION } from './partie.js';
-import { phraseMandat, aTraiter, vueBureau, vueEffectif, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
+import { phraseMandat, aTraiter, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
+import { ecranCeSoir, ecranSommaire } from './soir.js';
+import { terrainDe } from './terrain.js';
+import { ecussonHtml } from './fiche.js';
 import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe } from './meta.js';
-import { COACHS } from './rogue.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
 import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
 import { ecranRegles } from './regles.js';
-import { ouvrirDirect, fermerDirect } from './direct.js';
+import { ouvrirDirect, fermerDirect, faillePlate } from './direct.js';
 import { activerSons, jouerSon } from './sons.js';
 
 const $ = s => document.querySelector(s);
@@ -50,14 +52,15 @@ const $$ = s => document.querySelectorAll(s);
 
 const G = {
   index: null, champions: null, splits: new Map(), P: null, pid: null, de: null, meta: null, options: null, vue: 'titre',
-  section: 'bureau', sous: { marche: 'agents', ligue: 'classement' },
+  section: 'bureau', sous: { bureau: 'boite', effectif: 'cinq', marche: 'agents', ligue: 'classement' }, joueurs: { vue: 'saison', tri: 'kda' }, regarderApres: false,
   carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null,
 };
 /* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
-const COUCHES = ['#carte', '#direct', '#feuille', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
+const COUCHES = ['#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
-const rang = k => (k === 1 ? '1er' : `${k}e`);
 const SOUS = {
+  bureau: [['boite', 'Boîte'], ['proprio', 'Proprio'], ['coach', 'Coach'], ['vestiaire', 'Vestiaire']],
+  effectif: [['cinq', 'Ton cinq'], ['joueurs', 'Joueurs']],
   marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu']],
   ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries']],
 };
@@ -136,10 +139,8 @@ function majTete() {
   $('#retourBtn').hidden = !COUCHES.some(id => !$(id).hidden);
   $('#menuBtn').hidden = !enJeu || !$('#menu').hidden;
   $('#teteNom').textContent = enJeu ? P.club.nom : 'Faille';
+  $('#teteEcusson').innerHTML = ecussonHtml(enJeu ? P.club : { ...clubDe(G.meta), code: 'FAI' });
   $('#jauge').hidden = !enJeu || P.etape !== 'bati';
-  $('#teteFiche').hidden = !enJeu || !P.L;
-  $('#teteRang').hidden = !enJeu || !P.L;
-  $('#teteJetons').hidden = !enJeu || P.etape === 'bati';
   $('#nav').hidden = !enJeu || P.etape !== 'split';
   if (!enJeu) { $('#teteEtat').textContent = 'Le jeu de gestion des splits'; return; }
   const L = P.L;
@@ -148,16 +149,9 @@ function majTete() {
   $('#jaugeReste').textContent = `${reste} / ${plafond}`;
   $('#jaugeReste').className = `tete-ch-v${reste <= 3 ? ' serre' : ''}`;
   $('#jaugeRempli').style.width = `${(100 * reste) / plafond}%`;
-  $('#teteJetons .tete-ch-v').textContent = jetonsDe(L, P.R);
   if (P.etape === 'bati') $('#teteEtat').textContent = `Split ${P.run.n} · ${5 - libresDe(P.eff).length} / 5 signés`;
   else if (!L) $('#teteEtat').textContent = `Bilan du split ${P.run.n}`;
-  else {
-    const c = classement(L);
-    const k = c.findIndex(l => l.i === 0);
-    $('#teteFiche .tete-ch-v').textContent = `${c[k].v}-${c[k].d}`;
-    $('#teteRang .tete-ch-v').textContent = rang(k + 1);
-    $('#teteEtat').textContent = `Split ${P.run.n} · ${titreSplit(L)}`;
-  }
+  else $('#teteEtat').textContent = `Split ${P.run.n} · ${titreSplit(L)}`;
 }
 
 function montrer(id) {
@@ -442,11 +436,14 @@ function rendreSplit() {
   const S = L.series;
   const saison = L.jour < L.journees.length;
   const attend = !!enAttente(P);
-  $('#split-titre').textContent = titreSplit(L);
-  $('#split-mandat').textContent = phraseMandat(P);
+  $('#bande').innerHTML = G.section === 'bureau' ? bandeChiffres(P) : '';
   $('#decision').hidden = !attend || G.section === 'bureau';
+  const ta = taSerie(L);
+  const adv = ta && L.equipes[ta.a === 0 ? ta.b : ta.a];
   $('#journee').hidden = !saison || attend;
   $('#journee').disabled = false;
+  $('#journee').textContent = adv ? `Jouer ce soir · ${adv.nom}` : 'Journée suivante';
+  $('#regarder').hidden = attend || !ta || (!saison && !(S && S.champion === null));
   $('#jusqua').hidden = !saison || attend;
   $('#series').hidden = saison || !!S;
   $('#ronde').hidden = !S || S.champion !== null;
@@ -470,8 +467,10 @@ function rendreVue() {
   const P = G.P;
   const L = P.L;
   const s = G.section;
-  if (s === 'bureau') $('#vue').innerHTML = vueBureau(P, ctx());
-  else if (s === 'effectif') $('#vue').innerHTML = vueEffectif(P, ctx(), G.entr);
+  if (s === 'bureau') {
+    const k = G.sous.bureau;
+    $('#vue').innerHTML = k === 'proprio' ? vueProprio(P) : k === 'coach' ? vueCoach(P) : k === 'vestiaire' ? vueVestiaire(P, ctx(), G.entr) : vueBoite(P, ctx());
+  } else if (s === 'effectif') $('#vue').innerHTML = G.sous.effectif === 'joueurs' ? vueJoueurs(P, ctx(), G.joueurs.vue, G.joueurs.tri) : vueCinq(P);
   else if (s === 'marche') {
     const k = G.sous.marche;
     if (k === 'agents') rendreAgents();
@@ -523,8 +522,35 @@ function jouer(a) {
   const avant = compte(taDerniere(G.P.L));
   if (faire(a) === undefined) return;
   const s = G.P.L && taDerniere(G.P.L);
-  if (s && compte(s) !== avant) jouerSon(s.parties[s.parties.length - 1].gagnant === (s.a === 0 ? 0 : 1) ? 'victoire' : 'defaite');
+  const neuve = s && compte(s) !== avant;
+  if (neuve && !G.regarderApres) jouerSon(s.parties[s.parties.length - 1].gagnant === (s.a === 0 ? 0 : 1) ? 'victoire' : 'defaite');
+  G.section = 'bureau';
+  G.sous.bureau = 'boite';
   allerA('bureau');
+  // « Regarder » : la partie qui vient de se jouer, en direct ; sinon, rien ne s'ouvre (hier soir la dit).
+  if (G.regarderApres && neuve) regarder(`${s.cle}|${s.parties.length - 1}`);
+  G.regarderApres = false;
+}
+
+/* « CE SOIR » : l'avant-match de ta prochaine partie. */
+function ouvrirCeSoir() {
+  const L = G.P.L;
+  const s = taSerie(L);
+  if (!s) return;
+  $('#soir').innerHTML = ecranCeSoir(G.P, ctx(), s, planAdverse(G.P, ctx(), s.a === 0 ? s.b : s.a));
+  montrer('#soir');
+}
+
+/* LE SOMMAIRE d'une partie jouée : « clé de la série|numéro de la partie ». */
+function ouvrirSommaire(quoi) {
+  const L = G.P.L || G.P.dernier;
+  const [cle, k] = quoi.split('|');
+  const s = L && serieDe(L, cle);
+  const p = s && s.parties[Number(k)];
+  if (!p) return;
+  const T = terrainDe(p.feuille, [L.equipes[p.bleu].nom, L.equipes[p.rouge].nom], graineDe(L.graine, `${cle}-${k}-direct`));
+  $('#sommaire').innerHTML = ecranSommaire(L, s, Number(k), G.champions, faillePlate(T));
+  montrer('#sommaire');
 }
 
 function rendreRepechage() {
@@ -555,6 +581,15 @@ async function toucherVue(ev) {
   if (!b || b.disabled || ev.type !== 'click') return;
   if (b.id === 'ouvrir-strategie') ouvrir('strategie');
   else if (b.dataset.sous) { G.sous[G.section] = b.dataset.sous; rendreSplit(); }
+  else if (b.dataset.soir !== undefined) ouvrirCeSoir();
+  else if (b.dataset.sommaire) ouvrirSommaire(b.dataset.sommaire);
+  else if (b.dataset.tri) { G.joueurs.tri = b.dataset.tri; rendreVue(); }
+  else if (b.dataset.vueJoueurs) { G.joueurs.vue = b.dataset.vueJoueurs; rendreVue(); }
+  else if (b.id === 'soir-jouer' || b.id === 'soir-regarder') {
+    fermer('#soir');
+    G.regarderApres = b.id === 'soir-regarder';
+    avancer(G.P.L.series ? 'ronde' : 'journee');
+  }
   else if (b.dataset.direct) regarder(b.dataset.direct);
   else if (b.dataset.strategie !== undefined) {
     faire({ t: 'strategie', id: b.dataset.strategie || null });
@@ -676,6 +711,7 @@ async function demarrer() {
   $('#jouer').addEventListener('click', lancer);
   $('#journee').addEventListener('click', () => { $('#journee').disabled = true; avancer('journee'); });
   $('#jusqua').addEventListener('click', () => jouer({ t: 'jusqua' }));
+  $('#regarder').addEventListener('click', () => { G.regarderApres = true; avancer(G.P.L.series ? 'ronde' : 'journee'); });
   $('#series').addEventListener('click', () => { faire({ t: 'series' }); G.sous.ligue = 'series'; allerA('ligue'); });
   $('#ronde').addEventListener('click', () => avancer('ronde'));
   $('#bilan-ouvrir').addEventListener('click', () => {
@@ -685,7 +721,7 @@ async function demarrer() {
   });
   $('#decision').addEventListener('click', () => allerA('bureau'));
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('[data-section]'); if (b) allerA(b.dataset.section); });
-  for (const id of ['#vue', '#sousnav', '#strategie', '#feuille']) {
+  for (const id of ['#vue', '#sousnav', '#strategie', '#feuille', '#soir', '#sommaire']) {
     $(id).addEventListener('click', toucherVue);
     $(id).addEventListener('keydown', toucherVue);
   }

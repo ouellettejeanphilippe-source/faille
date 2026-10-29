@@ -54,6 +54,22 @@ export function statsDuSplit(L) {
   return [...lignes.values()];
 }
 
+/** Ce qu'une équipe de la ligue a fait par partie, dans ses feuilles : { pj, v, k, m, or, tours, dragons, barons, herauts, duree } ; null avant sa première partie. */
+export function profilDEquipe(L, i) {
+  const ps = partiesDe(L, i);
+  if (!ps.length) return null;
+  const moy = f => ps.reduce((s, x) => s + f(x), 0) / ps.length;
+  return {
+    pj: ps.length, v: ps.filter(x => x.f.gagnant === x.x).length,
+    k: moy(x => x.f.equipes[x.x].k), m: moy(x => x.f.equipes[1 - x.x].k), or: moy(x => x.f.equipes[x.x].or),
+    tours: moy(x => x.f.equipes[x.x].tours), dragons: moy(x => x.f.equipes[x.x].dragons), barons: moy(x => x.f.equipes[x.x].barons),
+    herauts: moy(x => x.f.equipes[x.x].herauts), duree: moy(x => x.f.duree),
+  };
+}
+
+/** Les dernières parties d'une équipe, de la plus récente à la plus ancienne : [{ f, x, adv, gagne }]. */
+export const dernieresParties = (L, i, n) => partiesDe(L, i).slice(-n).reverse().map(({ f, x, adv }) => ({ f, x, adv, gagne: f.gagnant === x }));
+
 /** Le KDA d'une ligne de stats : (éliminations + aides) ÷ morts (une mort au moins). */
 export const kda = l => (l.k + l.a) / Math.max(1, l.m);
 /* Assez de parties pour un classement par moyenne : les deux tiers des parties de son équipe (sa saison et ses séries). */

@@ -72,8 +72,9 @@ function courbe(f, t) {
 const pts = l => l.map(p => p.join(',')).join(' ');
 const initiales = n => esc(String(n).replace(/\s*\(.*\)$/, '').slice(0, 2).toUpperCase());
 
-/* LA FAILLE, dessinée une fois : le sol, les bois et leurs camps, la rivière et ses crabes, les lignes, les fosses, les bases, les tours ; puis les dix joueurs. */
-function carte(T, joueurs) {
+/* Le décor de la Faille : le sol, les bois et leurs murs, la rivière et ses crabes, les lignes, les fosses, les bases, les tours et les inhibiteurs (tombés à `t`, s'il est dit). */
+function decor(T, t = -1) {
+  const tombee = x => (x.tombe !== null && x.tombe <= t ? ' tombee' : '');
   const bois = BOIS.flatMap((b, c) => b.map(poly => `<polygon class="tf-bois camp-${c}" points="${pts(poly)}"/>`)).join('')
     + MURS.map(m => `<polygon class="tf-mur" points="${pts(m)}"/>`).join('');
   const camps = CAMPS.flatMap((cs, c) => cs.map(([k, [x, y]]) => `<circle class="tf-camp tf-camp-${k}" cx="${x}" cy="${y}" r="${k === 'bleu' || k === 'rouge' ? 1.9 : 1.3}"/>`)).join('');
@@ -81,14 +82,25 @@ function carte(T, joueurs) {
   const lignes = Object.values(TRACES).map(l => `<polyline class="tf-ligne" points="${pts(l)}"/>`).join('');
   const fosses = Object.entries(FOSSES).map(([k, [x, y]]) => `<circle class="tf-fosse" cx="${x}" cy="${y}" r="4.5"/><text class="tf-fosse-ico" x="${x}" y="${y}">${ICONES[k === 'dragon' ? 'dragon' : 'nashor']}</text>`).join('');
   const bases = BASES.map(([x, y], c) => `<circle class="tf-base camp-${c}" cx="${x}" cy="${y}" r="6"/>`).join('');
-  const tours = T.tours.map((tr, k) => `<rect class="tf-tour camp-${tr.camp}" data-tour="${k}" x="${(tr.x - 1.4).toFixed(1)}" y="${(tr.y - 1.4).toFixed(1)}" width="2.8" height="2.8"/>`).join('');
-  const inhibs = T.inhibs.map((x, k) => `<rect class="tf-inhib camp-${x.camp}" data-inhib="${k}" x="${(x.x - 1.2).toFixed(1)}" y="${(x.y - 1.2).toFixed(1)}" width="2.4" height="2.4" transform="rotate(45 ${x.x.toFixed(1)} ${x.y.toFixed(1)})"/>`).join('');
+  const tours = T.tours.map((tr, k) => `<rect class="tf-tour camp-${tr.camp}${tombee(tr)}" data-tour="${k}" x="${(tr.x - 1.4).toFixed(1)}" y="${(tr.y - 1.4).toFixed(1)}" width="2.8" height="2.8"/>`).join('');
+  const inhibs = T.inhibs.map((x, k) => `<rect class="tf-inhib camp-${x.camp}${tombee(x)}" data-inhib="${k}" x="${(x.x - 1.2).toFixed(1)}" y="${(x.y - 1.2).toFixed(1)}" width="2.4" height="2.4" transform="rotate(45 ${x.x.toFixed(1)} ${x.y.toFixed(1)})"/>`).join('');
+  return `<rect class="tf-sol" x="0" y="0" width="100" height="100" rx="3"/>${bois}<path class="tf-riviere" d="M4 4 L96 96"/>${lignes}${camps}${crabes}${fosses}${bases}${tours}${inhibs}`;
+}
+
+/** LA FAILLE D'UNE PARTIE JOUÉE, à plat (le sommaire) : les tours tombées, chaque élimination à sa place, aux couleurs de qui l'a faite. */
+export function faillePlate(T) {
+  const croix = T.evenements.filter(e => e.quoi === 'elim').map(e => `<text class="tf-croix camp-${e.camp}" x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}">✕</text>`).join('');
+  return `<div class="tf"><svg class="tf-carte" viewBox="0 0 100 100" aria-hidden="true">${decor(T, Infinity)}${croix}</svg></div>`;
+}
+
+/* LA FAILLE DU DIRECT, dessinée une fois : le décor, puis les dix joueurs. */
+function carte(T, joueurs) {
   const qui = joueurs.flatMap((eq, c) => eq.map((j, i) => `<g class="tf-joueur camp-${c}" data-j="${c}-${i}">
       <circle class="tf-anneau" r="2.6"/>${j.icone ? `<image href="${j.icone}" x="-2.3" y="-2.3" width="4.6" height="4.6" clip-path="url(#tf-rond)"/>` : `<text class="tf-init" y="0.1">${initiales(j.n)}</text>`}
       <text class="tf-nom" y="5.8">${esc(j.n.replace(/\s*\(.*\)$/, ''))}</text></g>`)).join('');
   return `<div class="tf"><svg class="tf-carte" viewBox="0 0 100 100" aria-hidden="true">
     <defs><clipPath id="tf-rond" clipPathUnits="objectBoundingBox"><circle cx="0.5" cy="0.5" r="0.5"/></clipPath></defs>
-    <rect class="tf-sol" x="0" y="0" width="100" height="100" rx="3"/>${bois}<path class="tf-riviere" d="M4 4 L96 96"/>${lignes}${camps}${crabes}${fosses}${bases}${tours}${inhibs}
+    ${decor(T)}
     <g class="tf-sbires"></g><g class="tf-marques"></g><g class="tf-joueurs">${qui}</g></svg>
     <p class="tf-action"></p></div>`;
 }

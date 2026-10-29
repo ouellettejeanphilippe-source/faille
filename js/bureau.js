@@ -21,6 +21,7 @@ import { carteDuCoach } from './boutique.js';
 import { iconeChampion } from './images.js';
 import { classement } from './sim.js';
 import { hierSoir } from './split.js';
+import { carteCeSoir, laRoute, laUne, nouvelles, autourDeLaLigue } from './soir.js';
 import { statsDuSplit, kda, TROPHEES, GALONS } from './palmares.js';
 import { medaillesDeLaPartie } from './meta.js';
 
@@ -47,7 +48,7 @@ const demandes = (id, cinq) => {
 };
 
 /** L'identité d'une équipe de la ligue (sa vraie partie), en une phrase ; null si rien ne ressort. */
-function identite(P, ctx, i) {
+export function planAdverse(P, ctx, i) {
   const a = P.adversaires[i - 1];
   if (!a) return null;
   const { split } = ctx.splits.get(a.id);
@@ -73,7 +74,7 @@ export function ecranStrategie(P, ctx) {
   const L = P.L;
   const cinq = L.equipes[0].cinq;
   const s = taSerie(L);
-  const enFace = s ? identite(P, ctx, s.a === 0 ? s.b : s.a) : null;
+  const enFace = s ? planAdverse(P, ctx, s.a === 0 ? s.b : s.a) : null;
   const items = Object.entries(STRATEGIES).map(([id, [ico, nom, texte, , gain, prix]]) => {
     const { mot } = lireFit(id, cinq);
     return `<li><button class="strategie${P.strategie === id ? ' active' : ''}" data-strategie="${id}">
@@ -90,38 +91,18 @@ export function ecranStrategie(P, ctx) {
 /** Le nombre de messages qui attendent une décision. */
 export const aTraiter = P => (enAttente(P) ? 1 : 0);
 
-/* LA PROCHAINE SÉRIE, dite par le dépisteur : qui, son rang, ce qu'il priorise, ses plus joués. */
-function prochaine(P, ctx) {
-  const L = P.L;
-  const s = taSerie(L);
-  if (!s) return '';
-  const i = s.a === 0 ? s.b : s.a;
-  const eux = L.equipes[i];
-  const c = classement(L);
-  const k = c.findIndex(l => l.i === i);
-  const fetiches = Object.entries(ROLES).map(([r, mot]) => {
-    const ch = eux.cinq[r].bassin[0];
-    return ch ? `${esc(eux.cinq[r].n)} (${mot}) : ${esc(ch[0])}, ${ch[1]} partie${ch[1] > 1 ? 's' : ''}` : null;
-  }).filter(Boolean).join(' · ');
-  const id = identite(P, ctx, i);
-  const nous = s.a === 0 ? 0 : 1;
-  const quand = L.series ? `partie ${s.parties.length + 1} de ${s.bo}, ${s.v[nous]}-${s.v[1 - nous]}` : `journée ${L.jour + 1}`;
-  return message('🔎', 'Le dépisteur', `Contre ${eux.nom} · ${quand}`,
-    `${eux.split ? `${esc(eux.split)} · ` : ''}${rangMot(k + 1)} au classement, ${c[k].v}-${c[k].d}. ${id ? `Ils priorisent ${esc(id)}. ` : ''}Leurs plus joués — ${fetiches}. Ils bannissent tes plus joués.`);
-}
-
-/** LE BUREAU : ce qui attend une décision (réglée ici), hier soir, la prochaine série, le proprio, le commanditaire. */
-export function vueBureau(P, ctx) {
-  const L = P.L;
-  const out = [];
+/* À FAIRE : la décision qui attend, réglée ici, sous sa voix — un événement, un talent du coach, un adjoint pour le staff. */
+function aFaire(P) {
   const ev = enAttente(P);
-  if (ev && ev.id === 'talent') {
+  if (!ev) return '';
+  if (ev.id === 'talent') {
     // Un talent : ton coach monte de niveau, un de ses pouvoirs grandit — ce qu'il ferait alors, en mots.
     const co = COACHS[P.R.coach.id];
     const grandis = pouvoirsDuPersonnage(P.R.coach.id, 5, ev.choix);
-    out.push(message(co.ico, co.nom, 'Un talent · à choisir', esc(`Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`),
-      `<div class="choix">${ev.choix.map(id => { const x = grandis.find(g => g.id === id); return `<button data-choix="${id}"><b>${esc(x.nom)}</b><small>${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></button>`; }).join('')}</div>`));
-  } else if (ev && (ev.id === 'adjoint' || ev.id === 'quiPart')) {
+    return message(co.ico, co.nom, 'Un talent · à choisir', esc(`Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`),
+      `<div class="choix">${ev.choix.map(id => { const x = grandis.find(g => g.id === id); return `<button data-choix="${id}"><b>${esc(x.nom)}</b><small>${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></button>`; }).join('')}</div>`);
+  }
+  if (ev.id === 'adjoint' || ev.id === 'quiPart') {
     // Le staff : un adjoint parmi trois, ou qui part quand il y en a un de trop.
     const co = COACHS[P.R.coach.id];
     const bouton = id => (id === 'aucun' ? '<button data-choix="aucun"><b>Personne cette fois</b><small>Le staff reste comme il est.</small></button>'
@@ -129,44 +110,91 @@ export function vueBureau(P, ctx) {
     const [titre, texte] = ev.id === 'adjoint'
       ? ['Un adjoint pour ton staff · à choisir', `Trois candidats, gratuits. Chacun est un échange : ce qu'il donne, ce qu'il coûte, à chaque partie. Ton staff : ${P.staff.length}/${ADJOINTS_MAX}.`]
       : ['Qui part ? · à trancher', `Le staff tient ${ADJOINTS_MAX} adjoints : un des ${ADJOINTS_MAX + 1} s'en va.`];
-    out.push(message(co.ico, co.nom, titre, esc(texte), `<div class="choix">${ev.choix.map(bouton).join('')}</div>`));
-  } else if (ev) {
-    const E = EVENEMENTS[ev.id];
-    out.push(message(E.ico, E.qui, `${E.titre} · à trancher`, esc(E.texte),
-      `<div class="choix">${ev.choix.map(c => `<button data-choix="${c}"><b>${esc(E.choix[c][0])}</b><small>${esc(E.choix[c][1])}</small></button>`).join('')}</div>`));
+    return message(co.ico, co.nom, titre, esc(texte), `<div class="choix">${ev.choix.map(bouton).join('')}</div>`);
   }
-  if (P.cadeau && L.jour === 0) {
-    out.push(message('🎁', 'Le proprio', 'Un cadeau pour ta run', esc(`Un pack argent offert : ${P.cadeau.map(c => `${CARTES[c][0]} ${CARTES[c][1]}`).join(', ')}. Ils sont au Marché, à la boutique, prêts pour ton plan de jeu.`)));
-  }
-  out.push(prochaine(P, ctx));
-  out.push(message('🏢', 'Le proprio', 'Ton mandat', esc(phraseMandat(P))));
-  const o = objectifsDe(L).filter(x => x.etat !== 'avenir').pop();
-  if (o) {
-    const sur = `${o.fin - o.debut} séries`;
+  const E = EVENEMENTS[ev.id];
+  return message(E.ico, E.qui, `${E.titre} · à trancher`, esc(E.texte),
+    `<div class="choix">${ev.choix.map(c => `<button data-choix="${c}"><b>${esc(E.choix[c][0])}</b><small>${esc(E.choix[c][1])}</small></button>`).join('')}</div>`);
+}
+
+/** LA BANDE DES CHIFFRES du Bureau, comme Cap 82-0 : ta fiche, ton rang, tes jetons. */
+export function bandeChiffres(P) {
+  const L = P.L;
+  const c = classement(L);
+  const k = c.findIndex(l => l.i === 0);
+  const ecart = c[k].pv - c[k].pd;
+  return `<div class="bande"><div><small>Fiche</small><b>${c[k].v}-${c[k].d}</b><small>${ecart >= 0 ? '+' : ''}${ecart} en parties</small></div>
+    <div><small>Rang</small><b>${rangMot(k + 1)}</b><small>sur ${L.equipes.length}</small></div>
+    <div><small>Jetons</small><b>🪙 ${jetonsDe(L, P.R)}</b><small>à dépenser</small></div></div>`;
+}
+
+/** LA BOÎTE : la partie de ce soir, ton plan, à faire, hier soir, la une, les nouvelles, autour de la ligue. */
+export function vueBoite(P, ctx) {
+  const L = P.L;
+  const s = taSerie(L);
+  const faire = aFaire(P);
+  const une = laUne(L);
+  const nouv = nouvelles(L);
+  const autour = autourDeLaLigue(L);
+  const cadeau = P.cadeau && L.jour === 0 ? message('🎁', 'Le proprio', 'Un cadeau pour ta run', esc(`Un pack argent offert : ${P.cadeau.map(c => `${CARTES[c][0]} ${CARTES[c][1]}`).join(', ')}. Ils sont au Marché, au plan de jeu.`)) : '';
+  const [ico, nom] = P.strategie ? STRATEGIES[P.strategie] : ['🧭', 'Aucune stratégie'];
+  return `${carteCeSoir(L, s)}
+    ${s ? `<button id="ouvrir-strategie" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}</b><span>›</span></button>` : ''}
+    <h3 class="a-faire">À faire${faire ? ' · 1 à régler' : ''}</h3>
+    ${faire || cadeau ? `<ul class="boite">${faire}${cadeau}</ul>` : '<p class="sous">Rien à régler : la journée t\'attend.</p>'}
+    <h3>Hier soir</h3>${hierSoir(L)}
+    ${une ? `<div class="une"><small>La une</small><b>${esc(une.titre)}</b><p>${esc(une.voix)} : « ${esc(une.mot)} »</p><small>${esc(une.fait)}</small></div>` : ''}
+    ${nouv.length ? `<h3>Nouvelles</h3><ul class="nouvelles">${nouv.map(x => `<li class="${x.feu ? 'feu' : 'panne'}"><b>${x.feu ? '🔥' : '🧊'} ${esc(x.n)}</b><small>${x.feu ? 'En feu' : 'La panne sèche'} — ${esc(x.mot)}</small></li>`).join('')}</ul>` : ''}
+    ${autour.length ? `<h3>Autour de la ligue</h3><ul class="autour">${autour.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}`;
+}
+
+/** LE PROPRIO : ton mandat et où tu en es, ses objectifs de six journées, l'élan, ton commanditaire. */
+export function vueProprio(P) {
+  const L = P.L;
+  const c = classement(L);
+  const k = c.findIndex(l => l.i === 0);
+  const [cle] = mandatDuSplit(P);
+  const dedans = !L.series && k < 6;
+  const etat = L.series ? 'Les séries sont commencées.' : cle === 'series' ? (dedans ? `Tu es ${rangMot(k + 1)} : dans les séries.` : `Tu es ${rangMot(k + 1)} : hors des séries.`) : `Tu es ${rangMot(k + 1)}${k < 2 ? ' : tu attendrais en demi-finale' : dedans ? ' : dans les séries' : ' : hors des séries'}.`;
+  const objectifs = objectifsDe(L).map(o => {
     const texte = {
-      encours: `Gagne ${o.cible} de tes ${sur} : ${o.v} jusqu'ici. +${OBJECTIF.jetons} 🪙 si c'est fait.`,
-      atteint: `Objectif atteint, ${victoires(o.v)} pour ${o.cible} demandées : +${OBJECTIF.jetons} 🪙.`,
-      rate: `Objectif raté : ${victoires(o.v)} pour ${o.cible} demandées.`,
+      avenir: `Gagne-en ${o.cible} sur ${o.fin - o.debut}`,
+      encours: `Gagne-en ${o.cible} sur ${o.fin - o.debut} : ${o.v} jusqu'ici`,
+      atteint: `Atteint : ${victoires(o.v)} pour ${o.cible}`,
+      rate: `Raté : ${victoires(o.v)} pour ${o.cible}`,
     }[o.etat];
-    const faits = objectifsDe(L).filter(x => x.etat === 'atteint').length;
-    out.push(message('🏢', 'Le proprio', `Journées ${o.debut + 1} à ${o.fin}`, esc(`${texte}${faits ? ` Objectifs atteints ce split : ${faits}.` : ''}`)));
-  }
-  if (gainsDe(L).elan) out.push(message('🏢', 'Le proprio', 'L\'élan', esc(`${ELAN.suite} victoires de suite : +${ELAN.jetons} 🪙.`)));
+    return `<li class="objectif ${o.etat}"><b>Journées ${o.debut + 1} à ${o.fin}</b><small>${esc(texte)} · +${OBJECTIF.jetons} 🪙</small></li>`;
+  }).join('');
+  let commanditaire = '<p class="sous">Le commanditaire se choisit avant la première journée.</p>';
   if (L.commanditaire) {
-    const [ico, nom, objectif, jetons] = COMMANDITAIRES[L.commanditaire];
+    const [cico, cnom, objectif, jetons] = COMMANDITAIRES[L.commanditaire];
     const parties = partiesCommanditees(L);
     const ok = parties.filter(Boolean).length;
-    out.push(message('💼', nom, `${ico} Ton commanditaire`, esc(`Objectif : ${objectif}. ${ok} partie${ok > 1 ? 's' : ''} réussie${ok > 1 ? 's' : ''} sur ${parties.length} : +${ok * jetons} 🪙 jusqu'ici.`)));
+    commanditaire = `<ul class="liens"><li class="actif"><b>${cico} ${esc(cnom)}</b><small>${esc(`Objectif : ${objectif}. ${ok} partie${ok > 1 ? 's' : ''} réussie${ok > 1 ? 's' : ''} sur ${parties.length} : +${ok * jetons} 🪙 jusqu'ici.`)}</small></li></ul>`;
   }
-  // Les décisions déjà prises de la gestion (le commanditaire, les adjoints et les talents se disent ailleurs).
-  for (const [cle, choix] of Object.entries(P.decisions).filter(([k]) => k.startsWith(`${P.run.n}-`) && k.split('-')[1] !== 'commanditaire' && EVENEMENTS[k.split('-')[1]])) {
-    const E = EVENEMENTS[cle.split('-')[1]];
-    out.push(message(E.ico, E.qui, E.titre, esc(`Tu as choisi : ${E.choix[choix][0].toLowerCase()}. ${E.choix[choix][1]}`)));
-  }
-  out.push(message('📋', 'Le DG', 'Le marché', esc(marcheOuvert(L)
-    ? `Ouvert jusqu'à la journée ${dateLimite(L)} : des agents libres chaque journée, ${MARCHE.prix} 🪙 la signature.${P.bons ? ` Le club paie ta prochaine (${P.bons}).` : ''}`
-    : 'La date limite des échanges est passée : ton effectif est fixé. Ton banc peut encore jouer.')));
-  return `<h3>Hier soir</h3>${hierSoir(L)}<h3>La boîte</h3><ul class="boite">${out.filter(Boolean).join('')}</ul>`;
+  const deja = Object.entries(P.decisions).filter(([x]) => x.startsWith(`${P.run.n}-`) && x.split('-')[1] !== 'commanditaire' && EVENEMENTS[x.split('-')[1]])
+    .map(([x, choix]) => { const E = EVENEMENTS[x.split('-')[1]]; return `<li><b>${E.ico} ${esc(E.titre)}</b><small>${esc(E.choix[choix][0])}</small></li>`; }).join('');
+  return `<div class="mandat-carte"><small>🏢 Le proprio · ton mandat</small><b>${esc(mandatDuSplit(P)[1])}</b><p>${esc(etat)}</p>
+      <span class="piste mandat-piste"><span class="rempli" style="width:${Math.round((100 * L.jour) / L.journees.length)}%"></span></span><small>Journée ${Math.min(L.jour, L.journees.length)} sur ${L.journees.length}</small></div>
+    <p class="mandat">${esc(phraseMandat(P))}</p>
+    <h3>Ses objectifs · six journées à la fois</h3><ul class="objectifs">${objectifs}</ul>
+    ${gainsDe(L).elan ? `<p class="etat">L'élan : ${ELAN.suite} victoires de suite, +${ELAN.jetons} 🪙.</p>` : `<p class="sous">L'élan : ${ELAN.suite} victoires de suite paient ${ELAN.jetons} 🪙.</p>`}
+    <h3>Ton commanditaire</h3>${commanditaire}
+    ${deja ? `<h3>Ce que tu as tranché</h3><ul class="liens">${deja}</ul>` : ''}
+    <h3>Le marché</h3><p class="sous">${esc(marcheOuvert(L) ? `Ouvert jusqu'à la journée ${dateLimite(L)} : des agents libres chaque journée, ${MARCHE.prix} 🪙 la signature.${P.bons ? ` Le club paie ta prochaine (${P.bons}).` : ''}` : 'La date limite des échanges est passée : ton effectif est fixé. Ton banc peut encore jouer.')}</p>`;
+}
+
+/** LE COACH : le personnage et son staff, et la route des prochaines journées. */
+export const vueCoach = P => `${tonCoach(P) || '<p class="sous">Une partie d\'avant le coach-personnage : ton coach s\'achète au Marché, au plan de jeu.</p>'}${laRoute(P.L)}`;
+
+/** LE VESTIAIRE : la forme de tes joueurs, tes liens d'origine, l'entraînement, ton histoire dans la run. `qui` : le rôle ouvert à l'entraînement. */
+export function vueVestiaire(P, ctx, qui) {
+  const nouv = nouvelles(P.L);
+  const histoire = P.run.passes.map(p => `<li><b>Split ${p.n} · ${p.champion ? 'champion' : p.rempli ? 'mandat rempli' : p.sursis ? 'pardonné' : 'mandat manqué'}</b><small>${p.fiche[0]}-${p.fiche[1]}, ${rangMot(p.rang)}${p.galons.length ? ` · ${p.galons.map(g => `${GALONS[g.id][0]} ${esc(g.n)}`).join(', ')}` : ''}</small></li>`).join('');
+  return `<h3>Ce qui court</h3>${nouv.length ? `<ul class="nouvelles">${nouv.map(x => `<li class="${x.feu ? 'feu' : 'panne'}"><b>${x.feu ? '🔥' : '🧊'} ${esc(x.n)}</b><small>${esc(x.mot)}</small></li>`).join('')}</ul>` : '<p class="sous">Personne en feu, personne en panne : ça se lit sur les trois dernières parties.</p>'}
+    ${lesLiens(P)}
+    ${lEntrainement(P, ctx, qui)}
+    <h3>Ton histoire · split ${P.run.n}</h3>${histoire ? `<ul class="liens">${histoire}</ul>` : '<p class="sous">Ton premier split de la run.</p>'}`;
 }
 
 /* Les stats d'un de tes joueurs dans ta ligue, en une ligne : parties, moyenne K/M/A, KDA. */
@@ -233,19 +261,42 @@ function tonCoach(P) {
     <p class="sous">Un adjoint parmi trois, gratuit, aux journées 6 et 12 de chaque split ; chacun est un échange, qui paie quand il s'emboîte avec ta stratégie, tes cartes, ton coach.</p>`;
 }
 
-/** L'EFFECTIF : ton plan de match, ton cinq et ton banc (leurs stats chez toi), les liens, l'entraînement. `qui` : le rôle ouvert à l'entraînement. */
-export function vueEffectif(P, ctx, qui) {
+/** TON CINQ : ton plan de match, ton cinq et ton banc (leurs stats chez toi), et ce qu'on fait du banc. */
+export function vueCinq(P) {
   const st = statsDuSplit(P.L);
   const b = P.eff.banc;
   const cinq = Object.entries(ROLES).map(([r, mot]) => caseEffectif(mot, P.eff.cinq[r], st)).join('');
   const banc = caseEffectif('Banc', b, st, b ? `<span class="case-gestes"><button data-geste="permuter">Faire jouer</button><button data-geste="relacher">Relâcher</button></span>` : '');
   return `${panneauStrategie(P)}
-    ${tonCoach(P)}
     <h3>Ton effectif · ${masseDe(P.eff)} / ${plafondDe(P.eff)} pts</h3>
     <p class="sous">Touche un joueur pour sa carte. Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.</p>
-    <ol class="alignement">${cinq}${banc}</ol>
-    ${lesLiens(P)}
-    ${lEntrainement(P, ctx, qui)}`;
+    <ol class="alignement">${cinq}${banc}</ol>`;
+}
+
+/*
+ * LES JOUEURS, en tableau, comme Cap 82-0 : ta saison à ce jour (dans ta
+ * ligue) ou leur vraie saison (leur split) ; un en-tête trie, un nom ouvre la
+ * carte. De vraies stats seulement.
+ */
+const COLONNES = { pj: 'PJ', k: 'É', m: 'M', a: 'A', kda: 'KDA', or: 'Or/min' };
+export function vueJoueurs(P, ctx, vue = 'saison', tri = 'kda') {
+  const st = statsDuSplit(P.L);
+  const tous = [...Object.entries(ROLES).map(([r]) => P.eff.cinq[r]), P.eff.banc].filter(Boolean);
+  const lignes = tous.map(c => {
+    let l;
+    if (vue === 'saison') l = st.find(x => x.i === 0 && x.n === c.n && x.r === c.r) || { pj: 0, k: 0, m: 0, a: 0, or: 0, min: 0 };
+    else {
+      const j = ctx.splits.get(c.ref.id).split.equipes.find(e => e.nom === c.ref.e).joueurs.find(x => x.n === c.n && x.r === c.r);
+      l = { pj: j.pj, k: j.k, m: j.m, a: j.a, or: j.or[1] ? j.or[0] : 0, min: j.or[1] ? j.or[2] : 0 };
+    }
+    return { c, l, val: { pj: l.pj, k: l.k, m: -l.m, a: l.a, kda: kda(l), or: l.min ? l.or / l.min : 0 } };
+  }).sort((x, y) => y.val[tri] - x.val[tri]);
+  const tete = Object.entries(COLONNES).map(([k, mot]) => `<th><button class="tri${tri === k ? ' on' : ''}" data-tri="${k}">${mot}${tri === k ? ' ▾' : ''}</button></th>`).join('');
+  const corps = lignes.map(({ c, l }) => `<tr data-contrat="${esc(cleDe(c.ref))}" tabindex="0"><td class="tj-qui">${vignette(c)}<span><b>${esc(c.n)}</b><small>${c === P.eff.banc ? 'Banc' : ROLES[c.r]} · ${esc(c.niveau)}</small></span></td>
+    <td>${l.pj}</td><td>${l.k}</td><td>${l.m}</td><td>${l.a}</td><td>${virgule(kda(l))}</td><td>${l.min ? Math.round(l.or / l.min) : '—'}</td></tr>`).join('');
+  return `<div class="sousnav vues"><button class="soustab${vue === 'saison' ? ' on' : ''}" data-vue-joueurs="saison">Cette saison</button><button class="soustab${vue === 'vraie' ? ' on' : ''}" data-vue-joueurs="vraie">Vraie saison</button></div>
+    <div class="tableau-joueurs"><table><thead><tr><th>Joueur</th>${tete}</tr></thead><tbody>${corps}</tbody></table></div>
+    <p class="sous">${vue === 'saison' ? 'Leurs parties chez toi, dans ta ligue.' : 'Leur vrai split, celui de leur carte.'} É : éliminations, M : morts, A : aides.</p>`;
 }
 
 /** LES AGENTS LIBRES : la masse, les jetons, et les joueurs de la journée. `offre` : les contrats offerts (null : on cherche). */
