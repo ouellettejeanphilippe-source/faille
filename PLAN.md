@@ -2,7 +2,7 @@
 
 ## Où on en est
 
-Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Ton cinq tient sous un plafond de 15 points (le coût suit le niveau). L'interface suit celle de Cap 82-0 : son tableau indicateur, sa condensée, une action principale par écran. Jalon 4 livré : une run de plusieurs splits sous le mandat du proprio, sauvegardée ; la roulette à relances ; le marché et le banc ; la boîte de réception. Les jeux de gestion de LoL y ont mis leur part : les commanditaires de Teamfight Manager, les liens de LoL Esports Manager, l'entraînement des champions. Jalon 5 : la stratégie est au centre — prioriser les dragons, le Nashor, pousser en solitaire… selon ce que tes joueurs savent faire. Pas encore de médailles ni de déblocages entre deux runs.
+Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre le niveau, les badges et les vraies stats ; on signe un joueur par rôle, puis on joue le split contre neuf vrais vestiaires, une journée à la fois, et les séries. Avant chacune de tes séries, le repêchage des champions ; entre deux journées, la boutique (packs, plan de jeu, coach). Ton cinq tient sous un plafond de 15 points (le coût suit le niveau). L'interface suit celle de Cap 82-0 : son tableau indicateur, sa condensée, une action principale par écran. Jalon 4 livré : une run de plusieurs splits sous le mandat du proprio, sauvegardée ; la roulette à relances ; le marché et le banc ; la boîte de réception. Les jeux de gestion de LoL y ont mis leur part : les commanditaires de Teamfight Manager, les liens de LoL Esports Manager, l'entraînement des champions. Jalon 5 : la stratégie est au centre — prioriser les dragons, le Nashor, pousser en solitaire… selon ce que tes joueurs savent faire. Jalon 6 : le jeu complet de Cap 82-0. Un écran titre et plusieurs parties (exportées, importées) ; le méta entre les runs — les médailles, le rang, les déblocages, ton club, la collection et ses finitions, le palmarès ; les packs de joueurs ; le joueur gardé qui vieillit ; les trophées et les galons du bilan ; le split en quatre sections (Bureau, Effectif, Marché, Ligue) ; le direct d'une partie, son commentateur et la Faille dessinée, où se voient le gank, la plongée, le combat d'équipe, la bataille du Nashor, la poussée de côté.
 
 ## Décisions prises
 
@@ -28,6 +28,12 @@ Jalon 3 livré. La roulette sort un split et une équipe ; le vestiaire montre l
 
 - **La stratégie suit les joueurs, comme les systèmes de Cap 82-0** : son gain et son exécution suivent le fit (les sous-cotes demandées), son prix se paie toujours. À contre-emploi, elle coûte. Pour qu'elle compte, les objectifs devaient compter : le moteur a été recalibré sur ce qu'ils valent dans les vraies parties, pas sur une envie.
 
+- **Le méta ne compte rien, comme les jetons** : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et noter deux fois la même partie ne paie pas deux fois. Il ne touche pas au moteur : un déblocage se pose au départ d'une run par une règle qui existe (des jetons, une relance, un gardé…), et la sauvegarde le garde avec la graine.
+- **La Faille du direct est lue de la feuille, pas jouée** (la glace de Cap 82-0) : qui tue qui, quand, avec qui, la ligne d'une élimination de la phase de lignes, les objectifs. Ce qui est illustratif (la place exacte, la ligne d'une tour) vient d'un dé à graine et reste cohérent : une ligne tombe dans l'ordre, le nexus par une ligne ouverte. Un moment ne se nomme que si la feuille le porte (`check_terrain`).
+- **La collection est une vitrine** : une finition (Base, Argent, Or, Holo) et des galons ne changent rien au jeu. Une carte qui jouerait passerait par les canaux et `check_rogue`.
+
 ## Dépendances
 
-Aucune. Une dépendance npm demande une raison écrite ici.
+Aucune dans le jeu. Une dépendance npm demande une raison écrite ici.
+
+- **Playwright, à la CI seulement** (`verifier.yml`, `npm install --no-save`) : le test de fumée (`scripts/smoke.mjs`) joue le parcours entier dans Chromium. Rien du jeu ne le charge, et le dépôt ne le garde pas.

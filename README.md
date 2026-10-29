@@ -16,13 +16,27 @@ puis `localhost:8000`. Les modules ES ne marchent pas en `file://`.
 
 `node scripts/build_splits.mjs` interroge Leaguepedia et écrit `data/splits/` et `data/index.json`. L'API limite le débit : c'est lent. Sinon, l'Action « Bâtir les splits » le fait et commite. Voir `docs/donnees.md`.
 
+## Le jeu
+
+L'écran titre : continuer ta partie, en commencer une (ton club, tes déblocages), et tout ce qui reste d'une run à l'autre — les médailles 🏅 et ce qu'elles débloquent, ta collection, le palmarès, tes parties. Chaque partie se garde dans le navigateur, s'exporte en fichier et s'importe sur un autre appareil.
+
+Pendant le split, quatre sections, comme dans Cap 82-0 : le **Bureau** (la boîte, où se règle une décision ; hier soir ; le dépisteur), l'**Effectif** (ton plan de match, tes joueurs et leurs stats chez toi, les liens, l'entraînement), le **Marché** (les agents libres, les packs de joueurs, le plan de jeu) et la **Ligue** (le classement, le calendrier, les meneurs, les séries).
+
+## Le direct et la Faille
+
+Chaque partie de ton cinq se regarde : la Faille dessinée, ses tours qui tombent, les éliminations là où elles arrivent, et ce qui se passe, nommé — un gank, une plongée sous la tour, une escarmouche, un combat d'équipe, la bataille du dragon ou du Nashor, une poussée de côté, l'assaut final ; le pointage, la courbe de l'or et le commentateur. Tout est lu dans la feuille de la partie ; seule la place exacte est illustrative. `node scripts/check_terrain.mjs` et `node scripts/check_commentaire.mjs` le vérifient.
+
+## Le méta et la collection
+
+Une run rapporte des médailles : par split joué, mandat rempli, ronde de séries gagnée, titre, run gagnée. Elles achètent des déblocages (des jetons de départ, une relance, un gardé, un agent libre, un pack offert, le premier coach, un mandat pardonné) et ton club (son nom, sa couleur) ; leur total à vie fait ton rang. Chaque joueur passé chez toi entre dans ta collection, une copie par run — deux font une Argent, trois une Or, cinq une Holo — avec ses galons. Au bilan d'un split, cinq trophées se décernent, chacun par une colonne, et tes records vont au panthéon. `node scripts/check_meta.mjs` le vérifie.
+
 ## Le plafond
 
 Ton cinq tient sous 15 points ; un joueur coûte selon son niveau (Remplaçant 1, Régulier 2, Pilier 3, ★ Étoile 5, ★ Phénomène 7). `node scripts/check_plafond.mjs` vérifie que le coût ne dit rien de plus que le niveau et que le cinq se complète toujours.
 
 ## La gestion
 
-Une run se joue sur plusieurs splits : le proprio fixe un mandat (les séries, puis la demie, la finale, le titre) ; rempli, tu gardes jusqu'à deux joueurs et la roulette comble le reste. Entre deux journées, la boîte de réception, le marché des agents libres jusqu'à la date limite, ton banc. La partie est un journal d'actions, gardé dans le navigateur : rejoué, il redonne la même partie. `node scripts/check_gestion.mjs` joue des runs entières et les rejoue.
+Une run se joue sur plusieurs splits : le proprio fixe un mandat (les séries, puis la demie, la finale, le titre) ; rempli, tu gardes jusqu'à deux joueurs — un joueur qui a joué un Mondial plus récent y vieillit — et la roulette comble le reste. Les packs de joueurs donnent trois vrais joueurs, tirés par leur niveau ; tu en signes un. Entre deux journées, la boîte de réception, le marché des agents libres jusqu'à la date limite, ton banc. La partie est un journal d'actions, gardé dans le navigateur : rejoué, il redonne la même partie. `node scripts/check_gestion.mjs` joue des runs entières et les rejoue.
 
 Des autres jeux de gestion de LoL : les commanditaires et leurs objectifs (Teamfight Manager), les liens d'origine entre joueurs qui ont joué ensemble (LoL Esports Manager), l'entraînement d'un champion que les autres jouaient au même rôle.
 
@@ -40,7 +54,7 @@ Avant chacune de tes séries, le repêchage des champions : trois bannissements 
 
 ## L'interface
 
-La peau de Cap 82-0 : ses jetons de style, son tableau indicateur, une action principale par écran. La police d'affichage, Barlow Condensed, est sous licence SIL Open Font License 1.1 (`fonts/OFL.txt`).
+La peau de Cap 82-0 : ses jetons de style, son tableau indicateur, une action principale par écran, la barre du bas. Les sons sont synthétisés (Web Audio), jamais téléchargés. `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px dans Chromium (Playwright), comme l'Action `verifier.yml`. La police d'affichage, Barlow Condensed, est sous licence SIL Open Font License 1.1 (`fonts/OFL.txt`).
 
 ## Mention légale
 

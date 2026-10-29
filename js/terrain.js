@@ -68,6 +68,8 @@ export const GENRES = {
 };
 
 const borner = v => Math.max(2, Math.min(98, v));
+/* Le bilan d'un échange : « 3-1 pour T1 », ou « 2-2 » quand personne ne l'emporte. */
+const bilan = (k, noms, camp) => `${Math.max(...k)}-${Math.min(...k)}${k[0] === k[1] ? '' : ` pour ${noms[camp]}`}`;
 const pres = (p, de, r) => [borner(p[0] + (de() * 2 - 1) * r), borner(p[1] + (de() * 2 - 1) * r)];
 
 /**
@@ -122,7 +124,7 @@ export function terrainDe(f, noms, graine) {
       for (const x of ici) pos.set(x, pres(centre, de, 2.5));
       if (!genre) continue;
       const x0 = ici[0];
-      const detail = ici.length === 1 ? `${nom(x0.camp, x0.tueur)} sur ${nom(1 - x0.camp, x0.victime)}` : `${Math.max(...k)}-${Math.min(...k)} pour ${noms[camp]}`;
+      const detail = ici.length === 1 ? `${nom(x0.camp, x0.tueur)} sur ${nom(1 - x0.camp, x0.victime)}` : bilan(k, noms, camp);
       agir(genre, camp, ici[0].t, ici[ici.length - 1].t, OU[ligne], detail, centre);
     }
   }
@@ -141,7 +143,7 @@ export function terrainDe(f, noms, graine) {
     const genre = o && o.quoi === 'nashor' ? 'batailleNashor' : o && o.quoi === 'dragon' ? (ames ? 'batailleAme' : 'batailleDragon') : gros ? 'combat' : g.elims.length === 1 ? null : 'escarmouche';
     if (!genre) continue;
     const ace = k.some(n => n >= 5) ? ' · tous à terre !' : '';
-    agir(genre, camp, g.debut, Math.max(g.fin, o ? o.t : 0), lieu, `${Math.max(...k)}-${Math.min(...k)} pour ${noms[camp]}${ace}`, centre);
+    agir(genre, camp, g.debut, Math.max(g.fin, o ? o.t : 0), lieu, `${bilan(k, noms, camp)}${ace}`, centre);
   }
   // Une élimination seule, hors des lignes et des combats : quelqu'un s'est fait prendre dans la jungle.
   for (const x of elims) if (!pos.has(x)) pos.set(x, pres(COINS[Math.floor(de() * COINS.length)][1], de, 6));

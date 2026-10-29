@@ -49,7 +49,7 @@ const $$ = s => document.querySelectorAll(s);
 const G = {
   index: null, champions: null, splits: new Map(), P: null, pid: null, de: null, meta: null, options: null, vue: 'titre',
   section: 'bureau', sous: { marche: 'agents', ligue: 'classement' },
-  carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null, album: null,
+  carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null,
 };
 /* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
 const COUCHES = ['#carte', '#direct', '#feuille', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
@@ -213,7 +213,6 @@ function ouvrir(nom) {
 
 async function ouvrirAlbum(id) {
   const { split, profils } = await lireSplit(id);
-  G.album = id;
   $('#album').innerHTML = ecranAlbum(G.meta, split, profils);
   montrer('#album');
 }
@@ -658,7 +657,11 @@ async function demarrer() {
   $('#jusqua').addEventListener('click', () => jouer({ t: 'jusqua' }));
   $('#series').addEventListener('click', () => { faire({ t: 'series' }); G.sous.ligue = 'series'; allerA('ligue'); });
   $('#ronde').addEventListener('click', () => avancer('ronde'));
-  $('#bilan-ouvrir').addEventListener('click', () => faire({ t: 'bilan' }));
+  $('#bilan-ouvrir').addEventListener('click', () => {
+    if (faire({ t: 'bilan' }) === undefined) return;
+    window.scrollTo(0, 0);
+    if (G.P.etape === 'gardes') vieillir();
+  });
   $('#decision').addEventListener('click', () => allerA('bureau'));
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('[data-section]'); if (b) allerA(b.dataset.section); });
   for (const id of ['#vue', '#sousnav', '#strategie', '#feuille']) {
