@@ -138,7 +138,7 @@ Les trois multiplicatifs touchent la partie entière : chacune des deux équipes
 
 ## 8. Le rogue, mesuré en paires
 
-`js/rogue.js`, repris de Cap 82-0. Les **jetons** ne se gardent pas : ils se recomptent des résultats (20 au départ, 4 par série gagnée, 1 par série perdue, 20 par ronde de séries gagnée) moins les achats. La **boutique** vend trois packs (bronze 10 jetons, argent 18, or 30 ; chaque pack hausse le suivant de 10 %), tirés du dé de la ligue et du numéro de l'achat ; une carte ne sort qu'une fois. Le **plan de jeu** : trois cartes actives au plus, changées entre deux journées. Le **coach** (12 jetons, un seul en poste) monte de palier à 3, 6 et 9 séries jouées avec une carte de sa couleur au plan ; la couleur d'une carte se lit sur ses canaux (`couleurDe`), jamais à la main.
+`js/rogue.js`, repris de Cap 82-0. Les **jetons** ne se gardent pas : ils se recomptent des résultats (20 au départ, 4 par série gagnée, 1 par série perdue, 20 par ronde de séries gagnée) moins les achats. La **boutique** vend trois packs (bronze 10 jetons, argent 18, or 30 ; chaque pack hausse le suivant de 10 %), tirés du dé de la ligue et du numéro de l'achat ; une carte ne sort qu'une fois. Le **plan de jeu** : trois cartes actives au plus, changées entre deux journées. Le **coach** (12 jetons, un seul en poste) monte de palier à 3, 6 et 9 séries jouées avec une carte de sa couleur au plan ; la couleur d'une carte se lit sur ses canaux (`couleurDe`), jamais à la main. Chaque palier ouvre un de ses trois **pouvoirs** (§ 11).
 
 **La mesure en paires** (`check_rogue`) : la même ligue de dix vraies équipes jouée sous la même graine, l'effet donné aux équipes paires puis aux impaires ; pour chaque équipe, ses victoires avec l'effet moins ses victoires sans. Douze ligues, 120 paires par mesure. La forme se lit sur les parties d'une équipe traitée contre une qui ne l'est pas, comparées aux mêmes parties sans aucun effet. Sans effet, les deux passes sont identiques (le témoin).
 
@@ -153,10 +153,6 @@ Les trois multiplicatifs touchent la partie entière : chacune des deux équipes
 | 🟣 Le coup de Nashor (rare) | +0,03 | +0,34 | −3,20 | +0,03 | +0,08 |
 | 🏆 La méta du tournoi (légendaire) | +0,58 | −1,08 | +1,46 | −0,50 | +0,37 |
 | 🌀 Le 4-1 (légendaire) | +0,13 | −0,41 | −0,45 | +0,62 | +0,17 |
-| 🐺 L'agresseur, palier III | +0,37 | −1,24 | +2,01 | −0,56 | +0,25 |
-| 🐉 Le stratège, palier III | +0,03 | +0,79 | −2,57 | +0,12 | +0,14 |
-| ⏳ Le patient, palier III | −0,15 | +1,33 | −1,75 | +0,29 | −0,05 |
-| 🏰 L'assiégeant, palier III | 0,00 | −0,23 | −0,28 | +0,69 | +0,10 |
 | Trois bannissements (l'adversaire n'en fait pas) | +0,78 | −0,14 | −0,37 | −0,04 | +0,34 |
 | Le repêchage automatique, des deux côtés | +0,10 | +0,03 | −0,21 | −0,10 | −0,12 |
 
@@ -183,3 +179,19 @@ Le fit se dit en mots, comme un badge (Sur mesure, Bon fit, Fit moyen, À contre
 **Mesuré en paires** (`check_rogue`) : chaque équipe traitée joue la stratégie avec SES joueurs ; le tiers le mieux ajusté y gagne de 0,5 à 2,5 victoires par saison, le tiers le moins bien ajusté y perd (0 ou moins), et chacune se voit sur sa propre signature (les dragons, le Nashor, les hérauts, les tours que l'équipe prend de plus que l'autre ; la durée ; les objectifs). Mesuré le 11 octobre 2026 : le tiers le mieux ajusté gagne de +0,5 (combats à cinq) à +1,1 (pousser en solitaire, agression précoce) ; le moins bien ajusté de 0 à −0,4.
 
 **Les vraies équipes jouent leur vraie partie** : aucune stratégie ne s'ajoute à elles (elles sont la calibration). Leur **identité** se lit sur leurs vraies parties — l'objectif qu'elles prenaient le plus au-dessus de la moyenne de leur split — et le dépisteur la dit.
+
+## 11. Les pouvoirs du coach, phase par phase (jalon 6)
+
+Repris du coach-personnage de Cap 82-0 (sa V21) : un pouvoir **lit ce qui est déjà joué** et **frappe une phase**. Une partie a trois phases : la phase de lignes (jusqu'à `LIGNES_FIN`, 14 min), le milieu de partie (jusqu'à `MILIEU_FIN`, 25 min), la fin de partie. Au début d'une phase, chaque pouvoir de l'équipe lit son état — son côté, son avance d'or, ses tours et ses dragons de plus que l'autre — et, si sa condition tient, ajoute ses effets aux canaux de l'équipe le temps de la phase ; les puissances et les débits se refont. Un pouvoir ne tire aucun dé : celui qui ne joue pas laisse la partie telle quelle, et une équipe sans pouvoir joue la partie calibrée. La feuille garde ceux qui ont joué (`feuille.pouvoirs`) ; le direct les dit.
+
+Chaque coach en a trois, un par palier de confiance (I, II, III) ; chacun joue à peu près une partie sur deux, et fort quand il joue :
+
+| Coach | I | II | III |
+|---|---|---|---|
+| 🐺 L'agresseur | La traque : en lignes, du côté rouge | La curée : au milieu, en avance à l'or | Le carnage : en fin, en retard à l'or |
+| 🐉 Le stratège | Le contrôle du fleuve : au milieu, pas en avance aux dragons | La vision du héraut : en lignes, du côté bleu | L'appel du Nashor : en fin, à 4 000 d'or ou moins |
+| ⏳ Le patient | La ferme : en lignes, du côté rouge | L'endurance : en fin, en retard à l'or | Le dernier mot : en fin, à 4 000 d'or ou moins |
+| 🏰 L'assiégeant | Le siège : au milieu, autant de tours ou plus | Le héraut au front : en lignes, du côté bleu | La percée : en fin, en avance à l'or |
+
+**Mesuré en paires** (`check_rogue`, le 29 octobre 2026) : chaque pouvoir seul reste sous 1,5 victoire par saison (de −0,07 à +0,52), joue dans 25 à 75 % des parties (de 29 à 71 %), et se voit sur sa signature les parties où il joue — la traque +0,59 élimination, la curée −0,66 min, le contrôle du fleuve +0,33 dragon de plus que l'adversaire, l'appel du Nashor +0,44 Nashor, la ferme −0,95 élimination, l'endurance +0,57 min, le siège +1,02 tour. Les trois ensemble (le palier III) restent sous 2,5 victoires : de +0,22 (le patient) à +0,62 (l'agresseur).
+

@@ -111,7 +111,9 @@ JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en co
 - [x] `scripts/smoke.mjs` : le parcours entier à 390 px, du titre à la reprise d'une partie rechargée, zéro erreur console ; dans l'Action `verifier.yml`.
 - [x] Les exigences 🔺 après un premier titre (Cap 82-0, `js/meta.js`) : six crans, chacun ajouté aux autres par une règle qui existe (le mandat, les jetons de départ, le plafond porté par l'effectif, les relances, les gardés, le prix des packs) ; chaque cran paie 25 % de médailles de plus, et gagner au plus haut ouvre le suivant — `check_meta`, `check_gestion`.
 - [x] Le repêchage des champions à chaque partie d'une série de séries, comme en vrai : ta série se joue partie par partie (`jouerRonde(L, toi)`), un repêchage et ta stratégie avant chacune, le perdant au bleu ; chaque partie garde son dé — `check_graine` (partie par partie comme d'un bloc), `check_gestion`. Une sauvegarde d'avant (version 2) garde l'ancienne règle et se rejoue pareil.
-- [ ] Le coach-personnage de Cap 82-0 (son niveau, ses pouvoirs par phase de partie), mesuré en paires.
+- [x] Les pouvoirs du coach (Cap 82-0, V21), phase par phase : chaque palier de confiance ouvre un pouvoir qui lit la partie au début d'une phase (lignes, milieu, fin) et la frappe le temps de la phase ; le moteur reste neutre sans pouvoir ; douze pouvoirs mesurés en paires — `check_rogue`, MOTEUR.md § 11.
+- [x] La Faille détaillée (JP : *avec les champions et nom joueur ?*, *plus détaillé la faille avec jungle et cie*) : les bois et leurs murs, six camps par côté, les crabes, les inhibiteurs ; les dix joueurs, l'icône de leur champion et leur nom, qui bougent selon la phase et les combats (un mort à sa fontaine) ; le tableau des dix joueurs et leur K/M/A en direct — `check_terrain`, smoke.
+- [ ] Le coach-personnage complet : l'expérience et les niveaux plutôt que la confiance, les talents, un coach choisi au départ de la run.
 
 ## Journal
 
@@ -127,3 +129,4 @@ JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en co
 - 2026-10-11 — Jalon 5 : la stratégie au centre. Les objectifs comptent dans le moteur (recalibré sur ce que valent dragons, Nashor et hérauts dans les vraies parties) ; sept stratégies dont le gain suit le fit des joueurs, mesurées en paires.
 - 2026-10-29 — Jalon 6, le jeu complet de Cap 82-0 : l'écran titre et les parties, le méta (médailles, déblocages, rang, ton club), la collection et le palmarès, les packs de joueurs, le joueur qui vieillit, les trophées et les galons, le split en quatre sections, le direct et son commentateur, et la Faille où se voient les ganks, les plongées, les combats et les poussées ; le test de fumée en CI.
 - 2026-10-29 — Les exigences 🔺 après un premier titre ; ta série de séries partie par partie, un repêchage avant chacune.
+- 2026-10-29 — Les pouvoirs du coach, phase par phase ; la Faille détaillée au direct, ses dix joueurs, leurs champions et leur K/M/A.

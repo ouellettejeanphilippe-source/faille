@@ -102,7 +102,8 @@ await sansDebordement('le Bureau');
 /* 4. Le direct et la Faille. */
 await page.click('#vue [data-direct]');
 await pause(2500);
-etape('le direct dessine la Faille', await visible('#direct') && (await page.$$('#direct .tf-tour')).length === 22);
+etape('le direct dessine la Faille', await visible('#direct') && (await page.$$('#direct .tf-tour')).length === 22 && (await page.$$('#direct .tf-camp')).length === 12);
+etape('les dix joueurs, sur la carte et au tableau', (await page.$$('#direct .tf-joueur .tf-nom')).length === 10 && (await page.$$('#direct .dt-camp li')).length === 10);
 await page.click('#dt-vite');
 await pause(2500);
 const moment = await page.$eval('#direct .tf-action', e => e.textContent.trim()).catch(() => '');

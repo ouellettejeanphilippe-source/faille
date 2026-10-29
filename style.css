@@ -396,6 +396,9 @@ button:disabled { opacity: 0.45; cursor: default; }
 .jeu-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .jeu-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .jeu-id small { color: var(--encre-2); font-size: var(--t-1); }
+.jeu-id .pouvoir { color: var(--encre-3); }
+.jeu-id .pouvoir.ouvert { color: var(--bon); }
+.jeu-id .pouvoir b { font: inherit; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .prix { flex: none; font: 800 var(--t-4)/1 var(--display); color: var(--or); }
 .rarete-peu { box-shadow: inset 3px 0 0 var(--peu-commune), var(--relief); }
 .rarete-rare { box-shadow: inset 3px 0 0 var(--rare), var(--relief); }
@@ -628,11 +631,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 .tf-ligne { fill: none; stroke: color-mix(in srgb, var(--encre-3) 45%, transparent); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
 .tf-fosse { fill: var(--fond-2); stroke: var(--filet); stroke-width: 0.6; }
 .tf-base { opacity: 0.55; }
-.tf-base.camp-0, .tf-tour.camp-0, .tf-elim.camp-0 { fill: var(--camp-bleu); }
-.tf-base.camp-1, .tf-tour.camp-1, .tf-elim.camp-1 { fill: var(--camp-rouge); }
+.tf-base.camp-0, .tf-tour.camp-0 { fill: var(--camp-bleu); }
+.tf-base.camp-1, .tf-tour.camp-1 { fill: var(--camp-rouge); }
 .tf-tour { stroke: var(--noir); stroke-width: 0.4; }
 .tf-tour.tombee { fill: none; stroke: var(--encre-3); stroke-dasharray: 0.6 0.6; }
-.tf-elim { stroke: var(--encre); stroke-width: 0.5; }
 .tf-boum { fill: none; stroke-width: 0.8; }
 .tf-boum.camp-0 { stroke: var(--camp-bleu); }
 .tf-boum.camp-1 { stroke: var(--camp-rouge); }
@@ -645,3 +647,42 @@ button:disabled { opacity: 0.45; cursor: default; }
 .tf-action.camp-0 { border-left-color: var(--camp-bleu); color: var(--encre); }
 .tf-action.camp-1 { border-left-color: var(--camp-rouge); color: var(--encre); }
 .dt-ligne.dt-moment { font: 800 var(--t-2)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre); background: var(--fond-1); }
+/* La Faille détaillée : les bois de chaque camp, leurs camps (les deux buffs plus gros), les crabes de la rivière, les inhibiteurs. */
+.tf-bois { stroke: none; }
+.tf-bois.camp-0 { fill: color-mix(in srgb, var(--camp-bleu) 9%, var(--fond-2)); }
+.tf-bois.camp-1 { fill: color-mix(in srgb, var(--camp-rouge) 9%, var(--fond-2)); }
+.tf-mur { fill: var(--noir); stroke: var(--noir); stroke-width: 1.4; stroke-linejoin: round; opacity: 0.75; }
+.tf-camp { fill: var(--fond-3); stroke: var(--encre-3); stroke-width: 0.35; }
+.tf-camp-bleu { fill: color-mix(in srgb, var(--bleu) 55%, var(--fond-3)); }
+.tf-camp-rouge { fill: color-mix(in srgb, var(--mauvais) 55%, var(--fond-3)); }
+.tf-crabe { fill: color-mix(in srgb, var(--bleu) 40%, var(--fond-3)); stroke: var(--encre-3); stroke-width: 0.3; }
+.tf-fosse-ico { font-size: 4px; text-anchor: middle; dominant-baseline: central; opacity: 0.45; }
+.tf-inhib { stroke: var(--noir); stroke-width: 0.35; }
+.tf-inhib.camp-0 { fill: var(--camp-bleu); }
+.tf-inhib.camp-1 { fill: var(--camp-rouge); }
+.tf-inhib.tombee { fill: none; stroke: var(--encre-3); stroke-dasharray: 0.6 0.6; }
+.tf-croix { font-size: 3.4px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.tf-croix.camp-0 { fill: var(--camp-bleu); }
+.tf-croix.camp-1 { fill: var(--camp-rouge); }
+/* Les dix joueurs : l'icône du champion dans un anneau aux couleurs du camp, le nom dessous ; ils glissent d'une place à l'autre. */
+.tf-joueur { transition: transform 0.6s var(--e-sortie), opacity var(--t-lent); }
+.tf-joueur.mort { opacity: 0.3; }
+.tf-anneau { fill: var(--fond-3); stroke-width: 0.7; }
+.tf-joueur.camp-0 .tf-anneau { stroke: var(--camp-bleu); }
+.tf-joueur.camp-1 .tf-anneau { stroke: var(--camp-rouge); }
+.tf-init { font: 800 2.2px var(--display); fill: var(--encre); text-anchor: middle; dominant-baseline: central; }
+.tf-nom { font: 700 3.3px var(--display); fill: var(--encre); text-anchor: middle; paint-order: stroke; stroke: var(--noir); stroke-width: 0.6px; letter-spacing: 0.02em; }
+@media (prefers-reduced-motion: reduce) { .tf-joueur { transition: none; } }
+/* Le tableau des dix joueurs : bleu à gauche, rouge à droite ; un mort pâlit. */
+.dt-joueurs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-2); margin: var(--esp-2) 0; }
+.dt-camp { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.dt-camp li { display: flex; align-items: center; gap: var(--esp-1); min-width: 0; padding: 2px var(--esp-1); background: var(--fond-1); border-radius: var(--r-1); }
+.dt-camp.bleu li { box-shadow: inset 2px 0 0 var(--camp-bleu); }
+.dt-camp.rouge li { box-shadow: inset 2px 0 0 var(--camp-rouge); }
+.dt-camp li.mort { opacity: 0.4; }
+.dt-champ { flex: none; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--fond-3); font: 800 var(--t-1)/1 var(--display); }
+.dt-champ img { width: 100%; height: 100%; object-fit: cover; }
+.dt-qui { flex: 1; min-width: 0; display: grid; line-height: 1.1; }
+.dt-qui b { font: 800 var(--t-1)/1.15 var(--display); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-qui small { font-size: var(--t-1); color: var(--encre-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dt-kma { flex: none; font: 800 var(--t-1)/1 var(--display); font-variant-numeric: tabular-nums; color: var(--encre-2); }

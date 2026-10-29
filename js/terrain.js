@@ -35,6 +35,25 @@ const NEXUS = [[[13, 82], [18, 87]], [[82, 13], [87, 18]]];
 /* Les coins de la jungle et de la rivière où un combat sans objectif se passe. */
 const COINS = [['dans la rivière', [42, 42]], ['dans la rivière', [58, 58]], ['dans la jungle bleue', [30, 63]], ['dans la jungle bleue', [40, 74]], ['dans la jungle rouge', [70, 37]], ['dans la jungle rouge', [60, 26]], ['au milieu', [50, 50]]];
 const OU = { haut: 'au haut', milieu: 'au milieu', bas: 'au bas' };
+
+/*
+ * LE DÉCOR DE LA JUNGLE, côté bleu (le rouge en est le symétrique par le
+ * centre) : ses deux bois, de part et d'autre du milieu, sous la rivière ;
+ * ses six camps — le buff bleu, le buff rouge, les loups, les rapaces, le
+ * grog, les krugs ; les deux crabes de la rivière.
+ */
+const miroir = ([x, y]) => [100 - x, 100 - y];
+const BOIS_BLEU = [[[16, 30], [16, 82], [42, 56]], [[20, 86], [72, 86], [46, 60]]];
+export const BOIS = [BOIS_BLEU, BOIS_BLEU.map(b => b.map(miroir))];
+const CAMPS_BLEU = [['bleu', [24, 50]], ['grog', [17.5, 44]], ['loups', [27, 62]], ['rouge', [50, 76]], ['rapaces', [43, 68]], ['krugs', [56, 82]]];
+export const CAMPS = [CAMPS_BLEU, CAMPS_BLEU.map(([k, p]) => [k, miroir(p)])];
+export const CRABES = [[40, 40], [60, 60]];
+/* Les murs des bois, entre les camps : des blocs, un dessin à nous. */
+const MURS_BLEU = [
+  [[19, 36], [25, 38], [24, 41], [19, 40]], [[27, 43], [33, 47], [31, 50], [26, 47]], [[19, 64], [25, 66], [23, 72], [18, 70]], [[31, 54], [36, 52], [37, 57], [33, 58]],
+  [[33, 80], [39, 78], [41, 83], [34, 84]], [[52, 69], [58, 71], [56, 74], [50, 73]], [[62, 80], [68, 79], [67, 84], [62, 84]], [[36, 70], [40, 73], [37, 76], [33, 73]],
+];
+export const MURS = [...MURS_BLEU, ...MURS_BLEU.map(m => m.map(miroir))];
 const FENETRE = 1;   // deux éliminations à plus d'une minute l'une de l'autre ne font pas le même combat
 
 /** Un point sur une ligne, à la part `u` de son chemin depuis la base bleue. */
@@ -231,8 +250,60 @@ export function terrainDe(f, noms, graine) {
   const evenements = fil.filter(x => pos.has(x)).map(x => {
     const ev = { t: x.t, quoi: x.quoi, camp: x.camp, x: pos.get(x)[0], y: pos.get(x)[1] };
     if (x.quoi === 'tour') Object.assign(ev, { ligne: ligneDe.get(x), k: rangDe.get(x) });
-    if (x.quoi === 'elim') Object.assign(ev, { ligne: x.ligne });
+    if (x.quoi === 'elim') Object.assign(ev, { ligne: x.ligne, tueur: x.tueur, victime: x.victime, aides: x.aides });
     return ev;
   });
-  return { evenements, tours: lesTours, actions: actions.sort((a, b) => a.t - b.t) };
+  // Les inhibiteurs : celui de la ligne d'assaut tombe avec le nexus ; les autres restent debout.
+  const tInhib = (fil.find(x => x.quoi === 'inhib') || {}).t ?? null;
+  const inhibs = [0, 1].flatMap(camp => LIGNES.map(l => {
+    const [x, y] = inhibEn(camp, l);
+    return { camp, ligne: l, x, y, tombe: camp === 1 - g && l === assaut ? tInhib : null };
+  }));
+  return { evenements, tours: lesTours, inhibs, actions: actions.sort((a, b) => a.t - b.t) };
+}
+
+/*
+ * LES DIX JOUEURS SUR LA CARTE, à l'instant t (illustratif, lu de la feuille) :
+ *   mort        à sa fontaine, le temps de revenir (plus long en fin de partie) ;
+ *   dans le coup là où il vient de tuer, d'aider ou de tomber (la dernière minute) ;
+ *   sinon       selon la phase : en phase de lignes, chacun dans la sienne et
+ *               le jungler d'un camp à l'autre de ses bois ; ensuite, le haut
+ *               pousse sa ligne de côté et les quatre autres se regroupent au
+ *               milieu ou vers l'objectif qui vient ; à l'assaut final, le
+ *               gagnant dans la base adverse.
+ * Rend [bleu, rouge] → cinq { x, y, mort }, dans l'ordre des rôles de la feuille.
+ */
+const ROLES5 = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
+const RETOUR = t => 0.25 + t / 45;     // le temps de revenir d'une mort, en minutes de partie
+const VU_DANS_LE_COUP = 0.75;
+const autour = ([x, y], i, r = 2.6) => [borner(x + r * Math.cos((i * 2 * Math.PI) / 5)), borner(y + r * Math.sin((i * 2 * Math.PI) / 5))];
+export function positionsDe(T, f, t) {
+  const pos = [0, 1].map(camp => ROLES5.map((r, i) => {
+    const u = camp ? 1 - 0.42 : 0.42;
+    if (t >= f.duree - 0.75 && camp === f.gagnant) return { p: autour(pointSur('milieu', camp ? 0.12 : 0.88), i, 3.5) };
+    if (t < LIGNES_FIN) {
+      const vague = 0.03 * Math.sin(t * 1.3 + i + camp);
+      if (r === 'jungle') return { p: CAMPS[camp][Math.floor((t + 0.8 * camp) / 1.6) % CAMPS[camp].length][1] };
+      if (r === 'soutien') return { p: autour(pointSur('bas', u + (camp ? 0.03 : -0.03) + vague), 1, 1.5) };
+      return { p: pointSur(r, u + vague) };
+    }
+    // Après les lignes : le haut pousse de son côté, les autres se regroupent.
+    if (r === 'haut') return { p: pointSur(camp ? 'bas' : 'haut', camp ? 0.4 : 0.6) };
+    const prochain = T.evenements.find(e => (e.quoi === 'dragon' || e.quoi === 'nashor') && e.t >= t && e.t - t < 1.5);
+    const groupe = prochain ? [prochain.x + (camp ? 4 : -4), prochain.y + (camp ? -4 : 4)] : pointSur('milieu', camp ? 0.6 : 0.4);
+    return { p: autour(groupe, i) };
+  }));
+  // Dans le coup : là où il vient de tuer, d'aider ou de tomber ; le plus récent l'emporte.
+  for (const e of T.evenements) {
+    if (e.quoi !== 'elim' || e.t > t || t - e.t >= VU_DANS_LE_COUP) continue;
+    [e.tueur, ...e.aides].forEach(i => { pos[e.camp][i] = { p: autour([e.x, e.y], i, 2) }; });
+    pos[1 - e.camp][e.victime] = { p: autour([e.x, e.y], e.victime, 1.2) };
+  }
+  // La poussée de côté : le haut au pied de la tour qu'il fait tomber.
+  for (const a of T.actions) if (a.genre === 'poussee' && a.t <= t && t - a.t < VU_DANS_LE_COUP) pos[a.camp][0] = { p: [a.x, a.y] };
+  // Mort : à sa fontaine, le temps de revenir.
+  for (const e of T.evenements) {
+    if (e.quoi === 'elim' && e.t <= t && t - e.t < RETOUR(e.t)) pos[1 - e.camp][e.victime] = { p: autour(BASES[1 - e.camp], e.victime, 3), mort: true };
+  }
+  return pos.map(eq => eq.map(({ p, mort }) => ({ x: p[0], y: p[1], mort: !!mort })));
 }

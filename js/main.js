@@ -23,7 +23,7 @@
 import { chargerIndex, chargerSplit, chargerChampions } from './data.js';
 import { hasard, graineDe } from './hasard.js';
 import { esc, pts } from './util.js';
-import { imageLP } from './images.js';
+import { imageLP, iconeChampion } from './images.js';
 import { brancherRetour } from './pile.js';
 import { profilsDuSplit, TARIFS } from './cotes.js';
 import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
@@ -595,10 +595,16 @@ function regarder(quoi) {
   const p = s && s.parties[Number(k)];
   if (!p) return;
   const rp = repechageDe(s, Number(k));
-  const champs = rp ? [p.bleu === s.a ? rp.choix[0] : rp.choix[1], p.rouge === s.a ? rp.choix[0] : rp.choix[1]] : null;
+  // Les dix joueurs de la feuille, et leur champion : celui du repêchage, sinon leur plus joué.
+  const joueurs = [p.bleu, p.rouge].map((i, x) => p.feuille.equipes[x].joueurs.map(j => {
+    const choix = rp && rp.choix[i === s.a ? 0 : 1][j.r];
+    const bassin = L.equipes[i].cinq[j.r] && L.equipes[i].cinq[j.r].n === j.n ? L.equipes[i].cinq[j.r].bassin : [];
+    const champion = choix || (bassin[0] && bassin[0][0]) || null;
+    return { n: j.n, r: j.r, champion, icone: champion ? iconeChampion(G.champions, champion) : null };
+  }));
   montrer('#direct');
   ouvrirDirect($('#direct'), {
-    feuille: p.feuille, noms: [L.equipes[p.bleu].nom, L.equipes[p.rouge].nom], champs,
+    feuille: p.feuille, noms: [L.equipes[p.bleu].nom, L.equipes[p.rouge].nom], joueurs,
     graine: graineDe(L.graine, `${cle}-${k}-direct`), toi: p.bleu === 0 ? 0 : p.rouge === 0 ? 1 : null,
   });
 }

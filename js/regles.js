@@ -6,7 +6,7 @@ import { esc } from './util.js';
 import { PLAFOND, TARIFS } from './cotes.js';
 import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT, PACKS_JOUEURS, chancesJoueurs } from './gestion.js';
 import { GARDES } from './partie.js';
-import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, chances } from './rogue.js';
+import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, COACHS, chances } from './rogue.js';
 import { BANS } from './repechage.js';
 import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
@@ -51,7 +51,7 @@ export function ecranRegles() {
     <h3>Le plan de jeu</h3>
     ${liste([
     `${PLAN} cartes au plus, qui jouent toutes tes séries. ${Object.entries(PACKS).map(([id, p]) => `${esc(p.nom)} ${p.prix} 🪙 (${chances(id).filter(([r]) => r !== 'commune').map(([r, n]) => `${esc(RARETES[r])} 1 sur ${n}`).join(', ')})`).join(' · ')}.`,
-    `Un coach à la fois, ${PRIX_COACH} 🪙 ; sa confiance monte à chaque série jouée avec une carte de sa couleur au plan.`,
+    `Un coach à la fois, ${PRIX_COACH} 🪙 ; sa confiance monte à chaque série jouée avec une carte de sa couleur au plan, et chaque palier ouvre un de ses pouvoirs : ${Object.values(COACHS).map(co => `${co.ico} ${co.pouvoirs.map(x => esc(x.nom)).join(', ')}`).join(' · ')}. Un pouvoir lit la partie au début de sa phase (les lignes, le milieu, la fin) et la frappe le temps de la phase.`,
   ])}
     <h3>Les médailles 🏅 et la collection</h3>
     ${liste([

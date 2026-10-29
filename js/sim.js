@@ -26,6 +26,14 @@
  * Ce qui change une partie (le repêchage des champions, les cartes, le
  * coach) passe par les CANAUX, et par rien d'autre : neutres, ils rejouent
  * la partie calibrée au tirage près.
+ *
+ * LES POUVOIRS DU COACH (js/rogue.js) jouent PHASE PAR PHASE : la phase de
+ * lignes, le milieu de partie (dès LIGNES_FIN), la fin de partie (dès
+ * MILIEU_FIN). Au début d'une phase, chaque pouvoir lit ce qui est déjà joué
+ * (le côté, l'or, les tours, les dragons) et, si sa condition tient, ajoute
+ * ses effets aux canaux de son équipe le temps de la phase ; la feuille le
+ * garde. Un pouvoir ne tire aucun dé : un pouvoir qui ne joue pas laisse la
+ * partie telle quelle.
  */
 import { hasard, graineDe } from './hasard.js';
 
@@ -63,6 +71,7 @@ export function regler(r) {
 
 const PAS = 0.5;               // un tour de moteur : 30 secondes de partie
 export const LIGNES_FIN = 14;  // les plaques tombent : fin de la phase de lignes
+export const MILIEU_FIN = 25;  // le milieu de partie cède à la fin de partie (les pouvoirs du coach)
 const ABANDON = 15;            // le nexus ne tombe pas avant (l'abandon permis)
 const DUREE_MAX = 80;          // et toujours à 80 min : le combat final est forcé
 const SBIRES = 1.5, DRAGON = 5, HERAUT = [8, 20], NASHOR = 20, TOUR = 10;   // TOUR : la première tour, rarement avant
@@ -215,7 +224,9 @@ function selon(poids, de) {
  * repêchage), ou null.
  * Rend la feuille : { duree, gagnant (0 bleu, 1 rouge), equipes: [{ nom, k,
  * or, tours, dragons, barons, herauts, inhib, joueurs: [{ n, r, k, m, a, or }] }],
- * fil: [{ t, quoi, camp, … }], courbe: [l'avance d'or du bleu à chaque minute] }.
+ * fil: [{ t, quoi, camp, … }], courbe: [l'avance d'or du bleu à chaque minute],
+ * pouvoirs: [{ t, camp, id }] (ceux qui ont joué, à leur phase) }.
+ * Une équipe peut porter `pouvoirs` : [{ id, phase, quand(etat), effet }].
  * Une élimination de la phase de lignes garde sa ligne (`ligne`, null après).
  * La ligne et la courbe ne font que regarder (le direct les montre) : elles ne tirent aucun dé.
  */
@@ -226,9 +237,10 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const T = melangerTempos([bleu.tempo, rouge.tempo]);
   const E = eqs.map((e, i) => sommerEffets([e.effets, effets[i]]));
   const P = eqs.map((e, i) => puissances(e, E[i]));
+  const avecPouvoirs = eqs.some(e => e.pouvoirs && e.pouvoirs.length);
   const deux = c => Math.sqrt(E[0][c] * E[1][c]);
   const f = {
-    duree: 0, gagnant: null, fil: [], courbe: [],
+    duree: 0, gagnant: null, fil: [], courbe: [], pouvoirs: [],
     equipes: eqs.map(e => ({ nom: e.nom, k: 0, or: 0, tours: 0, dragons: 0, barons: 0, herauts: 0, inhib: 0, joueurs: ROLES.map(r => ({ n: e.cinq[r].n, r, k: 0, m: 0, a: 0, or: 0 })) })),
   };
   const parts = (e, cle) => ROLES.map(r => e.cinq[r].part[cle]);
@@ -286,14 +298,29 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     if (quoi === 'heraut' && de() < R.obj.heraut) tour(t, camp);
   };
 
-  // Les débits, par minute, pour retomber en moyenne sur le tempo de l'époque.
+  // Les débits, par minute, pour retomber en moyenne sur le tempo de l'époque ; un pouvoir qui joue les refait.
   const D = T.duree;
-  const debit = {
+  const debits = () => ({
     elim: (deux('rythme') * 2 * T.k) / (D - SBIRES),
     dragon: T.dragons === null ? 0 : (2 * T.dragons) / (D - DRAGON),
     heraut: T.herauts === null ? 0 : (2 * T.herauts) / (HERAUT[1] - HERAUT[0]),
     nashor: T.barons === null ? 0 : (2 * T.barons) / Math.max(1, D - NASHOR),
     tour: T.tours === null ? 0 : (deux('siege') * 2 * R.tours * T.tours) / (D - TOUR),
+  });
+  let debit = debits();
+  // LES POUVOIRS, au début de chaque phase : ce qui est déjà joué, vu d'un camp ; ceux dont la condition tient jouent la phase.
+  const etat = (camp, phase) => {
+    const nous = f.equipes[camp], eux = f.equipes[1 - camp];
+    return { phase, bleu: camp === 0, avance: nous.or - eux.or, tours: nous.tours - eux.tours, dragons: nous.dragons - eux.dragons, k: nous.k - eux.k };
+  };
+  const poser = (t, phase) => {
+    eqs.forEach((e, camp) => {
+      const actifs = (e.pouvoirs || []).filter(x => x.phase === phase && x.quand(etat(camp, phase)));
+      for (const x of actifs) f.pouvoirs.push({ t, camp, id: x.id });
+      E[camp] = sommerEffets([e.effets, effets[camp], ...actifs.map(x => x.effet)]);
+      P[camp] = puissances(e, E[camp]);
+    });
+    debit = debits();
   };
   const evenements = [['elim', SBIRES, Infinity], ['dragon', DRAGON, Infinity], ['heraut', HERAUT[0], HERAUT[1]], ['nashor', NASHOR, Infinity], ['tour', TOUR, Infinity]];
   // Le revenu de base : l'or de l'époque, moins ce que les primes en donnent déjà.
@@ -301,6 +328,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
   const revenu = T.or === null ? 0 : Math.max(0, T.or - primes) / D;
 
   for (let t = PAS; ; t += PAS) {
+    if (avecPouvoirs && (t === PAS || t === LIGNES_FIN || t === MILIEU_FIN)) poser(t, t === PAS ? 'lignes' : t === LIGNES_FIN ? 'milieu' : 'tardif');
     for (const camp of [0, 1]) {
       const gain = revenu * PAS * Math.max(0, 1 + R.ferme * (P[camp].ferme - P[1 - camp].ferme));
       partsOr[camp].forEach((p, i) => donner(camp, i, gain * p));

@@ -73,9 +73,11 @@ export function vuePlanDeJeu(P, ouvertes) {
     const enPoste = R.coach && R.coach.id === id;
     const etat = enPoste
       ? `En poste · confiance ${PALIERS[conf.palier] || 'en rodage'} · ${conf.series} série${conf.series > 1 ? 's' : ''} à sa couleur${conf.prochain ? `, prochain palier à ${conf.prochain}` : ''}`
-      : `Au palier III : ${dire(co.paliers[2]).map(esc).join(' · ')}`;
+      : 'Ses pouvoirs s\'ouvrent un par palier de confiance.';
+    // Ses trois pouvoirs : le palier qui l'ouvre, sa phase et sa condition, ce qu'il fait.
+    const pouvoirs = co.pouvoirs.map((x, k) => `<small class="pouvoir${enPoste && conf.palier > k ? ' ouvert' : ''}">${PALIERS[k + 1]} · <b>${esc(x.nom)}</b> — ${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small>`).join('');
     return `<li><button class="coach${enPoste ? ' active' : ''}" data-coach="${id}"${enPoste || jetons < prixCoach ? ' disabled' : ''}>
-      <span class="jeu-ico">${co.ico}</span><span class="jeu-id"><b>${esc(co.nom)}</b><small>${etat}</small></span>
+      <span class="jeu-ico">${co.ico}</span><span class="jeu-id"><b>${esc(co.nom)}</b><small>${etat}</small>${pouvoirs}</span>
       <span class="prix">${enPoste ? '' : prixCoach ? `${prixCoach} 🪙` : 'Gratuit'}</span></button></li>`;
   }).join('');
   const packs = Object.entries(PACKS).map(([id, p]) => {
@@ -90,7 +92,7 @@ export function vuePlanDeJeu(P, ouvertes) {
     <p class="sous">Touche une carte pour la mettre au plan ou l'en retirer ; il joue toutes tes séries.</p>
     ${plan}
     <h3>Le coach</h3>
-    <p class="sous">Un seul en poste. Sa confiance monte à chaque série jouée avec une carte de sa couleur au plan : palier I à 3, II à 6, III à 9.</p>
+    <p class="sous">Un seul en poste. Sa confiance monte à chaque série jouée avec une carte de sa couleur au plan : palier I à 3, II à 6, III à 9 ; chaque palier ouvre un pouvoir, qui lit la partie au début de sa phase et la frappe quand sa condition tient.</p>
     <ul class="cartes-jeu">${coachs}</ul>
     <h3>Les packs de cartes</h3>
     <p class="sous">Des cartes de plan de jeu. Chaque pack hausse le prix du suivant ; une carte ne sort qu'une fois.</p>

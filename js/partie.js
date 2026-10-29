@@ -20,7 +20,7 @@ import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee,
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
+import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, liensDe, noterJoue, jetonsDe, PRIX_COACH } from './rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
@@ -121,6 +121,7 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
   else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
   L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq));
+  L.equipes[0].pouvoirs = pouvoirsDeToi(P.R);
   jouer(L);
   if (s && s.gagnant !== null) noterJoue(P.R, 1);
   finirEntrainement(P);
