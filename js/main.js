@@ -757,7 +757,7 @@ async function toucherVue(ev) {
     // Réglé, le choix se ferme ; un pack offert s'ouvre, puis attend au plan de jeu.
     const r = faire({ t: 'evenement', choix: b.dataset.choix });
     fermer('#choix');
-    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); ouvrirPackDeCartes('Un pack offert', 'argent', r); }
+    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); if (r.length) ouvrirPackDeCartes('Un pack offert', 'argent', r); }
   } else if (b.dataset.geste) faire({ t: b.dataset.geste });
   else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreVue(); }
   else if (b.dataset.entrChamp) { faire({ t: 'entrainer', r: G.entr, champion: b.dataset.entrChamp }); G.entr = null; }
@@ -774,7 +774,7 @@ async function toucherVue(ev) {
     faire({ t: 'signerPack', ref, place: b.dataset.place });
   } else if (b.dataset.pack) {
     const r = faire({ t: 'pack', id: b.dataset.pack });
-    if (r) { G.ouvertes = r; rendreVue(); ouvrirPackDeCartes(PACKS[b.dataset.pack].nom, b.dataset.pack, r); }
+    if (r) { G.ouvertes = r; rendreVue(); if (r.length) ouvrirPackDeCartes(PACKS[b.dataset.pack].nom, b.dataset.pack, r); }
   } else if (b.dataset.carte) faire({ t: 'plan', carte: b.dataset.carte });
   else if (b.dataset.coach) faire({ t: 'coach', id: b.dataset.coach });
 }
