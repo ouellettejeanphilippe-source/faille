@@ -27,11 +27,13 @@
  *                    récent, et le plafond tient avec elle ;
  *   la collection    chaque joueur passé chez toi y entre ;
  *   la sauvegarde    le journal, passé par JSON et rejoué, redonne la même
- *                    partie, à la fin comme au milieu ; une partie de la
- *                    version 5, gelée avec ses parties (scripts/lib/
- *                    partie-v5.json), se rejoue identique sous le moteur
- *                    d'alors (js/moteur-v1.js), et une partie neuve joue
- *                    celui d'aujourd'hui (js/moteur.js) ;
+ *                    partie, à la fin comme au milieu ; une sauvegarde de
+ *                    la version 5 joue le moteur d'alors (js/moteur-v1.js),
+ *                    qui redonne au tirage près les parties gelées par le
+ *                    code d'avant (scripts/lib/moteur-v1.json) ; une run de
+ *                    la version 5 gelée sur ces shards-ci (scripts/lib/
+ *                    partie-v5.json) se rejoue identique ; une partie neuve
+ *                    joue le moteur d'aujourd'hui (js/moteur.js) ;
  *   le départ        (version 5) le Rogue part de ses cases — la vedette, le
  *                    classeur tiré de la collection, ceux qui restent au loto —
  *                    puis du pack de départ : chaque loto rejoue, reste à son
@@ -45,10 +47,12 @@
  *   node scripts/check_gestion.mjs
  */
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { profilsDuSplit, PLAFOND, TARIFS } from '../js/cotes.js';
 import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
+import { jouerPartieV1 } from '../js/moteur-v1.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
 import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
@@ -473,12 +477,40 @@ for (const [id, pk] of Object.entries(PACKS_JOUEURS)) {
 exiger('chaque run rejoue depuis sa sauvegarde', !pasRejouees.length, pasRejouees.join(', ') || 'au bout et à mi-split, passée par JSON');
 
 /*
+ * LE MOTEUR D'AVANT LA VERSION 6, GELÉ : 75 parties jouées le 30 octobre 2026
+ * par le code d'avant (scripts/lib/moteur-v1.json : six vraies équipes telles
+ * que le moteur les recevait, leurs cartes, leurs stratégies, leurs coachs, et
+ * l'empreinte de chaque partie). js/moteur-v1.js doit les redonner au tirage
+ * près. Les équipes sont dans le fichier : une donnée corrigée à Leaguepedia
+ * n'y change rien.
+ */
+const hacher = x => createHash('sha1').update(x).digest('hex').slice(0, 16);
+const empreinteV1 = f => hacher(JSON.stringify([f.duree, f.gagnant, f.equipes.map(e => [e.k, e.or, e.tours, e.dragons, e.barons, e.herauts, e.inhib, e.joueurs.map(j => [j.k, j.m, j.a, j.or])]), f.fil.length, f.pouvoirs.map(p => [p.t, p.camp, p.id])]));
+const gelees = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/lib/moteur-v1.json'), 'utf8'));
+const autrement = gelees.parties.filter(p => {
+  const eq = [p.a, p.b].map((x, k) => ({ ...gelees.equipes[x], ...(p.equipeEffets[k] ? { effets: p.equipeEffets[k] } : {}), ...(p.coachs[k] ? { pouvoirs: COACHS[p.coachs[k]].pouvoirs } : {}) }));
+  return empreinteV1(jouerPartieV1(eq[0], eq[1], p.graine, p.effets)) !== p.empreinte;
+});
+exiger('le moteur d\'avant la version 6 redonne ses parties gelées', !autrement.length, `${gelees.parties.length - autrement.length} sur ${gelees.parties.length}`);
+
+/* Une sauvegarde de la version 5 (un 18-0 de ce script, relu comme tel) joue le moteur d'alors. */
+const sv5 = JSON.parse(JSON.stringify(sauvegarde(dixhuits[0].P)));
+sv5.v = 5;
+sv5.log = sv5.log.slice(0, sv5.log.findIndex(a => a.t === 'jusqua') + 1);
+// Une run qui ne se rejoue plus refuse une action en chemin : c'est une faute, pas un plantage.
+const relire = sv => { try { return rejouer(sv, ctx); } catch (err) { return { refus: err.message }; } };
+const relue5 = relire(sv5);
+exiger('une sauvegarde de la version 5 joue le moteur d\'alors', !relue5.refus && relue5.L.moteur === 1 && relue5.L.journees.flat().every(s => s.parties.every(p => p.feuille.moteur === undefined)),
+  relue5.refus || `${relue5.L.journees.flat().length} séries`);
+
+/*
  * UNE RUN DE LA VERSION 5, gelée le 30 octobre 2026 avec l'empreinte de ses
  * parties (le robot de scripts/lib/robot.mjs, deux splits, tous les
  * déblocages, l'agresseur) : rejouée aujourd'hui, elle redonne chaque partie
- * au tirage près — le moteur d'alors, gelé dans js/moteur-v1.js. Si les shards
- * changent (une donnée corrigée à Leaguepedia), l'empreinte change avec eux :
- * on la refait alors depuis le commit qui l'a gelée.
+ * au tirage près. Elle tire ses joueurs des shards : rebâtis (une donnée
+ * corrigée à Leaguepedia), la run part ailleurs. Elle ne se juge donc que sur
+ * les shards où elle a été gelée (leur empreinte, `shards`) ; ailleurs, les
+ * parties gelées du moteur d'avant, plus haut, en répondent.
  */
 const empreinteDesParties = P => {
   const L = P.L || P.dernier;
@@ -486,9 +518,12 @@ const empreinteDesParties = P => {
   return JSON.stringify({ etape: P.etape, run: P.run, jetons: jetonsDe(P.L, P.R), parties });
 };
 const gelee = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/lib/partie-v5.json'), 'utf8'));
-const relue = rejouer(JSON.parse(JSON.stringify(gelee.sauvegarde)), ctx);
-exiger('une run de la version 5 se rejoue identique, partie pour partie', relue.v === 5 && (relue.L || relue.dernier).moteur === 1 && empreinteDesParties(relue) === gelee.empreinte,
-  `${relue.run.passes.length} splits, ${JSON.parse(gelee.empreinte).parties.length} parties du dernier`);
+const shards = hacher(Buffer.concat(fs.readdirSync(DOSSIER).filter(f => f.endsWith('.json')).sort().map(f => fs.readFileSync(path.join(DOSSIER, f)))));
+if (shards === gelee.shards) {
+  const relue = relire(JSON.parse(JSON.stringify(gelee.sauvegarde)));
+  exiger('une run de la version 5 se rejoue identique, partie pour partie', !relue.refus && relue.v === 5 && (relue.L || relue.dernier).moteur === 1 && empreinteDesParties(relue) === gelee.empreinte,
+    relue.refus ? `refusée en chemin : ${relue.refus}` : `${relue.run.passes.length} splits, ${JSON.parse(gelee.empreinte).parties.length} parties du dernier`);
+} else informer('une run de la version 5 : gelée sur d\'autres shards', `les leurs ${gelee.shards}, ceux-ci ${shards} ; le moteur d'avant répond par ses parties gelées`);
 const neuve = nouvellePartie(1, {});
 exiger('une partie neuve joue le moteur d\'aujourd\'hui', neuve.v >= 6 && dixhuits.every(({ P }) => P.dernier && P.dernier.moteur === 2 && P.dernier.journees[0][0].parties[0].feuille.moteur === 2),
   `version ${neuve.v}`);

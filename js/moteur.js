@@ -228,15 +228,25 @@ const LIGNE_CANAL = { lignes: 0.7, pression: 3, combats: 0.5 };
  * LA DOSE DES CANAUX ADDITIFS dans ce moteur : un écart type d'un canal y vaut
  * DOSE écart type de puissance. Ici, une puissance se compose (le nombre, les
  * niveaux, l'or font boule de neige dans un combat) : la dose garde une carte
- * dans la borne de sa rareté. Le confort (un joueur sur son champion) reste entier.
+ * dans la borne de sa rareté. Le combat, plus encore : un combat s'y joue
+ * échange par échange, et l'écart de puissance compte à chacun (DOSE_COMBAT) ;
+ * c'est le canal de l'exécution d'une stratégie, dont le tiers le mieux ajusté
+ * reste ainsi sous sa borne (check_rogue). Le confort (un joueur sur son champion) reste entier.
  */
-const DOSE = 0.85;
+const DOSE = 0.85, DOSE_COMBAT = 0.7;
 const ADDITIFS = ['ligne', 'combat', 'objectifs', 'dragons', 'heraut', 'nashor', 'split', 'tardif'];
 function doser(E) {
   const out = { ...E };
-  for (const c of ADDITIFS) out[c] = E[c] * DOSE;
+  for (const c of ADDITIFS) out[c] = E[c] * (c === 'combat' ? DOSE_COMBAT : DOSE);
   return out;
 }
+/*
+ * LA BATAILLE PRÉPARÉE : le camp qui a priorisé un objectif y arrive placé.
+ * La priorité d'un dragon ou du Nashor va jusqu'à 2,5 écarts types (faite pour
+ * la priorité seule) ; dans la bataille, un combat à cinq qui décide souvent la
+ * partie, elle ne compte que pour PREPARE. Celle du héraut, un petit combat, entière.
+ */
+const PREPARE = { dragons: 0.3, nashor: 0.3, heraut: 1, objectifs: 1 };
 const PIVOT_V2 = 0.65;   // l'heure où le tardif ne compte ni pour ni contre, en part de la durée de l'époque
 function puissancesV2(e, E) {
   const P = puissances(e, E);
@@ -618,7 +628,7 @@ export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
     if (!vv[autre] || de() >= dispute) return { camp: prio, r: null };
     const ici = [0, 1].map(c => J[c].filter(j => j.mort <= tic && (qui === null || qui.includes(j.i))).map(j => j.i));
     // La bataille : le camp qui a priorisé cet objectif (son canal, ses objectifs) l'a préparée — la vision, la place.
-    const prepare = (R.force * (E[0][canal] - E[1][canal] + E[0].objectifs - E[1].objectifs)) / 2;
+    const prepare = (R.force * (PREPARE[canal] * (E[0][canal] - E[1][canal]) + E[0].objectifs - E[1].objectifs)) / 2;
     const r = combat('bataille', quoi === 'dragon' || quoi === 'ancestral' ? 'dragon' : 'nashor', ici, t, null, prepare);
     const gagne = r.vainqueur === null ? prio : r.vainqueur;
     // Le vol : le jungler de l'autre, encore en vie, son Châtiment sur le monstre.
