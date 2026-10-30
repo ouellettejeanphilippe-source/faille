@@ -40,11 +40,15 @@ js/direct.js          une partie en direct : la Faille, le pointage, la courbe d
 js/terrain.js         la Faille du direct : chaque événement à sa place, chaque moment nommé (gank, plongée, combat, bataille, poussée…)
 js/commentaire.js     le commentateur du direct : des phrases montées pièce par pièce, tirées en paquet
 js/sons.js            les sons, synthétisés (Web Audio)
+js/ouverture.js       l'ouverture d'un pack en plein écran : le paquet, la déchirure, la pile qu'on balaie, le walkout d'une étoile, l'étalage
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
 js/fiche.js           la carte d'un joueur : un carton 5:7 recto verso dans la série de son année (SERIES, une par année 2011 → 2025), son édition ; le retournement, l'inclinaison ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
-js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
+js/sim.js             le split au jour le jour, les séries, le tempo et les vraies équipes ; il appelle le moteur de la partie (MOTEUR.md)
+js/moteur.js          le moteur v2 : une partie comme une vraie — les sorts d'invocateur, les niveaux et l'ultime, les sbires, les combats, les monstres et les tours de chaque époque (MOTEUR.md)
+js/moteur-v1.js       le moteur d'avant, gelé : il rejoue les sauvegardes v ≤ 5
+js/canaux.js          les canaux d'une partie (`sommerEffets`) et les horaires des phases, partagés par les deux moteurs
 js/strategie.js       la stratégie : sept plans de match, leur fit sur les joueurs, l'identité des vraies équipes (MOTEUR.md §10)
 js/split.js           la Ligue (classement, calendrier, meneurs, séries), hier soir, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
@@ -95,7 +99,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - La feuille de match se ferme par construction (les éliminations des joueurs font celles de l'équipe et les morts de l'autre…) — `check_feuilles`.
 
 **Le rogue (jalon 3)**
-- Tout ce qui change une partie (repêchage, carte, coach) passe par les canaux de `js/sim.js` (`sommerEffets`), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
+- Tout ce qui change une partie (repêchage, carte, coach) passe par les canaux (`sommerEffets`, js/canaux.js), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
 - Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
 - Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
 - Ce qu'un effet fait s'écrit en mots (`dire`), jamais en cote.
