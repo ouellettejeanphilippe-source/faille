@@ -34,21 +34,22 @@ import { tempoDuSplit, equipeReelle, classement, jouerPartie } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { attendRepechage, repechageDe } from './repechage.js';
-import { liensDe, LIENS, COACHS } from './rogue.js';
-import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
-import { RELANCES, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION, parCases, caseEnCours, attendPack, refDe } from './partie.js';
-import { phraseMandat, aTraiter, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
-import { ecranCeSoir, ecranSommaire } from './soir.js';
+import { liensDe, LIENS, COACHS, PACKS, CARTES } from './rogue.js';
+import { vuePacksJoueurs, vuePlanDeJeu, carteDeJeu } from './boutique.js';
+import { RELANCES, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion, PACKS_JOUEURS } from './gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION, parCases, caseEnCours, attendPack, refDe, mandatDuSplit } from './partie.js';
+import { aTraiter, feuilleDuChoix, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
+import { ecranCeSoir, ecranSommaire, autourDeLaLigue } from './soir.js';
 import { terrainDe } from './terrain.js';
 import { ecussonHtml } from './fiche.js';
 import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe, MODES, modeDe, vedetteDe, choisirVedette } from './meta.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
-import { ecranCase, avantLePack, ecranPack, ecranExhibition } from './depart.js';
+import { ecranCase, avantLePack, ecranExhibition } from './depart.js';
 import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
 import { ecranRegles } from './regles.js';
 import { ouvrirDirect, fermerDirect, faillePlate } from './direct.js';
+import { ouvrirPaquet, fermerPaquet } from './ouverture.js';
 import { activerSons, jouerSon } from './sons.js';
 
 const $ = s => document.querySelector(s);
@@ -61,7 +62,7 @@ const G = {
   contrats: new Map(), etoiles: null, vedette: null, exhib: null,
 };
 /* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
-const COUCHES = ['#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#exhibition', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
+const COUCHES = ['#ouverture', '#choix', '#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#exhibition', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
 /*
  * LES SECTIONS, les mêmes que Cap 82-0 (JP : *même séparation des pages*) :
@@ -207,6 +208,7 @@ function montrer(id) {
 
 function fermer(id) {
   if ($(id).hidden) return false;
+  if (id === '#ouverture') { fermerPaquet(); majTete(); return true; }
   $(id).hidden = true;
   if (id === '#direct') fermerDirect();
   majTete();
@@ -231,7 +233,7 @@ function rendre() {
 
 /* ---- L'ÉCRAN TITRE ET LES COUCHES DU MENU ---- */
 function rendreTitre() {
-  $('#titre').innerHTML = ecranTitre(G.meta, partieActive(), G.options.sons);
+  $('#titre-corps').innerHTML = ecranTitre(G.meta, partieActive(), G.options.sons);
 }
 
 /* Ce qui se redessine quand la partie ou le méta change, si c'est ouvert. */
@@ -245,6 +247,8 @@ const RENDUS = {
   '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta, { etoiles: G.etoiles, vedette: G.vedette }); },
   '#exhibition': () => { $('#exhibition').innerHTML = ecranExhibition(G.exhib); },
   '#strategie': () => { if (G.P && G.P.L) $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
+  // Le choix en plein écran : réglé, il se ferme ; le suivant, s'il y en a un, attend sa ligne dans la Boîte.
+  '#choix': () => { const h = G.P && G.P.etape === 'split' ? feuilleDuChoix(G.P) : ''; if (h) $('#choix').innerHTML = h; else fermer('#choix'); },
 };
 
 /* Ta collection, split par split : au menu, et à l'Album du Marché. */
@@ -435,9 +439,8 @@ function entrer() {
 function rendreBati() {
   const P = G.P;
   const cases = parCases(P);
-  $('#bati-mandat').textContent = phraseMandat(P);
-  $('#bati-sous').textContent = cases ? 'Tes cases d\'abord — ta vedette, ton classeur, ceux qui restent —, puis le pack de départ comble le reste. Ton cinq tient sous le plafond.'
-    : 'La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.';
+  // Le mandat en une ligne ; le détail est au Proprio, et à la page des règles.
+  $('#bati-mandat').textContent = P.mode === 'dixhuit' ? 'Le 18-0 : un split, ses séries, le titre ou rien.' : `Split ${P.run.n} : le proprio veut ${mandatDuSplit(P)[1]}.`;
   $('#alignement').innerHTML = Object.entries(ROLES).map(([r, mot]) => {
     const j = P.eff.cinq[r];
     return `<li class="case${j ? ' pleine' : ''}"><span class="case-role">${mot}</span>${j ? vignette(j) : ''}<span class="qui">${j
@@ -451,9 +454,8 @@ function rendreBati() {
   $('#jouer').textContent = P.mode === 'dixhuit' ? 'Jouer le 18-0' : 'Jouer le split';
   if (cases) {
     const c = caseEnCours(P);
-    const dernier = [...P.log].reverse().find(a => a.t === 'boucheTrous');
     $('#depart-cases').innerHTML = c ? (c.loto.every(x => G.contrats.has(x.cle)) ? ecranCase(P, c, G.contrats, G.vieux) : '<p class="sous">Le classeur s\'ouvre…</p>')
-      : attendPack(P) ? avantLePack(P) : complet && P.bouches && dernier ? ecranPack(dernier.refs.map(ref => contratDe(ctx(), ref))) : '';
+      : attendPack(P) ? avantLePack(P) : '';
   } else $('#depart-cases').innerHTML = '';
   const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);
   $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${plafondDe(P.eff)}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
@@ -553,7 +555,7 @@ async function ouvrirPackDepart() {
   $('#pack').disabled = true;
   try {
     const refs = await tirerBoucheTrous(G.de, ids(), lireSplit, G.P.eff, G.P.fx.bouchetrous);
-    faire({ t: 'boucheTrous', refs });
+    if (faire({ t: 'boucheTrous', refs }) !== undefined) ouvrirPackDeJoueurs({ titre: 'Le pack de départ', metal: 'depart', marque: 'Départ' }, refs);
   } finally {
     $('#pack').disabled = false;
   }
@@ -586,7 +588,8 @@ function rendreSplit() {
   const dix = P.mode === 'dixhuit';
   if (dix && G.section === 'marche') G.section = 'ligue';
   $('#bande').innerHTML = G.section === 'bureau' ? bandeChiffres(P) : '';
-  $('#decision').hidden = !attend || G.section === 'bureau';
+  $('#decision').hidden = !attend;
+  $('#decision').textContent = '1 choix à trancher ›';
   const ta = taSerie(L);
   const adv = ta && L.equipes[ta.a === 0 ? ta.b : ta.a];
   $('#journee').hidden = !saison || attend || dix;
@@ -619,9 +622,9 @@ function rendreVue() {
   const s = G.section;
   if (s === 'bureau') {
     const k = G.sous.bureau;
-    $('#vue').innerHTML = k === 'proprio' ? vueProprio(P) : k === 'coach' ? vueCoach(P) : k === 'vestiaire' ? vueVestiaire(P, ctx(), G.entr) : vueBoite(P, ctx());
+    $('#vue').innerHTML = k === 'proprio' ? vueProprio(P) : k === 'coach' ? vueCoach(P) : k === 'vestiaire' ? vueVestiaire(P, ctx(), G.entr) : vueBoite(P);
   } else if (s === 'joueurs') $('#vue').innerHTML = vueJoueurs(P, ctx(), G.joueurs.vue, G.joueurs.tri);
-  else if (s === 'cinq') $('#vue').innerHTML = vueCinq(P);
+  else if (s === 'cinq') $('#vue').innerHTML = vueCinq(P, c => carteDuRef(c.ref).html);
   else if (s === 'marche') {
     const k = G.sous.marche;
     if (k === 'agents') rendreAgents();
@@ -630,7 +633,9 @@ function rendreVue() {
     else $('#vue').innerHTML = vuePlanDeJeu(P, G.ouvertes);
   } else {
     const k = G.sous.ligue === 'series' && !L.series ? 'classement' : G.sous.ligue;
-    $('#vue').innerHTML = k === 'palmares' ? ecranPalmares(G.meta) : { classement: tableauClassement, calendrier, meneurs: tableauMeneurs, series: tableauSeries }[k](L);
+    const autour = k === 'classement' ? autourDeLaLigue(L) : [];
+    $('#vue').innerHTML = (k === 'palmares' ? ecranPalmares(G.meta) : { classement: tableauClassement, calendrier, meneurs: tableauMeneurs, series: tableauSeries }[k](L))
+      + (autour.length ? `<h3>Autour de la ligue</h3><ul class="autour">${autour.map(x => `<li>${x}</li>`).join('')}</ul>` : '');
   }
 }
 
@@ -735,6 +740,7 @@ async function toucherVue(ev) {
   else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
   else if (b.dataset.sous) { G.sous[G.section] = b.dataset.sous; rendreSplit(); }
   else if (b.dataset.soir !== undefined) ouvrirCeSoir();
+  else if (b.dataset.afaire !== undefined) ouvrirChoix();
   else if (b.dataset.sommaire) ouvrirSommaire(b.dataset.sommaire);
   else if (b.dataset.tri) { G.joueurs.tri = b.dataset.tri; rendreVue(); }
   else if (b.dataset.vueJoueurs) { G.joueurs.vue = b.dataset.vueJoueurs; rendreVue(); }
@@ -748,9 +754,10 @@ async function toucherVue(ev) {
     faire({ t: 'strategie', id: b.dataset.strategie || null });
     fermer('#strategie');
   } else if (b.dataset.choix) {
-    // Un pack offert s'ouvre au plan de jeu.
+    // Réglé, le choix se ferme ; un pack offert s'ouvre, puis attend au plan de jeu.
     const r = faire({ t: 'evenement', choix: b.dataset.choix });
-    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); }
+    fermer('#choix');
+    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); ouvrirPackDeCartes('Un pack offert', 'argent', r); }
   } else if (b.dataset.geste) faire({ t: b.dataset.geste });
   else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreVue(); }
   else if (b.dataset.entrChamp) { faire({ t: 'entrainer', r: G.entr, champion: b.dataset.entrChamp }); G.entr = null; }
@@ -759,14 +766,15 @@ async function toucherVue(ev) {
     faire({ t: 'marche', ref: c.ref, place: b.dataset.place });
   } else if (b.dataset.packJoueurs) {
     b.disabled = true;
-    const refs = await tirerPackJoueurs(P.R, b.dataset.packJoueurs, ids(), lireSplit, P.eff);
-    faire({ t: 'packJoueurs', id: b.dataset.packJoueurs, refs });
+    const id = b.dataset.packJoueurs;
+    const refs = await tirerPackJoueurs(P.R, id, ids(), lireSplit, P.eff);
+    if (faire({ t: 'packJoueurs', id, refs }) !== undefined) ouvrirPackDeJoueurs({ titre: PACKS_JOUEURS[id].nom, metal: id, marque: id === 'legendes' ? 'Légendes' : id }, refs);
   } else if (b.dataset.packSigner) {
     const ref = P.offrePack.refs.find(x => cleDe(x) === b.dataset.packSigner);
     faire({ t: 'signerPack', ref, place: b.dataset.place });
   } else if (b.dataset.pack) {
     const r = faire({ t: 'pack', id: b.dataset.pack });
-    if (r) { G.ouvertes = r; rendreVue(); }
+    if (r) { G.ouvertes = r; rendreVue(); ouvrirPackDeCartes(PACKS[b.dataset.pack].nom, b.dataset.pack, r); }
   } else if (b.dataset.carte) faire({ t: 'plan', carte: b.dataset.carte });
   else if (b.dataset.coach) faire({ t: 'coach', id: b.dataset.coach });
 }
@@ -799,6 +807,44 @@ function regarder(quoi) {
     feuille: p.feuille, noms: [L.equipes[p.bleu].nom, L.equipes[p.rouge].nom], joueurs,
     graine: graineDe(L.graine, `${cle}-${k}-direct`), toi: p.bleu === 0 ? 0 : p.rouge === 0 ? 1 : null,
   });
+}
+
+/* LE CHOIX EN PLEIN ÉCRAN : la ligne d'À faire (ou « 1 choix à trancher ») l'ouvre ; « Plus tard » le laisse dans la boîte. */
+function ouvrirChoix() {
+  const h = feuilleDuChoix(G.P);
+  if (!h) return;
+  $('#choix').innerHTML = h;
+  montrer('#choix');
+  jouerSon('tap');
+}
+
+/*
+ * L'OUVERTURE D'UN PACK (js/ouverture.js) : le pack est déjà tiré et gardé au journal ; on le dévoile, la
+ * meilleure carte en dernier. Une ★ Étoile ou un ★ Phénomène s'annonce d'abord (le walkout) : l'année, le rôle,
+ * le logo de son équipe.
+ */
+const NIVEAU_ECLAT = c => (c.cout >= 5 ? 2 : c.cout >= 3 ? 1 : 0);
+function carteDuRef(ref) {
+  const { split, profils } = G.splits.get(ref.id);
+  const equipe = split.equipes.find(e => e.nom === ref.e);
+  const j = equipe.joueurs.find(x => x.n === ref.n && x.r === ref.r);
+  const col = collectionDe(G.meta).get(cleDe(ref));
+  return { split, equipe, html: carte({ split, equipe, j, profil: profils.joueurs.get(j), champions: G.champions, bouton: false, collection: col && col.copies ? col : null }) };
+}
+function ouvrirPackDeJoueurs({ titre, metal, marque }, refs) {
+  const contrats = refs.map(ref => contratDe(ctx(), ref)).sort((a, b) => a.cout - b.cout);
+  const cartes = contrats.map(c => ({ ...carteDuRef(c.ref), eclat: NIVEAU_ECLAT(c), c }));
+  const v = cartes[cartes.length - 1];
+  const walkout = v && v.eclat === 2 ? [String(v.split.annee), ROLES[v.c.r], v.equipe.logo ? `<img src="${imageLP(v.equipe.logo)}" alt="">` : esc(v.equipe.nom)] : null;
+  ouvrirPaquet($('#ouverture'), { pack: { titre, metal, marque, n: `${refs.length} joueur${refs.length > 1 ? 's' : ''}`, sous: 'Pack de joueurs' }, cartes, walkout, fin: () => majTete() });
+  majTete();
+}
+function ouvrirPackDeCartes(titre, metal, ids) {
+  const RANG = { commune: 0, peu: 0, rare: 1, legendaire: 2 };
+  const cartes = [...ids].sort((a, b) => RANG[CARTES[a][2]] - RANG[CARTES[b][2]]).map(id => ({ html: carteDeJeu(id), eclat: RANG[CARTES[id][2]] }));
+  const v = ids.length && cartes[cartes.length - 1].eclat === 2 ? ids.find(id => CARTES[id][2] === 'legendaire') : null;
+  ouvrirPaquet($('#ouverture'), { pack: { titre, metal, marque: metal, n: `${ids.length} carte${ids.length > 1 ? 's' : ''}`, sous: 'Pack de cartes' }, cartes, walkout: v ? ['Légendaire', CARTES[v][0], esc(CARTES[v][1])] : null, fin: () => majTete() });
+  majTete();
 }
 
 /* ---- LE BILAN ---- */
@@ -847,7 +893,7 @@ async function demarrer() {
   [G.index, G.champions] = await Promise.all([chargerIndex(), chargerChampions()]);
   $('#source').textContent = `Données : ${G.index.source}. Photos et logos : Leaguepedia.`;
   if (!G.index.splits.length) {
-    $('#titre').innerHTML = '<p class="etat">Aucun split bâti : lance scripts/build_splits.mjs.</p>';
+    $('#titre-corps').innerHTML = '<p class="etat">Aucun split bâti : lance scripts/build_splits.mjs.</p>';
     return;
   }
   migrer(idNeuf());
@@ -880,9 +926,9 @@ async function demarrer() {
     window.scrollTo(0, 0);
     if (G.P.etape === 'gardes') vieillir();
   });
-  $('#decision').addEventListener('click', () => allerA('bureau'));
+  $('#decision').addEventListener('click', ouvrirChoix);
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('[data-section]'); if (b) allerA(b.dataset.section); });
-  for (const id of ['#vue', '#sousnav', '#strategie', '#feuille', '#soir', '#sommaire']) {
+  for (const id of ['#vue', '#sousnav', '#strategie', '#feuille', '#soir', '#sommaire', '#choix']) {
     $(id).addEventListener('click', toucherVue);
     $(id).addEventListener('keydown', toucherVue);
   }
@@ -907,5 +953,5 @@ async function demarrer() {
   rendre();
 }
 
-demarrer().catch(err => { $('#titre').innerHTML = `<p class="etat">Erreur : ${esc(err.message)}</p>`; });
+demarrer().catch(err => { $('#titre-corps').innerHTML = `<p class="etat">Erreur : ${esc(err.message)}</p>`; });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -85,6 +85,32 @@ const SONS = {
     souffle(c, t, { gain: 0.18, att: 0.02, dec: 0.3, type: 'bandpass', freq: 2600, q: 0.6 });
     [523, 659, 784].forEach((f, i) => note(c, t + 0.25 + i * 0.09, { forme: 'triangle', freq: f, gain: 0.08, dec: 0.25 }));
   },
+  /* L'ouverture d'un pack (js/ouverture.js) : le papier qui se déchire, une lumière qui monte. */
+  dechire(c, t) {
+    souffle(c, t, { gain: 0.22, att: 0.01, dec: 0.32, type: 'bandpass', freq: 3200, q: 0.5 });
+    note(c, t + 0.12, { forme: 'sine', freq: 220, vers: 880, gain: 0.06, att: 0.05, dec: 0.3 });
+  },
+  /* Une carte qui se retourne : un frottement, un petit claquement. */
+  retourne(c, t) {
+    souffle(c, t, { gain: 0.09, att: 0.01, dec: 0.08, type: 'bandpass', freq: 4200, q: 0.8 });
+    note(c, t + 0.06, { forme: 'triangle', freq: 880, gain: 0.04, dec: 0.08 });
+  },
+  /* Une carte rare : le retournement, et deux notes claires. */
+  rare(c, t) {
+    souffle(c, t, { gain: 0.09, att: 0.01, dec: 0.08, type: 'bandpass', freq: 4200, q: 0.8 });
+    [784, 1175].forEach((f, i) => note(c, t + 0.07 + i * 0.07, { forme: 'triangle', freq: f, gain: 0.07, dec: 0.3 }));
+  },
+  /* Un temps du walkout : un coup sourd, comme un cœur. */
+  battement(c, t) {
+    note(c, t, { forme: 'sine', freq: 70, vers: 45, gain: 0.3, dec: 0.25 });
+    souffle(c, t, { gain: 0.06, dec: 0.12, type: 'lowpass', freq: 300 });
+  },
+  /* La vedette du pack : un éclat, un accord qui monte et qui reste. */
+  eclat(c, t) {
+    note(c, t, { forme: 'sine', freq: 55, vers: 35, gain: 0.3, dec: 0.4 });
+    souffle(c, t, { gain: 0.12, att: 0.01, dec: 0.5, type: 'highpass', freq: 5000 });
+    [523, 784, 1046, 1568].forEach((f, i) => note(c, t + 0.05 + i * 0.06, { forme: 'triangle', freq: f, gain: 0.07, dec: 0.9 }));
+  },
   /* Une élimination au direct : un coup sec. */
   elim(c, t) {
     souffle(c, t, { gain: 0.14, dec: 0.06, type: 'highpass', freq: 1500 });

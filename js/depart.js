@@ -61,13 +61,6 @@ export function avantLePack(P) {
     <p class="sous">Tes cases sont faites. Le pack comble ${l.map(r => ROLES[r]).join(', ')} de bouche-trous : des Remplaçants et de bas Réguliers de splits tirés au hasard. Chaque carte va à ton effectif et à ta collection.${P.fx.bouchetrous ? ' Des bouche-trous moins pires : ils sortent un cran plus haut.' : ''}</p>`;
 }
 
-/** LE PACK OUVERT : les bouche-trous qui viennent d'entrer. `contrats` : leurs contrats. */
-export function ecranPack(contrats) {
-  return `<h3>🧰 Le pack de départ · ${contrats.length} bouche-trou${contrats.length > 1 ? 's' : ''}</h3>
-    <p class="sous">Ils font le cinq avec tes cartes. Le marché, les packs de joueurs et les lotos d'un split à l'autre feront le reste.</p>
-    <ul class="liste-joueurs">${contrats.map(c => rangee(c)).join('')}</ul>`;
-}
-
 /** TON JOUEUR DE CONCESSION, au départ de la première run : trois étoiles, tu en prends une. `etoiles` : [{ cle, c }] (null : on cherche). */
 export function choixDeVedette(etoiles) {
   if (!etoiles) return '<p class="sous">Le dépisteur cherche trois étoiles…</p>';
