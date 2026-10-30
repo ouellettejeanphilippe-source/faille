@@ -59,7 +59,7 @@ export function ouvrirPaquet(el, { pack, cartes, walkout = null, fin }) {
   const scene = el.querySelector('.ouv-scene');
   const pile = [...el.querySelectorAll('.ouv-carte')];
   const points = el.querySelector('.ouv-points');
-  let etat = 'ferme', cur = 0, minuteur = 0, x0 = null, dx = 0;
+  let etat = 'ferme', cur = 0, minuteur = 0, x0 = null, dx = 0, geste = false;
   const mettre = e => { etat = e; racine.className = `ouv etat-${e} lueur-${meilleur}`; };
 
   const poser = () => {
@@ -142,13 +142,18 @@ export function ouvrirPaquet(el, { pack, cartes, walkout = null, fin }) {
     const c = dessus();
     c.classList.remove('glisse');
     x0 = null;
+    // Le « click » qui suit ce toucher ne doit pas avancer une deuxième fois (il sauterait le walkout qu'il vient d'ouvrir).
+    geste = true;
     if (Math.abs(dx) < 8) { c.style.removeProperty('--glisse'); avancer(); return; }
     if (Math.abs(dx) >= GLISSE) avancer(dx > 0 ? 'd' : 'g');
     else c.style.removeProperty('--glisse');
   };
   scene.addEventListener('pointerup', lacher);
   scene.addEventListener('pointercancel', lacher);
-  scene.addEventListener('click', ev => { if (etat !== 'pile' && etat !== 'etale' && !ev.target.closest('.ouv-etalage')) avancer(); });
+  scene.addEventListener('click', ev => {
+    if (geste) { geste = false; return; }
+    if (etat !== 'pile' && etat !== 'etale' && !ev.target.closest('.ouv-etalage')) avancer();
+  });
   el.querySelector('.ouv-tout').addEventListener('click', etaler);
   el.querySelector('.ouv-fin').addEventListener('click', () => fermer());
   const clavier = ev => {

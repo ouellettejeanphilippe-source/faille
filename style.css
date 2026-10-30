@@ -23,6 +23,10 @@
   11. l'écran titre, le menu, les parties, le départ
   12. la vitrine : déblocages, palmarès, collection, album
   13. le direct
+  14. le bureau de Cap 82-0 : l'écusson, la bande, la boîte, ce soir, le sommaire, le tableau des joueurs
+  15. l'ouverture d'un pack, et le paquet en tuile
+  16. la feuille d'un choix, et les lignes d'À faire
+  17. les cartes en rangées : la carte de plan de jeu, ta main, ton cinq en cartons
    ===================================================================== */
 
 /* ---- Barlow Condensed (fonts/, OFL 1.1) : les chiffres, les titres, les boutons ---- */
@@ -198,9 +202,8 @@ main { margin: 0; padding: 0; }
   font-size: var(--t-6); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase;
   background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.couche > h2 { position: sticky; top: 0; z-index: 6; font-size: var(--t-5); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-2); }
-/* Le titre d'une couche reste en haut quand elle défile : un fond noir derrière ses lettres en dégradé. */
-.couche > h2::before { content: ""; position: absolute; inset: 0 calc(-1 * var(--esp-4)); z-index: -1; background: var(--noir); }
+/* Le titre d'une couche reste en haut quand elle défile, comme la tête d'une feuille : plein, sur le noir. */
+.couche > h2 { position: sticky; top: 0; z-index: 6; font-size: var(--t-5); padding: var(--esp-3) var(--esp-4); margin: 0 calc(-1 * var(--esp-4)) var(--esp-2); border-bottom: 1px solid var(--filet); box-shadow: inset 0 3px 0 var(--or); background: var(--noir); color: var(--encre); -webkit-background-clip: border-box; background-clip: border-box; }
 .sous, .etat { color: var(--encre-2); margin: var(--esp-2) 0; font-size: var(--t-2); }
 /* Les intertitres : une étiquette condensée, en capitales, sur un filet. */
 h3 { margin: var(--esp-4) 0 var(--esp-2); padding-bottom: var(--esp-1); border-bottom: 1px solid var(--filet); font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-2); }
@@ -760,7 +763,6 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cal[data-serie] { cursor: pointer; }
 .cal-prochaine { background: var(--club-sourd); box-shadow: inset 3px 0 0 var(--club-vif); }
 /* Ton effectif : ses stats chez toi, sous son split. */
-.qui .chez-toi { color: var(--encre); font-variant-numeric: tabular-nums; white-space: normal; }
 .case[data-contrat] { cursor: pointer; }
 .qui .vieillit { color: var(--or); }
 .medailles-run { margin: var(--esp-4) 0; padding: var(--esp-3); border: 1px solid var(--or); border-radius: var(--r-2); color: var(--or); font: 800 var(--t-4)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
