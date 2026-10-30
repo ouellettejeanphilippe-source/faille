@@ -1,133 +1,18 @@
 /*
- * LE MOTEUR (MOTEUR.md). Une partie se joue par événements, un tour de 30
- * secondes à la fois, de 15 à 80 minutes : des éliminations, des dragons, des hérauts, le Nashor,
- * des tours, puis le combat final qui fait tomber le nexus. Rien n'est tiré
- * d'avance : la durée, le pointage et l'or ÉMERGENT des événements, et la
- * feuille se ferme par construction — check_feuilles le mesure.
- *
- * D'où vient chaque chiffre :
- *
- *   le tempo        les repères du split de chaque équipe (tempoDuSplit) :
- *                   durée, éliminations, or, tours, dragons, Nashor,
- *                   hérauts, côté bleu — mesurés sur ses vraies parties ;
- *   qui tue, qui aide, qui meurt, qui prend l'or
- *                   les vraies parts de chaque joueur dans son split ;
- *   qui gagne un événement
- *                   les sous-cotes (js/cotes.js), à travers REGLAGES, ajustés
- *                   pour retomber sur les vraies parties (MOTEUR.md) ;
- *   les primes et les horaires
- *                   ceux du jeu : 300 d'or l'élimination, la moitié aux
- *                   aides, 300 par joueur au Nashor ; les sbires qui se
- *                   croisent à 1 min 30, le premier dragon à 5 min, le héraut de 8 à 20, le Nashor à 20, l'abandon
- *                   permis à 15, la phase de lignes jusqu'à 14 (les plaques).
+ * LE SPLIT (MOTEUR.md §5) : le tempo de chaque époque, les équipes telles que
+ * le moteur les lit, le split au jour le jour et ses séries. Une partie se
+ * joue dans js/moteur.js (une partie comme une vraie, MOTEUR.md) ; une
+ * sauvegarde d'avant la version 6 joue le moteur gelé de js/moteur-v1.js
+ * (`moteur: 1` à la création du split), pour se rejouer pareil.
  *
  * Tout le hasard d'une partie vient de son dé : hasard(graineDe(…)).
- *
- * Ce qui change une partie (le repêchage des champions, les cartes, le
- * coach) passe par les CANAUX, et par rien d'autre : neutres, ils rejouent
- * la partie calibrée au tirage près.
- *
- * LES POUVOIRS DU COACH (js/rogue.js) jouent PHASE PAR PHASE : la phase de
- * lignes, le milieu de partie (dès LIGNES_FIN), la fin de partie (dès
- * MILIEU_FIN). Au début d'une phase, chaque pouvoir lit ce qui est déjà joué
- * (le côté, l'or, les tours, les dragons) et, si sa condition tient, ajoute
- * ses effets aux canaux de son équipe le temps de la phase ; la feuille le
- * garde. Un pouvoir ne tire aucun dé : un pouvoir qui ne joue pas laisse la
- * partie telle quelle.
  */
-import { hasard, graineDe } from './hasard.js';
+import { graineDe } from './hasard.js';
+import { ROLES, moyenne } from './canaux.js';
+import { jouerPartie } from './moteur.js';
+import { jouerPartieV1 } from './moteur-v1.js';
 
-const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
-const LIGNES = { haut: ['haut', 'jungle'], milieu: ['milieu', 'jungle'], bas: ['bas', 'soutien', 'jungle'] };
-
-/*
- * LES RÉGLAGES, et rien d'autre ne se règle. Chacun a été ajusté pour que le
- * moteur retombe sur une mesure des vraies parties (MOTEUR.md, « La
- * calibration ») ; check_feuilles juge le résultat.
- *
- *   force    le poids d'un écart de puissance (en écarts types) dans un événement
- *   boule    le poids de 1 000 pièces d'or d'avance (la boule de neige)
- *   ferme    l'or de plus par minute que vaut un écart de ligne (la ferme)
- *   tours    la part des tours qui tombent en cours de partie (le reste, au combat final)
- *   siege    la part de la boule de neige qui joue sur une tour (on en échange d'un bout à l'autre de la carte)
- *   cote     la part de l'avantage mesuré du côté bleu que porte chaque événement
- *   fin      le rythme du combat final : sa base, sa pente avec le temps, l'avance qui le hâte
- *   obj      ce que valent les objectifs neutres : la part de la boule de neige qui
- *            joue sur un objectif (sur le héraut, disputé tôt, la sienne) ; le dragon (par dragon, écarts de combat et
- *            d'objectifs, quatre au plus) et l'âme (de plus, au quatrième) ; le
- *            Nashor (écarts de combat pendant NASHOR_BUFF) ; le héraut (la chance
- *            qu'il fasse tomber une tour). Réglés sur ce que le camp qui en
- *            prend le plus gagne dans les vraies parties (MOTEUR.md §4).
- */
-const REGLAGES = {
-  force: 0.29, boule: 0.48, ferme: 0.025, tours: 0.883, siege: 0.49, cote: 0.42, fin: { base: 0.3, pente: 4.4, avance: 0.27 },
-  obj: { boule: 0.52, bouleHeraut: 0.35, dragon: 0.07, ame: 0.22, nashor: 0.32, heraut: 0.31 },
-};
-
-/** Pour scripts/calibrer.mjs seulement : remplace des réglages (un objet de la même forme), le temps d'une recherche. */
-export function regler(r) {
-  for (const [k, v] of Object.entries(r)) REGLAGES[k] = typeof v === 'object' ? { ...REGLAGES[k], ...v } : v;
-}
-
-const PAS = 0.5;               // un tour de moteur : 30 secondes de partie
-export const LIGNES_FIN = 14;  // les plaques tombent : fin de la phase de lignes
-export const MILIEU_FIN = 25;  // le milieu de partie cède à la fin de partie (les pouvoirs du coach)
-const ABANDON = 15;            // le nexus ne tombe pas avant (l'abandon permis)
-const DUREE_MAX = 80;          // et toujours à 80 min : le combat final est forcé
-const SBIRES = 1.5, DRAGON = 5, HERAUT = [8, 20], NASHOR = 20, TOUR = 10;   // TOUR : la première tour, rarement avant
-const PRIME = 300, PRIME_AIDES = 150, PRIME_NASHOR = 300, PRIME_TOUR = 250;
-const NASHOR_BUFF = 3, AME = 4;   // le buff du Nashor dure trois minutes ; l'âme vient au quatrième dragon
-const TOURS_MAX = 11, TOURS_LIGNE = 3, TOURS_NEXUS = 2;   // trois par ligne, deux devant le nexus
-
-/*
- * LES CANAUX (MOTEUR.md, « Les canaux »). Une source d'effets est un objet
- * dont chaque clé est un canal ; elles se somment en un seul endroit
- * (sommerEffets), puis chaque canal reste dans sa borne.
- *
- *   ligne      écarts types ajoutés aux trois lignes (la phase de lignes)
- *   combat     écarts types ajoutés au combat (escarmouches, tours, combat final)
- *   objectifs  écarts types ajoutés aux objectifs (dragons, héraut, Nashor)
- *   dragons, heraut, nashor   écarts types ajoutés à CET objectif seulement (une priorité)
- *   split      écarts types ajoutés aux tours que l'équipe dispute (la pression d'une ligne de côté)
- *   tardif     écarts types de combat qui comptent selon l'heure : moins tôt,
- *              plus tard (× 2 (t ÷ durée de l'époque − PIVOT), de −1 à 1)
- *   rythme     × le débit des éliminations de la partie, pour les deux équipes
- *   siege      × le débit des tours de la partie, pour les deux équipes
- *   fin        × la hâte du combat final : plus de 1, on ferme tôt ; moins, on étire
- *   confort    { rôle : écarts types } ajoutés à toutes les sous-cotes d'un joueur
- *              (son champion : js/repechage.js)
- *
- * Les trois derniers multiplient la partie entière : chaque équipe en porte
- * la racine, et la partie prend le produit des deux.
- */
-const NEUTRE = { ligne: 0, combat: 0, objectifs: 0, dragons: 0, heraut: 0, nashor: 0, split: 0, tardif: 0, rythme: 1, siege: 1, fin: 1 };
-const BORNES = {
-  ligne: [-0.5, 0.5], combat: [-0.4, 0.4], objectifs: [-0.5, 0.5], dragons: [-2.5, 2.5], heraut: [-2.5, 2.5], nashor: [-2.5, 2.5], split: [-2.5, 2.5],
-  tardif: [-0.8, 0.8], rythme: [0.7, 1.4], siege: [0.7, 1.4], fin: [0.7, 1.4], confort: [-1, 0],
-};
-const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
-const PIVOT = 0.8;   // l'heure où le tardif ne compte ni pour ni contre, en part de la durée de l'époque
-
-/** La somme de plusieurs sources d'effets (null permis), chaque canal dans sa borne. */
-export function sommerEffets(sources) {
-  const e = { ...NEUTRE, confort: Object.fromEntries(ROLES.map(r => [r, 0])) };
-  for (const src of sources) {
-    if (!src) continue;
-    for (const [c, v] of Object.entries(src)) {
-      if (c === 'confort') for (const [r, x] of Object.entries(v)) e.confort[r] += x;
-      else if (MULTIPLIE.has(c)) e[c] *= v;
-      else e[c] += v;
-    }
-  }
-  const borner = (v, [a, b]) => Math.max(a, Math.min(b, v));
-  for (const c of Object.keys(NEUTRE)) e[c] = borner(e[c], BORNES[c]);
-  for (const r of ROLES) e.confort[r] = borner(e.confort[r], BORNES.confort);
-  return e;
-}
-
-const moyenne = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
 const somme = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
-const sigmoide = x => 1 / (1 + Math.exp(-x));
 
 /*
  * LE TEMPO D'UN SPLIT, mesuré sur ses vraies parties. Par équipe et par
@@ -154,17 +39,10 @@ export function tempoDuSplit(split) {
     or: deux(M.or, orMesure.length ? (5 * somme(orMesure, j => j.or[0])) / somme(orMesure, j => j.or[1]) : null),
     ...Object.fromEntries(['tours', 'dragons', 'barons', 'herauts'].map(o => [o, deux(M[o], parEq(o))])),
     bleu: lignes.length ? lignes.filter(l => l[M.gagnant] === 1).length / lignes.length : null,
+    // Le moteur d'aujourd'hui (js/moteur.js) : l'année fait les règles de l'époque ; les larves du Néant (2024 →), par équipe et par partie.
+    annee: split.annee ?? null,
+    larves: split.equipes.some(e => e.obj.larves && e.obj.larves[0]) ? parEq('larves') : null,
   };
-}
-
-/* Le tempo d'une équipe faite de plusieurs splits, ou d'une partie entre deux équipes : la moyenne de ce qui est mesuré. */
-export function melangerTempos(tempos) {
-  const t = {};
-  for (const cle of Object.keys(tempos[0])) {
-    const xs = tempos.map(x => x[cle]).filter(x => x !== null);
-    t[cle] = xs.length ? moyenne(xs) : null;
-  }
-  return t;
 }
 
 /** Un joueur tel que le moteur le lit : ses sous-cotes et ses vraies parts dans son split. */
@@ -172,6 +50,11 @@ export function joueurDuMoteur(j, profil) {
   return {
     n: j.n, r: j.r, valeur: profil.valeur, sous: profil.sous,
     bassin: j.champs,                                      // [[champion, parties, victoires]], du plus joué au moins joué
+    // Le moteur d'aujourd'hui (js/moteur.js) : ses sbires par minute, ses sorts d'invocateur sur son plus joué, ses objets les plus achetés.
+    csMin: j.cs && j.cs[2] ? j.cs[0] / j.cs[2] : null,
+    visionMin: j.vision && j.vision[2] ? j.vision[0] / j.vision[2] : null,
+    sorts: j.sorts && j.sorts[0] ? j.sorts[0] : null,
+    objets: j.objets || [],
     part: {
       k: j.eqK ? j.k / j.eqK : 0,                          // sa part des éliminations de l'équipe
       a: j.eqK > j.k ? j.a / (j.eqK - j.k) : 0,            // la chance d'aider sur une élimination qu'il ne fait pas
@@ -192,183 +75,17 @@ export function equipeReelle(split, e, profils, tempo) {
   return { nom: e.nom, split: split.nom, logo: e.logo || null, cinq, tempo };
 }
 
-/* Ce que pèse une équipe à chaque phase, sur l'échelle des sous-cotes, ses effets compris (E : sommerEffets). */
-function puissances(eq, E) {
-  const c = eq.cinq;
-  const s = (r, axe) => (c[r].sous[axe] || 0) + E.confort[r];
-  const combat = moyenne(ROLES.map(r => c[r].valeur + E.confort[r])) + E.combat;
-  const ligne = {
-    haut: moyenne([s('haut', 'ligne'), s('haut', 'pression'), s('jungle', 'implication')]) + E.ligne,
-    milieu: moyenne([s('milieu', 'ligne'), s('milieu', 'pression'), s('jungle', 'implication')]) + E.ligne,
-    bas: moyenne([s('bas', 'ligne'), s('soutien', 'implication'), s('soutien', 'vision'), s('jungle', 'implication')]) + E.ligne,
-  };
-  return {
-    combat, ligne,
-    ferme: moyenne(ROLES.map(r => s(r, 'ligne'))),
-    objectifs: moyenne([combat, s('jungle', 'objectifs'), s('soutien', 'vision')]) + E.objectifs,
-  };
-}
-
-/* Un indice tiré selon des poids ; des poids tous nuls tirent au hasard égal. */
-function selon(poids, de) {
-  const tot = poids.reduce((s, p) => s + p, 0);
-  if (!(tot > 0)) return Math.floor(de() * poids.length);
-  let x = de() * tot;
-  for (let i = 0; i < poids.length; i++) { x -= poids[i]; if (x < 0) return i; }
-  return poids.length - 1;
-}
-
-/**
- * UNE PARTIE. `bleu` et `rouge` : des équipes du moteur ({ nom, cinq, tempo,
- * effets? }) ; `effets` : ce que chaque côté ajoute pour cette partie (son
- * repêchage), ou null.
- * Rend la feuille : { duree, gagnant (0 bleu, 1 rouge), equipes: [{ nom, k,
- * or, tours, dragons, barons, herauts, inhib, joueurs: [{ n, r, k, m, a, or }] }],
- * fil: [{ t, quoi, camp, … }], courbe: [l'avance d'or du bleu à chaque minute],
- * pouvoirs: [{ t, camp, id }] (ceux qui ont joué, à leur phase),
- * orJoueurs: [à chaque minute, [bleu, rouge] → l'or de chacun des cinq] }.
- * Une équipe peut porter `pouvoirs` : [{ id, phase, quand(etat), effet }].
- * Une élimination de la phase de lignes garde sa ligne (`ligne`, null après).
- * La ligne, la courbe et l'or de chacun ne font que regarder (le direct les montre) : ils ne tirent aucun dé.
- */
-export function jouerPartie(bleu, rouge, graine, effets = [null, null]) {
-  const de = hasard(graine);
-  const R = REGLAGES;
-  const eqs = [bleu, rouge];
-  const T = melangerTempos([bleu.tempo, rouge.tempo]);
-  const E = eqs.map((e, i) => sommerEffets([e.effets, effets[i]]));
-  const P = eqs.map((e, i) => puissances(e, E[i]));
-  const avecPouvoirs = eqs.some(e => e.pouvoirs && e.pouvoirs.length);
-  const deux = c => Math.sqrt(E[0][c] * E[1][c]);
-  const f = {
-    duree: 0, gagnant: null, fil: [], courbe: [], pouvoirs: [], orJoueurs: [],
-    equipes: eqs.map(e => ({ nom: e.nom, k: 0, or: 0, tours: 0, dragons: 0, barons: 0, herauts: 0, inhib: 0, joueurs: ROLES.map(r => ({ n: e.cinq[r].n, r, k: 0, m: 0, a: 0, or: 0 })) })),
-  };
-  const parts = (e, cle) => ROLES.map(r => e.cinq[r].part[cle]);
-  const partsOr = eqs.map(e => { const p = parts(e, 'or'), s = p.reduce((a, b) => a + b, 0); return s > 0 ? p.map(x => x / s) : p.map(() => 0.2); });
-  const donner = (camp, i, or) => { f.equipes[camp].joueurs[i].or += or; f.equipes[camp].or += or; };
-  const partager = (camp, or) => ROLES.forEach((_, i) => donner(camp, i, or / ROLES.length));
-  const avance = () => (f.equipes[0].or - f.equipes[1].or) / 1000;
-  // Ce que portent les objectifs pris : les dragons (et l'âme), le Nashor tant que dure son buff.
-  const nashorJusqua = [-1, -1];
-  const buffs = (camp, t) => {
-    const d = f.equipes[camp].dragons;
-    return R.obj.dragon * Math.min(d, AME) + (d >= AME ? R.obj.ame : 0) + (t < nashorJusqua[camp] ? R.obj.nashor : 0);
-  };
-  // La chance du côté bleu de gagner un événement : la puissance, l'avance d'or, le côté ; `extra` : une priorité.
-  const bleuGagne = (cle, t, ligne = null, boule = R.boule, extra = 0) => {
-    const heure = cle === 'combat' && !ligne ? (E[0].tardif - E[1].tardif) * Math.max(-1, Math.min(1, 2 * (t / T.duree - PIVOT))) : 0;
-    const ecart = (ligne ? P[0].ligne[ligne] - P[1].ligne[ligne] : P[0][cle] - P[1][cle] + buffs(0, t) - buffs(1, t)) + heure + extra;
-    const cote = T.bleu > 0 && T.bleu < 1 ? R.cote * Math.log(T.bleu / (1 - T.bleu)) : 0;
-    return de() < sigmoide(R.force * ecart + boule * avance() + cote) ? 0 : 1;
-  };
-
-  const elimination = t => {
-    const ligne = t < LIGNES_FIN ? Object.keys(LIGNES)[Math.floor(de() * 3)] : null;
-    const camp = bleuGagne('combat', t, ligne);
-    const quiPeut = ligne ? LIGNES[ligne] : ROLES;
-    const tueur = ROLES.indexOf(quiPeut[selon(quiPeut.map(r => eqs[camp].cinq[r].part.k), de)]);
-    const victime = ROLES.indexOf(quiPeut[selon(quiPeut.map(r => eqs[1 - camp].cinq[r].part.m), de)]);
-    const aides = ROLES.map((r, i) => i).filter(i => i !== tueur && de() < eqs[camp].cinq[ROLES[i]].part.a);
-    const nous = f.equipes[camp], eux = f.equipes[1 - camp];
-    nous.k++; nous.joueurs[tueur].k++; eux.joueurs[victime].m++;
-    aides.forEach(i => { nous.joueurs[i].a++; donner(camp, i, PRIME_AIDES / aides.length); });
-    donner(camp, tueur, PRIME);
-    f.fil.push({ t, quoi: 'elim', camp, tueur, victime, aides, ligne });
-  };
-  const CANAL = { dragon: 'dragons', heraut: 'heraut', nashor: 'nashor', tour: 'split' };
-  const tour = (t, camp) => {
-    const eq = f.equipes[camp];
-    if (eq.tours >= TOURS_MAX - TOURS_NEXUS) return;     // celles du nexus attendent le combat final
-    eq.tours++; partager(camp, PRIME_TOUR);
-    f.fil.push({ t, quoi: 'tour', camp });
-  };
-  const objectif = (t, quoi) => {
-    const extra = E[0][CANAL[quoi]] - E[1][CANAL[quoi]];
-    const boule = R.boule * (quoi === 'tour' ? R.siege : quoi === 'heraut' ? R.obj.bouleHeraut : R.obj.boule);
-    const camp = bleuGagne(quoi === 'tour' ? 'combat' : 'objectifs', t, null, boule, extra);
-    const eq = f.equipes[camp];
-    if (quoi === 'tour') { tour(t, camp); return; }
-    if (quoi === 'nashor') {
-      eq.barons++; partager(camp, PRIME_NASHOR * ROLES.length);
-      nashorJusqua[camp] = t + NASHOR_BUFF;
-    } else if (quoi === 'dragon') eq.dragons++;
-    else eq.herauts++;
-    f.fil.push({ t, quoi, camp });
-    // Le héraut lâché sur une tour : souvent, elle tombe.
-    if (quoi === 'heraut' && de() < R.obj.heraut) tour(t, camp);
-  };
-
-  // Les débits, par minute, pour retomber en moyenne sur le tempo de l'époque ; un pouvoir qui joue les refait.
-  const D = T.duree;
-  const debits = () => ({
-    elim: (deux('rythme') * 2 * T.k) / (D - SBIRES),
-    dragon: T.dragons === null ? 0 : (2 * T.dragons) / (D - DRAGON),
-    heraut: T.herauts === null ? 0 : (2 * T.herauts) / (HERAUT[1] - HERAUT[0]),
-    nashor: T.barons === null ? 0 : (2 * T.barons) / Math.max(1, D - NASHOR),
-    tour: T.tours === null ? 0 : (deux('siege') * 2 * R.tours * T.tours) / (D - TOUR),
-  });
-  let debit = debits();
-  // LES POUVOIRS, au début de chaque phase : ce qui est déjà joué, vu d'un camp ; ceux dont la condition tient jouent la phase.
-  const etat = (camp, phase) => {
-    const nous = f.equipes[camp], eux = f.equipes[1 - camp];
-    return { phase, bleu: camp === 0, avance: nous.or - eux.or, tours: nous.tours - eux.tours, dragons: nous.dragons - eux.dragons, k: nous.k - eux.k };
-  };
-  const poser = (t, phase) => {
-    eqs.forEach((e, camp) => {
-      const actifs = (e.pouvoirs || []).filter(x => x.phase === phase && x.quand(etat(camp, phase)));
-      for (const x of actifs) f.pouvoirs.push({ t, camp, id: x.id });
-      E[camp] = sommerEffets([e.effets, effets[camp], ...actifs.map(x => x.effet)]);
-      P[camp] = puissances(e, E[camp]);
-    });
-    debit = debits();
-  };
-  const evenements = [['elim', SBIRES, Infinity], ['dragon', DRAGON, Infinity], ['heraut', HERAUT[0], HERAUT[1]], ['nashor', NASHOR, Infinity], ['tour', TOUR, Infinity]];
-  // Le revenu de base : l'or de l'époque, moins ce que les primes en donnent déjà.
-  const primes = T.k * (PRIME + PRIME_AIDES) + (T.tours || 0) * PRIME_TOUR + (T.barons || 0) * PRIME_NASHOR * ROLES.length;
-  const revenu = T.or === null ? 0 : Math.max(0, T.or - primes) / D;
-
-  for (let t = PAS; ; t += PAS) {
-    if (avecPouvoirs && (t === PAS || t === LIGNES_FIN || t === MILIEU_FIN)) poser(t, t === PAS ? 'lignes' : t === LIGNES_FIN ? 'milieu' : 'tardif');
-    for (const camp of [0, 1]) {
-      const gain = revenu * PAS * Math.max(0, 1 + R.ferme * (P[camp].ferme - P[1 - camp].ferme));
-      partsOr[camp].forEach((p, i) => donner(camp, i, gain * p));
-    }
-    for (const [quoi, debut, fin] of evenements) {
-      if (t >= debut && t < fin && de() < debit[quoi] * PAS) (quoi === 'elim' ? elimination(t) : objectif(t, quoi));
-    }
-    if (t % 1 === 0) {
-      f.courbe.push(Math.round(f.equipes[0].or - f.equipes[1].or));
-      f.orJoueurs.push(f.equipes.map(e => e.joueurs.map(j => Math.round(j.or))));
-    }
-    // Le combat final : de plus en plus probable avec le temps, plus tôt quand une équipe mène.
-    if (t >= ABANDON) {
-      const h = (deux('fin') * R.fin.base / D) * Math.exp(R.fin.pente * (t / D - 1) + R.fin.avance * Math.abs(avance()));
-      if (t >= DUREE_MAX || de() < h * PAS) {
-        const camp = bleuGagne('combat', t);
-        const eq = f.equipes[camp];
-        // Le chemin du nexus : trois tours d'une ligne (prises avant, ou là), puis les deux du nexus, toujours là.
-        for (let n = Math.max(0, TOURS_LIGNE - eq.tours) + TOURS_NEXUS; n > 0; n--) { eq.tours++; partager(camp, PRIME_TOUR); f.fil.push({ t, quoi: 'tour', camp }); }
-        if (!eq.inhib) { eq.inhib++; f.fil.push({ t, quoi: 'inhib', camp }); }
-        f.fil.push({ t, quoi: 'nexus', camp });
-        f.duree = t;
-        f.gagnant = camp;
-        return f;
-      }
-    }
-  }
-}
-
 /*
  * LE SPLIT AU JOUR LE JOUR (la règle de Cap 82-0 : rien ne se joue d'avance).
  * creerSplit pose le calendrier — une ronde où chacun croise chacun, deux
  * fois, côtés inversés au retour ; chaque rencontre est une série (BO1 ou
- * BO3). jouerJournee joue UNE journée. Chaque partie a son propre dé, tiré
+ * BO3) ; `moteur` : 2 (js/moteur.js), ou 1 pour une sauvegarde d'avant la
+ * version 6 (js/moteur-v1.js, gelé). jouerJournee joue UNE journée. Chaque partie a son propre dé, tiré
  * de la graine du split et de sa place au calendrier : jouées une à une ou
  * d'un bloc, avec ou sans hasard tiré ailleurs entre deux, elles donnent la
  * même chose (check_graine).
  */
-export function creerSplit(equipes, { graine, rondes = 2, bo = 1 }) {
+export function creerSplit(equipes, { graine, rondes = 2, bo = 1, moteur = 2 }) {
   const n = equipes.length + (equipes.length % 2);
   const places = [...equipes.keys(), ...(n > equipes.length ? [null] : [])];
   const aller = [];
@@ -385,7 +102,7 @@ export function creerSplit(equipes, { graine, rondes = 2, bo = 1 }) {
   const journees = [];
   for (let r = 0; r < rondes; r++) journees.push(...aller.map(jour => jour.map(([a, b]) => (r % 2 ? [b, a] : [a, b]))));
   return {
-    equipes, graine, jour: 0, series: null,
+    equipes, graine, moteur, jour: 0, series: null,
     journees: journees.map((jour, j) => jour.map(([a, b], i) => ({ a, b, bo, cle: `j${j}-${i}`, parties: [], v: [0, 0], gagnant: null }))),
   };
 }
@@ -405,7 +122,7 @@ function jouerSerie(L, s, max = Infinity) {
     // Le repêchage de la partie (js/repechage.js), sinon celui de la série : ses effets suivent chaque équipe d'un côté à l'autre.
     const eff = (s.effetsParPartie && s.effetsParPartie[k]) || s.effets;
     const effets = eff ? (bleu ? [eff[1], eff[0]] : eff) : undefined;
-    const f = jouerPartie(L.equipes[camps[0]], L.equipes[camps[1]], graineDe(L.graine, `${s.cle}-${k}`), effets);
+    const f = (L.moteur === 1 ? jouerPartieV1 : jouerPartie)(L.equipes[camps[0]], L.equipes[camps[1]], graineDe(L.graine, `${s.cle}-${k}`), effets);
     const gagnant = camps[f.gagnant] === s.a ? 0 : 1;
     s.parties.push({ bleu: camps[0], rouge: camps[1], feuille: f, gagnant });
     s.v[gagnant]++;
@@ -471,3 +188,6 @@ export function jouerRonde(L, toi = null) {
   else S.champion = gagnants[0];
   return true;
 }
+
+/* La partie d'aujourd'hui, pour une partie hors ligue (l'exhibition, js/main.js). */
+export { jouerPartie };

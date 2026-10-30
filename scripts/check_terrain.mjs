@@ -22,7 +22,8 @@
  *
  *   node scripts/check_terrain.mjs
  */
-import { creerSplit, jouerJournee, LIGNES_FIN } from '../js/sim.js';
+import { creerSplit, jouerJournee } from '../js/sim.js';
+import { LIGNES_FIN } from '../js/canaux.js';
 import { terrainDe, positionsDe, rappelsDe, vaguesDe, GENRES, BASES } from '../js/terrain.js';
 import { graineDe } from '../js/hasard.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
@@ -34,8 +35,9 @@ const fautes = { rappels: 0, sbires: 0, joueurs: 0, morts: 0, lignes: 0, place: 
 const vus = {};
 let parties = 0, moments = 0;
 const dans = e => e.x >= 0 && e.x <= 100 && e.y >= 0 && e.y <= 100;
+// Sept ligues du moteur d'aujourd'hui, et une du moteur d'avant (une vieille sauvegarde se regarde encore).
 for (let g = 1; g <= 8; g++) {
-  const L = creerSplit(ligueDEssai(splits, 10, g), { graine: g * 41, rondes: 2, bo: 1 });
+  const L = creerSplit(ligueDEssai(splits, 10, g), { graine: g * 41, rondes: 2, bo: 1, moteur: g === 8 ? 1 : 2 });
   while (jouerJournee(L));
   for (const s of L.journees.flat()) {
     for (const p of s.parties) {

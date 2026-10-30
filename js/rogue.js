@@ -28,7 +28,7 @@
  * victoires selon sa rareté, et une rare doit se voir sur la feuille.
  */
 import { hasard, graineDe } from './hasard.js';
-import { sommerEffets } from './sim.js';
+import { sommerEffets } from './canaux.js';
 import { gainsDe, OBJECTIF, ELAN } from './gestion.js';
 
 export const JETONS = { depart: 20, victoire: 4, defaite: 1, ronde: 20 };

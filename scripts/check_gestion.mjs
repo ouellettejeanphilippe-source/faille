@@ -27,7 +27,11 @@
  *                    récent, et le plafond tient avec elle ;
  *   la collection    chaque joueur passé chez toi y entre ;
  *   la sauvegarde    le journal, passé par JSON et rejoué, redonne la même
- *                    partie, à la fin comme au milieu ;
+ *                    partie, à la fin comme au milieu ; une partie de la
+ *                    version 5, gelée avec ses parties (scripts/lib/
+ *                    partie-v5.json), se rejoue identique sous le moteur
+ *                    d'alors (js/moteur-v1.js), et une partie neuve joue
+ *                    celui d'aujourd'hui (js/moteur.js) ;
  *   le départ        (version 5) le Rogue part de ses cases — la vedette, le
  *                    classeur tiré de la collection, ceux qui restent au loto —
  *                    puis du pack de départ : chaque loto rejoue, reste à son
@@ -467,6 +471,27 @@ for (const [id, pk] of Object.entries(PACKS_JOUEURS)) {
     ecarts.map(([niv, m]) => `${niv} ${Math.round(m)} %`).join(' · '));
 }
 exiger('chaque run rejoue depuis sa sauvegarde', !pasRejouees.length, pasRejouees.join(', ') || 'au bout et à mi-split, passée par JSON');
+
+/*
+ * UNE RUN DE LA VERSION 5, gelée le 30 octobre 2026 avec l'empreinte de ses
+ * parties (le robot de scripts/lib/robot.mjs, deux splits, tous les
+ * déblocages, l'agresseur) : rejouée aujourd'hui, elle redonne chaque partie
+ * au tirage près — le moteur d'alors, gelé dans js/moteur-v1.js. Si les shards
+ * changent (une donnée corrigée à Leaguepedia), l'empreinte change avec eux :
+ * on la refait alors depuis le commit qui l'a gelée.
+ */
+const empreinteDesParties = P => {
+  const L = P.L || P.dernier;
+  const parties = [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].flatMap(s => s.parties.map(p => [p.feuille.duree, p.feuille.gagnant, p.feuille.equipes.map(e => [e.k, Math.round(e.or), e.tours, e.dragons])]));
+  return JSON.stringify({ etape: P.etape, run: P.run, jetons: jetonsDe(P.L, P.R), parties });
+};
+const gelee = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/lib/partie-v5.json'), 'utf8'));
+const relue = rejouer(JSON.parse(JSON.stringify(gelee.sauvegarde)), ctx);
+exiger('une run de la version 5 se rejoue identique, partie pour partie', relue.v === 5 && (relue.L || relue.dernier).moteur === 1 && empreinteDesParties(relue) === gelee.empreinte,
+  `${relue.run.passes.length} splits, ${JSON.parse(gelee.empreinte).parties.length} parties du dernier`);
+const neuve = nouvellePartie(1, {});
+exiger('une partie neuve joue le moteur d\'aujourd\'hui', neuve.v >= 6 && dixhuits.every(({ P }) => P.dernier && P.dernier.moteur === 2 && P.dernier.journees[0][0].parties[0].feuille.moteur === 2),
+  `version ${neuve.v}`);
 informer('les runs', `${bilan.gagnees} gagnées, ${bilan.perdues} perdues, ${bilan.objectifs} objectifs jugés, ${bilan.refusAttendus} refus attendus`);
 
 verdict('La gestion');

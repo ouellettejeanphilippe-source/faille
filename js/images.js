@@ -20,3 +20,8 @@ export const illustration = (champions, nom) => (champions.ids[nom] ? `${DDRAGON
 document.addEventListener('error', ev => {
   if (ev.target instanceof HTMLImageElement) ev.target.classList.add('absente');
 }, true);
+
+/** L'icône d'un sort d'invocateur (`sort` : [nom, icône, recharge, version où le lire ?] de js/moteur.js SORTS). */
+export const iconeSort = (champions, sort) => `${DDRAGON}/${sort[3] || champions.version}/img/spell/${sort[1]}.png`;
+/** L'icône d'un objet complété (`o` : champions.objets[nom], [id, nom français, prix, version]). */
+export const iconeObjet = (champions, o) => `${DDRAGON}/${champions.versionsObjets[o[3]]}/img/item/${o[0]}.png`;

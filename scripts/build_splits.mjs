@@ -12,7 +12,9 @@
  * Les sources :
  *   Leaguepedia (scripts/lib/leaguepedia.mjs) — les parties, les joueurs,
  *     leurs stats, leurs objets.
- *   Data Dragon (Riot) — la classe de chaque champion.
+ *   Data Dragon (Riot) — la classe de chaque champion ; pour data/champions.json,
+ *     le nom français de son ultime, et les objets complétés (leur id, leur nom
+ *     français, leur prix) tels que le Data Dragon du Mondial de leur année les donne.
  *
  *   node scripts/build_splits.mjs                  # tous les splits de scripts/splits.json
  *   node scripts/build_splits.mjs mondial-2013     # seulement celui-là
@@ -47,6 +49,66 @@ async function classesDesChampions() {
   }
   const ficheDe = nom => table.get(ALIAS[normal(nom)] || normal(nom)) || null;
   return { version, ficheDe, de: nom => ficheDe(nom)?.tags || null };
+}
+
+/* L'ULTIME DE CHAQUE CHAMPION, en français (Data Dragon fr_FR, champion/<id>.json) : { nom → nom de l'ultime }. */
+async function ultimesDe(version, champions) {
+  const out = {};
+  for (let k = 0; k < champions.length; k += 8) {
+    await Promise.all(champions.slice(k, k + 8).map(async ([c, fi]) => {
+      const rep = await fetch(`${DDRAGON}/cdn/${version}/data/fr_FR/champion/${fi.id}.json`);
+      if (!rep.ok) return;
+      const d = (await rep.json()).data[fi.id];
+      if (d && d.spells && d.spells[3]) out[c] = d.spells[3].name;
+    }));
+  }
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+/*
+ * LES OBJETS COMPLÉTÉS que les joueurs des shards achetaient (leurs `objets`),
+ * par leur nom anglais (celui de Leaguepedia) : [id, nom français, prix, la
+ * version de Data Dragon où les lire]. On cherche du plus récent au plus vieux
+ * dans le Data Dragon du Mondial de chaque année ; un objet est complété quand
+ * il ne se construit plus en un autre qui s'achète (une botte améliorée, un
+ * objet d'Ornn ou un enchantement ne comptent pas), qu'il s'achète, coûte 900
+ * ou plus et n'est ni une potion ni une balise.
+ */
+const VERSIONS_OBJETS = ['16.20', '15.19', '14.18', '13.19', '12.18', '11.19', '10.19', '9.19', '8.19', '7.18', '6.18', '5.18', '4.18', '3.12', '3.6'];
+async function objetsDe(noms) {
+  const toutes = await (await fetch(`${DDRAGON}/api/versions.json`)).json();
+  const versions = VERSIONS_OBJETS.map(p => toutes.find(v => v.startsWith(`${p}.`))).filter(Boolean);
+  const objets = {};
+  for (const [k, v] of versions.entries()) {
+    const en = (await (await fetch(`${DDRAGON}/cdn/${v}/data/en_US/item.json`)).json()).data;
+    const fr = (await (await fetch(`${DDRAGON}/cdn/${v}/data/fr_FR/item.json`)).json()).data;
+    // La Faille de l'invocateur seulement (la carte 11, la 1 avant 2014) : pas les objets de l'Arène ni de l'Abîme.
+    const faille = o => !o.maps || o.maps['11'] || o.maps['1'];
+    const achetable = id => en[id] && faille(en[id]) && en[id].gold && en[id].gold.purchasable !== false && !/^Enchantment/.test(en[id].name);
+    // Un objet de jungle enchanté : Leaguepedia écrit « Skirmisher's Sabre - Warrior », Data Dragon « Enchantment: Warrior » construit de la lame.
+    // Un nom qui revient sous plusieurs id : celui de la Faille a l'id le plus court (les variantes des modes en ont six chiffres).
+    const parNom = new Map(Object.entries(en).filter(([, o]) => faille(o)).sort(([a], [b]) => b.length - a.length).map(([id, o]) => [o.name, id]));
+    const enchante = nom => {
+      const m = nom.match(/^(.+) - (.+)$/);
+      const base = m && parNom.get(m[1]);
+      const id = base && Object.keys(en).find(x => faille(en[x]) && en[x].name === `Enchantment: ${m[2]}` && (en[x].from || []).includes(base));
+      return id ? [id, `${fr[base] ? fr[base].name : m[1]} · ${fr[id] ? fr[id].name.replace(/^Enchantement\s*:\s*/, '') : m[2]}`] : null;
+    };
+    for (const nom of noms) {
+      if (objets[nom]) continue;
+      const ench = parNom.has(nom) ? null : enchante(nom);
+      const id = parNom.get(nom) || (ench && ench[0]);
+      const o = id && en[id];
+      if (!o || !o.gold) continue;
+      const tags = o.tags || [];
+      const botte = tags.includes('Boots') && (o.depth || 1) >= 2;
+      const fini = botte || !(o.into || []).some(achetable);
+      // Un objet qui ne s'achète pas mais se transforme d'un autre (la Muramana, l'Étreinte du séraphin) est complété aussi.
+      const vient = o.gold.purchasable !== false || (o.from || []).some(achetable) || o.gold.total >= 2000;
+      if (fini && vient && o.gold.total >= 900 && !tags.includes('Consumable') && !tags.includes('Trinket')) objets[nom] = [id, ench ? ench[1] : fr[id] ? fr[id].name : o.name, o.gold.total, k];
+    }
+  }
+  return { versions, objets: Object.fromEntries(Object.entries(objets).sort(([a], [b]) => (a < b ? -1 : 1))) };
 }
 
 /*
@@ -104,6 +166,16 @@ async function logosDe(noms) {
 }
 
 const nb = x => (x === null || x === undefined ? null : Number(x));
+/*
+ * LES SORTS D'INVOCATEUR en deux lettres (js/moteur.js, SORTS) : le Flash
+ * d'abord, puis l'autre ; un sort inconnu (de Dominion, d'un mode retiré) laisse la paire vide.
+ */
+const CODES_SORTS = { Flash: 'F', Teleport: 'T', Ignite: 'I', Smite: 'S', Heal: 'H', Exhaust: 'E', Barrier: 'B', Cleanse: 'C', Ghost: 'G', Clarity: 'L', Clairvoyance: 'V', Promote: 'P', Revive: 'R' };
+function codeDesSorts(sorts) {
+  const noms = (Array.isArray(sorts) ? sorts : String(sorts || '').split(',')).map(x => String(x).trim()).filter(Boolean);
+  if (noms.length !== 2 || noms.some(n => !CODES_SORTS[n])) return null;
+  return noms.map(n => CODES_SORTS[n]).sort((a, b) => (a === 'F' ? -1 : b === 'F' ? 1 : a < b ? -1 : 1)).join('');
+}
 const ROLES = { top: 'haut', jungle: 'jungle', mid: 'milieu', middle: 'milieu', bot: 'bas', adc: 'bas', 'ad carry': 'bas', bottom: 'bas', support: 'soutien' };
 const roleDe = l => ROLES[String(l.role || l.roleJeu || '').toLowerCase()] || null;
 /* Une stat qui peut manquer : [somme, parties où elle est mesurée, minutes de ces parties]. */
@@ -124,7 +196,7 @@ async function construire(split, ctx) {
   }, ou);
   const lignes = await cargo('ScoreboardPlayers', {
     n: 'Link', eq: 'Team', role: 'Role', roleJeu: 'IngameRole', champion: 'Champion', k: 'Kills', m: 'Deaths', a: 'Assists',
-    or: 'Gold', cs: 'CS', deg: 'DamageToChampions', vision: 'VisionScore', objets: 'Items', gagne: 'PlayerWin', id: 'GameId',
+    or: 'Gold', cs: 'CS', deg: 'DamageToChampions', vision: 'VisionScore', objets: 'Items', sorts: 'SummonerSpells', gagne: 'PlayerWin', id: 'GameId',
   }, ou);
   const partie = new Map(parties.map(p => [p.id, p]));
 
@@ -162,7 +234,7 @@ async function construire(split, ctx) {
     const cle = `${l.n}|${r}`;
     if (!eq.joueurs.has(cle)) {
       eq.joueurs.set(cle, { n: l.n, r, pj: 0, v: 0, min: 0, k: 0, m: 0, a: 0, eqK: 0, eqOr: 0, eqDeg: 0,
-        ...Object.fromEntries(MESURABLES.map(s => [s, [0, 0, 0]])), champs: new Map(), classes: {}, objets: new Map() });
+        ...Object.fromEntries(MESURABLES.map(s => [s, [0, 0, 0]])), champs: new Map(), classes: {}, objets: new Map(), sorts: new Map() });
     }
     const j = eq.joueurs.get(cle);
     const duree = nb(p.duree) || 0;
@@ -180,6 +252,13 @@ async function construire(split, ctx) {
     const c = j.champs.get(l.champion) || [0, 0];
     c[0]++; c[1] += gagne ? 1 : 0;
     j.champs.set(l.champion, c);
+    // Ses sorts d'invocateur sur ce champion : la paire, en deux lettres (CODES_SORTS), comptée.
+    const paire = codeDesSorts(l.sorts);
+    if (paire) {
+      const parSorts = j.sorts.get(l.champion) || new Map();
+      parSorts.set(paire, (parSorts.get(paire) || 0) + 1);
+      j.sorts.set(l.champion, parSorts);
+    }
     const tags = ctx.classes.de(l.champion);
     if (tags) for (const t of tags) j.classes[t] = (j.classes[t] || 0) + 1 / tags.length;
     else ctx.inconnus.add(l.champion);
@@ -206,6 +285,11 @@ async function construire(split, ctx) {
         n: j.n, photo: cheminImage(photos.get(j.n)), r: j.r, pj: j.pj, v: j.v, min: r1(j.min), k: j.k, m: j.m, a: j.a, eqK: j.eqK, eqOr: j.eqOr, eqDeg: j.eqDeg,
         ...Object.fromEntries(MESURABLES.map(s => [s, [j[s][0], j[s][1], r1(j[s][2])]])),
         champs: [...j.champs.entries()].sort((a, b) => b[1][0] - a[1][0]).map(([c, [pj, v]]) => [c, pj, v]),
+        // Ses sorts sur chacun de ses champions, dans l'ordre de `champs` : la paire la plus jouée (« FT »), ou '' si l'export ne les a pas.
+        sorts: [...j.champs.entries()].sort((a, b) => b[1][0] - a[1][0]).map(([c]) => {
+          const ps = j.sorts.get(c);
+          return ps ? [...ps.entries()].sort((a, b) => b[1] - a[1])[0][0] : '';
+        }),
         classes: Object.fromEntries(Object.entries(j.classes).map(([c, x]) => [c, Math.round((x / j.pj) * 100) / 100])),
         objets: [...j.objets.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([o]) => o),
       })),
@@ -235,18 +319,29 @@ if (ctx.inconnus.size) console.log(`Champions sans classe (Data Dragon) : ${[...
 
 // Les champions joués, nom → id de Data Dragon (ses images) et ses classes (le repêchage, js/repechage.js) :
 // data/champions.json, pour la page.
+// Le direct y lit aussi le nom français de l'ultime de chacun (le commentateur) et les objets complétés des joueurs.
 const champions = new Map();
+const nomsObjets = new Set();
 for (const f of fs.readdirSync(dossier).filter(f => f.endsWith('.json'))) {
   for (const e of JSON.parse(fs.readFileSync(path.join(dossier, f), 'utf8')).equipes) {
-    for (const j of e.joueurs) for (const [c] of j.champs) { const fi = ctx.classes.ficheDe(c); if (fi) champions.set(c, fi); }
+    for (const j of e.joueurs) {
+      for (const [c] of j.champs) { const fi = ctx.classes.ficheDe(c); if (fi) champions.set(c, fi); }
+      for (const o of j.objets) nomsObjets.add(o);
+    }
   }
 }
 const tries = [...champions].sort(([a], [b]) => (a < b ? -1 : 1));
+const ultimes = await ultimesDe(ctx.classes.version, tries);
+const { versions: versionsObjets, objets } = await objetsDe(nomsObjets);
 fs.writeFileSync(path.join(ROOT, 'data/champions.json'), `${JSON.stringify({
   version: ctx.classes.version,
   ids: Object.fromEntries(tries.map(([c, fi]) => [c, fi.id])),
   classes: Object.fromEntries(tries.map(([c, fi]) => [c, fi.tags])),
+  ultimes,
+  versionsObjets,
+  objets,
 })}\n`);
+console.log(`data/champions.json : ${tries.length} champions, ${Object.keys(ultimes).length} ultimes, ${Object.keys(objets).length} objets complétés sur ${nomsObjets.size} noms`);
 
 // L'index : ce qui est sur le disque, pas ce qui était demandé.
 const index = tous.filter(s => fs.existsSync(path.join(dossier, `${s.id}.json`))).map(({ id, nom, ligue, annee }) => ({ id, nom, ligue, annee }));

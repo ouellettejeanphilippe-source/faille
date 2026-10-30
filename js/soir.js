@@ -14,7 +14,10 @@ import { classement } from './sim.js';
 import { horloge, vedetteDe, taDerniere } from './split.js';
 import { statsDuSplit, profilDEquipe, dernieresParties } from './palmares.js';
 import { repechageDe } from './repechage.js';
-import { iconeChampion } from './images.js';
+import { iconeChampion, iconeSort, iconeObjet } from './images.js';
+import { SORTS } from './moteur.js';
+import { objetsCompletes, TERRAIN } from './commentaire.js';
+import { DRAGONS } from './terrain.js';
 import { hasard, graineDe, piger } from './hasard.js';
 
 const ROLES = { haut: 'Haut', jungle: 'Jungle', milieu: 'Milieu', bas: 'Bas', soutien: 'Soutien' };
@@ -112,6 +115,31 @@ function troisEtoiles(f, noms) {
     .sort((a, b) => b.score - a.score).slice(0, 3).reverse();
 }
 
+/*
+ * LES FAITS D'UNE PARTIE du moteur d'aujourd'hui, lus dans son fil : le
+ * premier sang, la première tour, l'âme, les éliminations multiples, la plus
+ * grosse prime de fin de série, les vols au Châtiment.
+ */
+const MULTIPLES = { 3: 'Triple élimination', 4: 'Quadruple élimination', 5: 'Pentakill' };
+const AMES = { infernal: 'infernale', montagne: 'de la montagne', ocean: 'de l\'océan', nuage: 'des nuages', hextech: 'hextech', chimtech: 'chimtech' };
+function faits(f, noms) {
+  const qui = (c, i) => esc(f.equipes[c].joueurs[i].n);
+  const out = [];
+  const sang = f.fil.find(x => x.quoi === 'elim');
+  if (sang) out.push(['🩸', `Premier sang : ${qui(sang.camp, sang.tueur)} sur ${qui(1 - sang.camp, sang.victime)}`, sang.t]);
+  const tour = f.fil.find(x => x.quoi === 'tour');
+  if (tour) out.push(['🏰', `Première tour : ${esc(noms[tour.camp])}`, tour.t]);
+  for (const x of f.fil) {
+    if (x.quoi === 'elim' && MULTIPLES[x.multi]) out.push([x.multi === 5 ? '🖐️' : '🔥', `${MULTIPLES[x.multi]} de ${qui(x.camp, x.tueur)}`, x.t]);
+    if (x.quoi === 'dragon' && x.terrain) out.push([DRAGONS[x.terrain] || '🐉', `La Faille prend le terrain ${TERRAIN[x.terrain] || ''}`, x.t]);
+    if (x.quoi === 'dragon' && x.ame) out.push([DRAGONS[x.ame] || '🐉', `L'âme ${AMES[x.ame] || ''} : ${esc(noms[x.camp])}`, x.t]);
+    if (x.vol) out.push(['⚡', `Vol au Châtiment : ${qui(x.camp, 1)}, ${x.quoi === 'nashor' ? 'le Nashor' : x.quoi === 'heraut' ? 'le héraut' : x.ancestral ? 'l\'ancestral' : 'le dragon'}`, x.t]);
+  }
+  const prime = f.fil.filter(x => x.quoi === 'elim' && x.prime).sort((a, b) => b.prime - a.prime)[0];
+  if (prime) out.push(['💰', `La plus grosse prime : ${qui(prime.camp, prime.tueur)} sur ${qui(1 - prime.camp, prime.victime)}, ${Math.round(prime.prime)} d'or`, prime.t]);
+  return out.sort((a, b) => a[2] - b[2]).map(([ico, mot, t]) => `<li><span class="temps">${horloge(t)}</span><span>${ico} ${mot}</span></li>`).join('');
+}
+
 /** LE SOMMAIRE d'une partie jouée : les étoiles, le pointage, la Faille de la partie (`carte` : son dessin), les chiffres face à face, les dix joueurs. */
 export function ecranSommaire(L, s, k, champions, carte) {
   const p = s.parties[k];
@@ -122,19 +150,30 @@ export function ecranSommaire(L, s, k, champions, carte) {
   const champ = (x, r) => rp && rp.choix[camps[x] === s.a ? 0 : 1][r];
   const etoiles = troisEtoiles(f, noms).map((j, n) => `<li><span class="etoiles">${'★'.repeat(n + 1)}</span><span class="dt-qui"><b>${esc(j.n)}</b><small>${esc(j.nom)}${champ(j.x, j.r) ? ` · ${esc(champ(j.x, j.r))}` : ''}</small></span><span class="dt-kma">${j.k}/${j.m}/${j.a}</span></li>`).join('');
   const pointage = [0, 1].map(x => `<li class="score-camp ${x ? 'rouge' : 'bleu'}${f.gagnant === x ? ' gagne' : ''}"><b>${esc(noms[x])}</b><span class="score-k">${f.equipes[x].k}</span><small>${virgule(f.equipes[x].or / 1000)} k d'or</small></li>`).join('');
+  // Le moteur d'aujourd'hui : ses plaques, ses inhibiteurs et ses larves ; chaque joueur, son niveau, ses sorts, ses sbires, ses objets complétés.
+  const v2 = f.moteur === 2;
   const lignes = [
-    ['Éliminations', 'k', 0], ['Or (k)', 'or', 1, 1000], ['Tours', 'tours', 0], ['Dragons', 'dragons', 0], ['Hérauts', 'herauts', 0], ['Nashor', 'barons', 0],
-  ].map(([mot, c, dec, div = 1]) => faceAFace(mot, f.equipes[0][c] / div, f.equipes[1][c] / div, dec)).join('');
-  const joueurs = [0, 1].map(x => `<ol class="dt-camp ${x ? 'rouge' : 'bleu'}">${f.equipes[x].joueurs.map(j => {
+    ['Éliminations', 'k', 0], ['Or (k)', 'or', 1, 1000], ['Tours', 'tours', 0], ...(v2 ? [['Plaques', 'plaques', 0], ['Inhibiteurs', 'inhib', 0]] : []), ['Dragons', 'dragons', 0], ['Hérauts', 'herauts', 0],
+    ...(v2 && f.equipes.some(e => e.larves) ? [['Larves', 'larves', 0]] : []), ['Nashor', 'barons', 0],
+  ].map(([mot, c, dec, div = 1]) => faceAFace(mot, f.equipes[0][c] / div, f.equipes[1][c] / div, dec)).join('')
+    + (v2 ? faceAFace('Score de vision', ...f.equipes.map(e => e.joueurs.reduce((t, j) => t + j.vision, 0)), 0) : '');
+  const objets = v2 ? objetsCompletes(f, champions) : null;
+  const joueurs = [0, 1].map(x => `<ol class="dt-camp ${x ? 'rouge' : 'bleu'}">${f.equipes[x].joueurs.map((j, i) => {
     const c = champ(x, j.r);
     const src = c && iconeChampion(champions, c);
-    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(ROLES[j.r].slice(0, 2))}</span><span class="dt-qui"><b>${esc(j.n)}</b><small>${c ? esc(c) : ROLES[j.r]}</small></span><span class="dt-kma">${j.k}/${j.m}/${j.a}<small>${virgule(j.or / 1000)} k</small></span></li>`;
+    const sorts = v2 ? `<span class="dt-sorts">${j.sorts.map(sp => `<img class="dt-sort" src="${iconeSort(champions, SORTS[sp])}" alt="${esc(SORTS[sp][0])}" title="${esc(SORTS[sp][0])}" loading="lazy">`).join('')}</span>` : '';
+    const os = v2 && objets[x][i].length ? `<span class="dt-objets">${objets[x][i].map(o => `<img src="${iconeObjet(champions, o.o)}" alt="${esc(o.o[1])}" title="${esc(o.o[1])} · ${horloge(o.t)}" loading="lazy">`).join('')}</span>` : '';
+    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(ROLES[j.r].slice(0, 2))}${v2 ? `<i class="dt-niv">${j.niv}</i>` : ''}</span>${sorts}<span class="dt-qui"><b>${esc(j.n)}</b><small>${c ? esc(c) : ROLES[j.r]}</small>${os}</span><span class="dt-kma">${j.k}/${j.m}/${j.a}<small>${v2 ? `${j.cs} · ` : ''}${virgule(j.or / 1000)} k</small></span></li>`;
   }).join('')}</ol>`).join('');
+  const recap = v2 ? faits(f, noms) : '';
+  const dragons = v2 ? f.equipes.map((e, x) => f.fil.filter(y => y.quoi === 'dragon' && y.camp === x).map(y => DRAGONS[y.type] || '🐉').join('')) : null;
   const quand = s.cle.startsWith('j') ? `Journée ${Number(s.cle.slice(1).split('-')[0]) + 1}` : `Les séries · partie ${k + 1}`;
   return `<h2>${quand} · ${horloge(f.duree)}</h2>
     <h3>Les trois étoiles</h3><ol class="etoiles-liste">${etoiles}</ol>
     <ul class="score">${pointage}</ul>
+    ${dragons && (dragons[0] || dragons[1]) ? `<p class="dt-dragons"><span>${dragons[0] || '—'}</span><small>dragons</small><span>${dragons[1] || '—'}</span></p>` : ''}
     ${carte}
+    ${recap ? `<h3>Les faits de la partie</h3><ol class="dt-fil dt-recap">${recap}</ol>` : ''}
     <h3>Face à face · bleu, rouge</h3><ul class="faces">${lignes}</ul>
     <h3>Les dix joueurs</h3><div class="dt-joueurs">${joueurs}</div>
     <div class="actionbar"><button class="go" data-direct="${s.cle}|${k}">▶ Regarder la partie</button><button data-serie="${s.cle}">La feuille</button></div>`;
