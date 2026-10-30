@@ -345,7 +345,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 .carton-fond::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--fonce) 20%, transparent), transparent 30%, color-mix(in srgb, var(--fonce) 85%, transparent)); }
 .carton-fini { inset: 0; z-index: 1; pointer-events: none; background: repeating-linear-gradient(115deg, transparent 0 1.4cqw, color-mix(in srgb, white 7%, transparent) 1.4cqw 1.7cqw), conic-gradient(from calc(var(--ry, 0deg) * 4) at var(--mx, 50%) var(--my, 50%), transparent, color-mix(in srgb, var(--vive) 16%, transparent), transparent 30%); }
 .carton-photo { z-index: 2; inset: 0 0 auto; height: 100cqw; overflow: hidden; display: grid; place-items: center; }
-.carton-photo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; filter: contrast(1.05) saturate(1.05); -webkit-mask-image: linear-gradient(black 70%, transparent 100%); mask-image: linear-gradient(black 70%, transparent 100%); }
+/* Le portrait est recadré à la copie (scripts/recadrer.py) : un 5:7 au fond transparent, la tête toujours à la même place ; la fenêtre le pose en haut, et le carton met la couleur dessous. */
+.carton-photo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; filter: contrast(1.05) saturate(1.05); -webkit-mask-image: linear-gradient(black 70%, transparent 100%); mask-image: linear-gradient(black 70%, transparent 100%); }
 .carton-photo > img.absente { display: none; }
 .carton-initiales { font: 800 28cqw/1 var(--display); color: color-mix(in srgb, var(--ink) 28%, transparent); }
 .carton-photo:has(> img:not(.absente)) .carton-initiales, .carton-fond[style] ~ .carton-photo .carton-initiales { display: none; }
