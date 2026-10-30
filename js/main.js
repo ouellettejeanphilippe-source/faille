@@ -454,7 +454,7 @@ function rendreBati() {
   $('#jouer').textContent = P.mode === 'dixhuit' ? 'Jouer le 18-0' : 'Jouer le split';
   if (cases) {
     const c = caseEnCours(P);
-    $('#depart-cases').innerHTML = c ? (c.loto.every(x => G.contrats.has(x.cle)) ? ecranCase(P, c, G.contrats, G.vieux) : '<p class="sous">Le classeur s\'ouvre…</p>')
+    $('#depart-cases').innerHTML = c ? (c.loto.every(x => G.contrats.has(x.cle)) ? ecranCase(P, c, G.contrats, G.vieux, x => carteDuRef(x.ref).html) : '<p class="sous">Le classeur s\'ouvre…</p>')
       : attendPack(P) ? avantLePack(P) : '';
   } else $('#depart-cases').innerHTML = '';
   const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);

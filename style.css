@@ -227,6 +227,8 @@ h3 { margin: var(--esp-4) 0 var(--esp-2); padding-bottom: var(--esp-1); border-b
   background: linear-gradient(transparent, var(--noir) 30%);
 }
 .ecran > .actionbar { position: static; padding-bottom: var(--esp-2); background: none; border-top: 1px solid var(--filet); }
+/* Une barre sans bouton à montrer ne prend pas de place. */
+.actionbar:not(:has(> :not([hidden]))) { display: none; }
 .actionbar > button { flex: 1 1 0; min-width: 0; padding: 0 var(--esp-2); font-size: var(--t-2); }
 .actionbar > .go { flex: 1 1 100%; min-height: 52px; font-size: var(--t-4); }
 
@@ -712,7 +714,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .bande-cartes { display: grid; grid-auto-flow: column; grid-auto-columns: 84%; gap: var(--esp-2); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: var(--esp-1); }
 .bande-cartes::-webkit-scrollbar { display: none; }
 .bande-cartes > li { scroll-snap-align: center; }
-.bande-cartes .strategie { height: 100%; align-content: start; }
+.bande-cartes .strategie, .bande-cartes .coach-choix { height: 100%; align-content: start; }
 
 /* =====================================================================
    10. LA BARRE DU BAS — quatre portes au split : Bureau, Effectif, Marché, Ligue ; les sous-onglets ; hier soir, le calendrier
@@ -1248,3 +1250,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cinq-gestes { grid-column: 1 / -1; display: flex; gap: var(--esp-1); }
 .cinq-gestes button { flex: 1 1 0; min-height: 40px; font-size: var(--t-1); }
 .une-note { margin: var(--esp-2) 0 0; padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--or); background: color-mix(in srgb, var(--or) 7%, var(--fond-1)); font-size: var(--t-2); }
+/* Les lotos du départ : leurs cartes de front, qu'on balaie ; « Prendre » sous chacune. */
+.loto { --loto-l: min(44vw, 200px, calc((100dvh - 540px) * 5 / 7)); grid-auto-columns: var(--loto-l); justify-content: center; }
+.loto-carte { display: grid; gap: var(--esp-1); align-content: start; }
+.loto-carte .fiche { margin: 0; max-width: none; }
+.loto-carte :is(.fiche-plaque, .carton-verso) { display: none; }
+.loto-carte .signer { width: 100%; min-width: 0; }
+.loto-carte .vieillit { font-size: var(--t-1); color: var(--or); }

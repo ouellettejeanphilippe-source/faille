@@ -33,24 +33,26 @@ function refus(P, c) {
 export const rangee = (c, bouton = '', extra = '') => `<li class="joueur agent">${vignette(c)}<span class="joueur-id"><b>${esc(c.n)}</b><small>${ROLES[c.r]} · ${esc(c.niveau)}</small><small>${esc(c.equipe)} · ${esc(c.split)}</small>${extra}</span>${coutHtml(c.cout)}${bouton}</li>`;
 
 /**
- * LA CASE EN COURS : son loto en rangées, « Prendre » sur chacune (ou pourquoi
- * pas), et « Personne ». `c` : caseEnCours(P) ; `contrats` : Map(clé → contrat,
- * ou null) ; `vieux` : Map(clé → la version qui vieillit).
+ * LA CASE EN COURS : son loto en cartes qu'on balaie (Cap 82-0 : *les cartes à
+ * choisir se balaient en grand*), « Prendre » sous chacune (ou pourquoi pas),
+ * et « Personne ». `c` : caseEnCours(P) ; `contrats` : Map(clé → contrat, ou
+ * null) ; `vieux` : Map(clé → la version qui vieillit) ; `carteDe` : le carton
+ * d'un contrat (js/main.js).
  */
-export function ecranCase(P, c, contrats, vieux = new Map()) {
+export function ecranCase(P, c, contrats, vieux, carteDe) {
   const [ico, titre, phrase] = CASES[c.source];
   const n = casesDe(P).length;
   const lignes = c.loto.map(({ cle }) => {
     const x = contrats.get(cle) || null;
-    if (!x) return `<li class="joueur agent"><span class="joueur-id"><b>${esc(cle.split('|')[2])}</b><small>Introuvable : ses splits ont changé</small></span></li>`;
+    if (!x) return `<li class="loto-carte"><span class="cinq-case vide">${esc(cle.split('|')[2])} · introuvable</span></li>`;
     const v = vieux.get(cle);
     const non = refus(P, v || x);
     const age = v ? `<small class="vieillit">Vieillit : ${esc(v.split)} · ${esc(v.niveau)} · ${pts(v.cout)}</small>` : '';
-    return rangee(x, `<button class="signer" data-case-prendre="${esc(cle)}"${non ? ' disabled' : ''}>${non || 'Prendre'}</button>`, age);
+    return `<li class="loto-carte">${carteDe(x)}${age}<button class="signer" data-case-prendre="${esc(cle)}"${non ? ' disabled' : ''}>${non || `Prendre · ${pts((v || x).cout)}`}</button></li>`;
   }).join('');
   return `<h3>${ico} ${esc(titre)} · case ${c.k + 1} sur ${n}${c.niveau ? ` · ${esc(c.niveau)}` : ''}</h3>
     <p class="sous">${esc(phrase)}</p>
-    ${lignes ? `<ul class="liste-joueurs">${lignes}</ul>` : '<p class="sous">Rien à ce niveau ni en dessous : la case passe.</p>'}
+    ${lignes ? `<ul class="loto bande-cartes">${lignes}</ul>` : '<p class="sous">Rien à ce niveau ni en dessous : la case passe.</p>'}
     <div class="puces"><button class="puce" data-case-passer>${c.source === 'vedette' ? 'Sans lui' : 'Personne'}</button></div>`;
 }
 

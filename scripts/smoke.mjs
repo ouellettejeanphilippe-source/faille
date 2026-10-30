@@ -264,7 +264,7 @@ if (await page.$('#bilan-suivant')) {
   await page.click('#bilan-suivant');
   await pause(600);
   await page.waitForSelector('#depart-cases [data-case-prendre], #depart-cases [data-case-passer]', { timeout: 15000 });
-  etape('le split suivant commence au départ : ceux qui restent au loto', await visible('#bati') && (await page.$$('#depart-cases .joueur')).length >= 1 && (await page.$$('#depart-cases .joueur')).length <= 3);
+  etape('le split suivant commence au départ : ceux qui restent au loto, en cartes', await visible('#bati') && (await page.$$('#depart-cases .loto-carte .carton-recto')).length >= 1 && (await page.$$('#depart-cases .loto-carte')).length <= 3);
 } else etape('la run finit au bilan', !!(await page.$('#bilan-nouvelle')));
 
 /* 7. Le menu. */
