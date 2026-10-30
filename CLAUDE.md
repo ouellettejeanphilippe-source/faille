@@ -57,7 +57,8 @@ js/util.js            les petits outils partagés
 
 scripts/build_splits.mjs   Leaguepedia + Data Dragon → data/ (lent : l'API limite le débit)
 scripts/catalogue.mjs      la table Tournaments → scripts/splits.json (les splits des quatre ligues)
-scripts/images.mjs         les photos et les logos des shards → img/lp/, une fois chacun
+scripts/images.mjs         les photos et les logos des shards → img/lp/, une fois chacun ; les portraits recadrés à la copie
+scripts/recadrer.py        le recadrage d'un portrait (Pillow, outil de fabrication) : la tête par la transparence, un 5:7 au fond transparent
 scripts/splits.json        les splits à bâtir : les Mondiaux, puis le catalogue
 scripts/lib/leaguepedia.mjs l'API Cargo, sa pause et ses attentes
 scripts/verdict.mjs        le juge partagé : chaque script pose son code de sortie
@@ -117,7 +118,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - La Faille est lue de la feuille : un moment ne se nomme que si la feuille le porte (un gank, le jungler ; un combat, trois éliminations ; une poussée, personne ne meurt autour) ; seule la place est illustrative, et cohérente (une ligne tombe dans l'ordre, le nexus par une ligne ouverte) — `check_terrain`. La carte est un dessin à nous, jamais celle du jeu.
 
 **Les images**
-- Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
+- Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs` (Pillow pour le recadrage). La photo d'un joueur est celle de son split, sinon la plus proche ; chaque portrait est recadré comme au hockey — la tête par la transparence, à la même place d'un 5:7, le fond transparent gardé (`scripts/recadrer.py`).
 - Champions : Data Dragon, demandé à Riot, gardé par le travailleur de service.
 - La carte d'un joueur est un carton 5:7 recto verso (Cap 82-0), dans la série de son année : chaque série s'inspire de l'esprit du client et des sites de l'esport de son année, sans en copier ni police, ni logo, ni élément ; ses polices sont libres (OFL, `fonts/POLICES.txt`). Le fond de la fenêtre est l'illustration de son champion (Data Dragon).
 

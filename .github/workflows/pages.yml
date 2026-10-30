@@ -32,12 +32,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Les portraits sont recadrés à la copie (scripts/recadrer.py, Pillow) ; la clé change avec le recadrage (v2).
       - name: Les images déjà copiées
         uses: actions/cache@v4
         with:
           path: img/lp
-          key: images-${{ hashFiles('data/splits/*.json') }}
-          restore-keys: images-
+          key: images-v2-${{ hashFiles('data/splits/*.json') }}
+          restore-keys: images-v2-
+      - name: Pillow, pour recadrer les portraits
+        run: python3 -m pip install --quiet pillow
       - name: Copier les nouvelles images
         run: node scripts/images.mjs
       - uses: actions/upload-pages-artifact@v3
