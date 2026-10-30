@@ -28,6 +28,8 @@ import { hasard, graineDe } from './hasard.js';
 import { esc, pts } from './util.js';
 import { imageLP, iconeChampion } from './images.js';
 import { brancherRetour } from './pile.js';
+import { brancherGlisser } from './glisser.js';
+import { glisserDeposer } from './deposer.js';
 import { profilsDuSplit, TARIFS } from './cotes.js';
 import { ROLES, badge, vignette, icones, coutHtml, carte, retournerFiche, brancherInclinaison } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement, jouerPartie } from './sim.js';
@@ -950,6 +952,20 @@ async function demarrer() {
   });
   brancherInclinaison(document);
   brancherRetour(COUCHES.map(id => () => fermer(id)));
+  // LES GESTES DU DOIGT (js/glisser.js) : balayer d'un onglet à l'autre, tirer une couche vers le bas pour la fermer.
+  brancherGlisser();
+  /*
+   * LA CARTE DU BANC SE GLISSE (JP : *possibilité de drag and drop les cartes*) : tenue au doigt (ou prise à la souris),
+   * elle se pose sur le titulaire de son rôle — ou lui sur le banc — et ils permutent, comme « Faire jouer ». Une autre
+   * case s'allume en rouge : un joueur ne change pas de rôle.
+   */
+  const banc = el => el.hasAttribute('data-banc');
+  glisserDeposer({
+    prise: '.cinq-cartes:has([data-banc]) .cinq-case[data-contrat]',
+    cible: '.cinq-case[data-contrat]',
+    permis: (de, vers) => banc(de) !== banc(vers) && de.dataset.r === vers.dataset.r,
+    deposer: (de, vers) => { if (banc(de) !== banc(vers) && de.dataset.r === vers.dataset.r) faire({ t: 'permuter' }); else avis('Un joueur ne change pas de rôle : le banc entre à la place du titulaire de son rôle.'); },
+  });
   rendre();
 }
 
