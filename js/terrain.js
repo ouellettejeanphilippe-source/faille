@@ -27,6 +27,7 @@
  * Nashor (et le héraut) au nord, le dragon au sud.
  */
 import { hasard, graineDe } from './hasard.js';
+import { nomCourt } from './util.js';
 import { LIGNES_FIN } from './canaux.js';
 
 const LIGNES = ['haut', 'milieu', 'bas'];
@@ -115,7 +116,7 @@ export function terrainDe(f, noms, graine) {
   const fil = f.fil;
   // Le moteur d'aujourd'hui dit le combat, son lieu, la ligne et le palier de chaque tour ; celui d'avant, non.
   const v2 = f.moteur === 2;
-  const nom = (camp, i) => f.equipes[camp].joueurs[i].n;
+  const nom = (camp, i) => nomCourt(f.equipes[camp].joueurs[i].n);
   const role = (camp, i) => f.equipes[camp].joueurs[i].r;
   const pos = new Map();      // événement du fil → [x, y]
   const actions = [];

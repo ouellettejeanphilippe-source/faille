@@ -24,6 +24,7 @@
  * Pur : scripts/check_commentaire.mjs l'éprouve sur des milliers de parties.
  */
 import { hasard, graineDe } from './hasard.js';
+import { nomCourt } from './util.js';
 
 export const BANQUES = {
   cri: ['Oh !', 'Et voilà !', 'Regardez-moi ça !', 'Ouf !', 'Quelle lecture !', 'Bang !', 'Incroyable !', 'Pas de pitié !', 'C\'est propre !', 'Ça craque !', 'Sans hésiter !', 'Tout en finesse !'],
@@ -139,7 +140,7 @@ export function commenter(f, noms, champs, graine, ch = null) {
   const compte = { elim: [0, 0], tour: [0, 0], dragon: [0, 0] };
   let premier = true, premiereTour = true, premierePlaque = true;
   let dernieres = [];   // les éliminations de la dernière minute, pour le carnage
-  const nomDe = (camp, i) => f.equipes[camp].joueurs[i].n;
+  const nomDe = (camp, i) => nomCourt(f.equipes[camp].joueurs[i].n);
   for (const x of f.fil) {
     const eq = noms[x.camp], autre = noms[1 - x.camp];
     let texte;

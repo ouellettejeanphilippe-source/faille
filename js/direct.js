@@ -31,7 +31,7 @@
  * et sur la feuille d'une série. Une minute de partie passe en une seconde ;
  * ×4 et ×16 vont plus vite, « La fin » saute au nexus.
  */
-import { esc, virgule } from './util.js';
+import { esc, virgule, nomCourt } from './util.js';
 import { horloge, vedetteDe } from './split.js';
 import { commenter } from './commentaire.js';
 import { terrainDe, positionsDe, rappelsDe, vaguesDe, inhibATerre, TRACES, FOSSES, BASES, BOIS, CAMPS, CRABES, MURS, GENRES, DRAGONS } from './terrain.js';
@@ -111,7 +111,7 @@ export function faillePlate(T) {
 function carte(T, joueurs) {
   const qui = joueurs.flatMap((eq, c) => eq.map((j, i) => `<g class="tf-joueur camp-${c}" data-j="${c}-${i}">
       <circle class="tf-anneau" r="2.6"/>${j.icone ? `<image href="${j.icone}" x="-2.3" y="-2.3" width="4.6" height="4.6" clip-path="url(#tf-rond)"/>` : `<text class="tf-init" y="0.1">${initiales(j.n)}</text>`}
-      <text class="tf-nom" y="5.8">${esc(String(j.n).replace(/\s*\(.*\)$/, ''))}</text></g>`)).join('');
+      <text class="tf-nom" y="5.8">${esc(nomCourt(j.n))}</text></g>`)).join('');
   return `<div class="tf"><svg class="tf-carte" viewBox="0 0 100 100" aria-hidden="true">
     <defs><clipPath id="tf-rond" clipPathUnits="objectBoundingBox"><circle cx="0.5" cy="0.5" r="0.5"/></clipPath></defs>
     ${decor(T)}
@@ -203,7 +203,7 @@ function tableau(c, t) {
   };
   return `<div class="dt-joueurs">${[0, 1].map(x => `<ol class="dt-camp ${x ? 'rouge' : 'bleu'}">${joueurs[x].map((j, i) => `<li class="${morts[x][i].mort ? 'mort' : ''}">
     <span class="dt-champ">${j.icone ? `<img src="${j.icone}" alt="" loading="lazy">` : initiales(j.n)}${f.niveaux ? `<i class="dt-niv">${niv ? niv[x][i] : 1}</i>` : ''}</span>${sorts(x, i)}
-    <span class="dt-qui"><b>${esc(String(j.n).replace(/\s*\(.*\)$/, ''))}</b><small>${j.champion ? esc(j.champion) : ROLES[j.r]}</small></span>
+    <span class="dt-qui"><b>${esc(nomCourt(j.n))}</b><small>${j.champion ? esc(j.champion) : ROLES[j.r]}</small></span>
     <span class="dt-kma">${c[x].j[i].k}/${c[x].j[i].m}/${c[x].j[i].a}<small>${f.sbires ? `${cs ? cs[x][i] : 0} · ` : ''}${virgule(or[x][i] / 1000)} k</small></span></li>`).join('')}</ol>`).join('')}</div>`;
 }
 
@@ -239,7 +239,7 @@ function dessiner() {
   majCarte(t);
   el.querySelector('.dt-table').innerHTML = tableau(c, t);
   el.querySelector('.dt-bas').innerHTML = `${courbe(f, t)}
-    ${fini ? `<p class="dt-fin${toi === f.gagnant ? ' bon' : toi === null ? '' : ' mauvais'}"><b>Victoire de ${esc(noms[f.gagnant])}</b> en ${horloge(f.duree)} · ⭐ ${esc(v.n)} ${v.k}/${v.m}/${v.a}</p>` : ''}
+    ${fini ? `<p class="dt-fin${toi === f.gagnant ? ' bon' : toi === null ? '' : ' mauvais'}"><b>Victoire de ${esc(noms[f.gagnant])}</b> en ${horloge(f.duree)} · ⭐ ${esc(nomCourt(v.n))} ${v.k}/${v.m}/${v.a}</p>` : ''}
     <ol class="dt-fil">${vus.map(x => `<li class="dt-ligne ${x.camp ? 'rouge' : 'bleu'}${x.quoi === 'nexus' ? ' nexus' : ''}${x.quoi === 'action' || x.quoi === 'pouvoir' ? ' dt-moment' : ''}"><span class="temps">${horloge(x.t)}</span><span>${esc(x.texte)}</span></li>`).join('') || '<li class="dt-ligne"><span class="temps">0:00</span><span>Les sbires arrivent dans leurs lignes. Bonne partie !</span></li>'}</ol>`;
 }
 

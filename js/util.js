@@ -6,5 +6,8 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;'
 /** La virgule décimale, à la québécoise. */
 export const virgule = (x, dec = 1) => x.toFixed(dec).replace('.', ',');
 
+/** Le nom d'un joueur à l'écran : sans ce que Leaguepedia ajoute pour le distinguer (« Amazing (Maurice Stückenschneider) » → « Amazing »). */
+export const nomCourt = n => String(n).replace(/\s*\(.*\)$/, '');
+
 /** Des points de plafond, au singulier comme au pluriel. */
 export const pts = n => `${n} pt${Math.abs(n) > 1 ? 's' : ''}`;

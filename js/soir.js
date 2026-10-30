@@ -9,7 +9,7 @@
  * (js/palmares.js) ; aucune cote : de vraies stats, le niveau, des mots. Une
  * voix dit une opinion, jamais un chiffre ; le fait sous elle dit les chiffres.
  */
-import { esc, virgule } from './util.js';
+import { esc, virgule, nomCourt } from './util.js';
 import { classement } from './sim.js';
 import { horloge, vedetteDe, taDerniere } from './split.js';
 import { statsDuSplit, profilDEquipe, dernieresParties } from './palmares.js';
@@ -91,7 +91,7 @@ export function ecranCeSoir(P, ctx, s, identite) {
     const niveau = sj ? shard.profils.joueurs.get(sj).niveau : '';
     const fet = j.bassin[0];
     const src = fet && iconeChampion(ctx.champions, fet[0]);
-    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(mot.slice(0, 2))}</span><span class="dt-qui"><b>${esc(j.n)}</b><small>${mot}${niveau ? ` · ${esc(niveau)}` : ''}${fet ? ` · ${esc(fet[0])}, ${fet[1]} partie${fet[1] > 1 ? 's' : ''}` : ''}</small></span>
+    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(mot.slice(0, 2))}</span><span class="dt-qui"><b>${esc(nomCourt(j.n))}</b><small>${mot}${niveau ? ` · ${esc(niveau)}` : ''}${fet ? ` · ${esc(fet[0])}, ${fet[1]} partie${fet[1] > 1 ? 's' : ''}` : ''}</small></span>
       ${sj ? `<span class="dt-kma">KDA ${virgule((sj.k + sj.a) / Math.max(1, sj.m))}</span>` : ''}</li>`;
   }).join('');
   return `<h2>Ce soir</h2>
@@ -148,7 +148,7 @@ export function ecranSommaire(L, s, k, champions, carte) {
   const noms = camps.map(i => L.equipes[i].nom);
   const rp = repechageDe(s, k);
   const champ = (x, r) => rp && rp.choix[camps[x] === s.a ? 0 : 1][r];
-  const etoiles = troisEtoiles(f, noms).map((j, n) => `<li><span class="etoiles">${'★'.repeat(n + 1)}</span><span class="dt-qui"><b>${esc(j.n)}</b><small>${esc(j.nom)}${champ(j.x, j.r) ? ` · ${esc(champ(j.x, j.r))}` : ''}</small></span><span class="dt-kma">${j.k}/${j.m}/${j.a}</span></li>`).join('');
+  const etoiles = troisEtoiles(f, noms).map((j, n) => `<li><span class="etoiles">${'★'.repeat(n + 1)}</span><span class="dt-qui"><b>${esc(nomCourt(j.n))}</b><small>${esc(j.nom)}${champ(j.x, j.r) ? ` · ${esc(champ(j.x, j.r))}` : ''}</small></span><span class="dt-kma">${j.k}/${j.m}/${j.a}</span></li>`).join('');
   const pointage = [0, 1].map(x => `<li class="score-camp ${x ? 'rouge' : 'bleu'}${f.gagnant === x ? ' gagne' : ''}"><b>${esc(noms[x])}</b><span class="score-k">${f.equipes[x].k}</span><small>${virgule(f.equipes[x].or / 1000)} k d'or</small></li>`).join('');
   // Le moteur d'aujourd'hui : ses plaques, ses inhibiteurs et ses larves ; chaque joueur, son niveau, ses sorts, ses sbires, ses objets complétés.
   const v2 = f.moteur === 2;
@@ -163,7 +163,7 @@ export function ecranSommaire(L, s, k, champions, carte) {
     const src = c && iconeChampion(champions, c);
     const sorts = v2 ? `<span class="dt-sorts">${j.sorts.map(sp => `<img class="dt-sort" src="${iconeSort(champions, SORTS[sp])}" alt="${esc(SORTS[sp][0])}" title="${esc(SORTS[sp][0])}" loading="lazy">`).join('')}</span>` : '';
     const os = v2 && objets[x][i].length ? `<span class="dt-objets">${objets[x][i].map(o => `<img src="${iconeObjet(champions, o.o)}" alt="${esc(o.o[1])}" title="${esc(o.o[1])} · ${horloge(o.t)}" loading="lazy">`).join('')}</span>` : '';
-    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(ROLES[j.r].slice(0, 2))}${v2 ? `<i class="dt-niv">${j.niv}</i>` : ''}</span>${sorts}<span class="dt-qui"><b>${esc(j.n)}</b><small>${c ? esc(c) : ROLES[j.r]}</small>${os}</span><span class="dt-kma">${j.k}/${j.m}/${j.a}<small>${v2 ? `${j.cs} · ` : ''}${virgule(j.or / 1000)} k</small></span></li>`;
+    return `<li><span class="dt-champ">${src ? `<img src="${src}" alt="" loading="lazy">` : esc(ROLES[j.r].slice(0, 2))}${v2 ? `<i class="dt-niv">${j.niv}</i>` : ''}</span>${sorts}<span class="dt-qui"><b>${esc(nomCourt(j.n))}</b><small>${c ? esc(c) : ROLES[j.r]}</small>${os}</span><span class="dt-kma">${j.k}/${j.m}/${j.a}<small>${v2 ? `${j.cs} · ` : ''}${virgule(j.or / 1000)} k</small></span></li>`;
   }).join('')}</ol>`).join('');
   const recap = v2 ? faits(f, noms) : '';
   const dragons = v2 ? f.equipes.map((e, x) => f.fil.filter(y => y.quoi === 'dragon' && y.camp === x).map(y => DRAGONS[y.type] || '🐉').join('')) : null;
