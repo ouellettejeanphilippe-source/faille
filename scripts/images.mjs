@@ -35,16 +35,26 @@ const LOT = 40;                              // des portraits recadrés par appe
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 const PYTHON = process.env.PYTHON || 'python3';
 
-/* Les portraits téléchargés, recadrés par lots ; rend ce que Python a dit de chacun (famille), ou null s'il manque. */
+/*
+ * Un lot de portraits téléchargés, recadrés d'un appel de Python ; sans Pillow (ou une image que Python n'a pas
+ * pu lire), la photo reste telle quelle. Lot par lot, à mesure que les photos arrivent : une copie interrompue
+ * garde ce qu'elle a déjà recadré, et la relancer ne redemande que la suite.
+ */
+const familles = { detouree: 0, opaque: 0, brute: 0 };
+let pillow = true;
 function recadrer(paires) {
+  if (!paires.length) return;
   const faits = new Map();
-  for (let i = 0; i < paires.length; i += LOT) {
-    const lot = paires.slice(i, i + LOT);
-    const r = spawnSync(PYTHON, [path.join(ROOT, 'scripts/recadrer.py'), ...lot.flat()], { encoding: 'utf8' });
-    if (r.status !== 0 && !r.stdout) return null;
-    for (const l of r.stdout.split('\n')) { const [cible, famille] = l.split(' '); if (cible && famille) faits.set(cible, famille); }
+  const r = pillow ? spawnSync(PYTHON, [path.join(ROOT, 'scripts/recadrer.py'), ...paires.flat()], { encoding: 'utf8' }) : null;
+  if (!r || (r.status !== 0 && !r.stdout)) pillow = false;
+  else for (const l of r.stdout.split('\n')) { const [cible, famille] = l.split(' '); if (cible && famille) faits.set(cible, famille); }
+  for (const [brute, cible] of paires) {
+    const f = faits.get(cible);
+    if (f && fs.existsSync(cible)) familles[f] = (familles[f] || 0) + 1;
+    else { fs.copyFileSync(brute, cible); familles.brute++; }
+    fs.rmSync(brute, { force: true });
   }
-  return faits;
+  paires.length = 0;
 }
 
 const voulues = new Map();
@@ -70,28 +80,22 @@ for (const [chemin, largeur] of voulues) {
     fs.mkdirSync(path.dirname(cible), { recursive: true });
     const octets = Buffer.from(await rep.arrayBuffer());
     if (largeur === LARGEUR.photo) {
-      const brute = path.join(tmp, `${brutes.length}.img`);
+      const brute = path.join(tmp, `${nouvelles}.img`);
       fs.writeFileSync(brute, octets);
       brutes.push([brute, cible]);
+      if (brutes.length >= LOT) recadrer(brutes);
     } else fs.writeFileSync(cible, octets);
     nouvelles++;
   } catch (err) {
     ratees.push(`${decodeURIComponent(chemin)} (${err.message})`);
   }
 }
-// Les portraits, recadrés ; sans Pillow (ou une image que Python n'a pas pu lire), la photo reste telle quelle.
-const familles = { detouree: 0, opaque: 0, brute: 0 };
-const faits = brutes.length ? recadrer(brutes) : new Map();
-for (const [brute, cible] of brutes) {
-  const f = faits && faits.get(cible);
-  if (f && fs.existsSync(cible)) familles[f] = (familles[f] || 0) + 1;
-  else { fs.copyFileSync(brute, cible); familles.brute++; }
-}
+recadrer(brutes);
 fs.rmSync(tmp, { recursive: true, force: true });
 
 informer('images', `${voulues.size} voulues : ${nouvelles} téléchargées, ${deja} déjà là`);
 informer('portraits recadrés', `${familles.detouree} détourés, ${familles.opaque} opaques${familles.brute ? `, ${familles.brute} laissés tels quels (Pillow absent ?)` : ''}`);
-if (!faits && brutes.length) informer('Pillow', 'python3 et Pillow manquent : les portraits ne sont pas recadrés (pip install pillow)');
+if (!pillow) informer('Pillow', 'python3 et Pillow manquent : les portraits ne sont pas recadrés (pip install pillow)');
 // Une image ratée n'empêche pas de jouer (les initiales la remplacent), mais plus de 2 % dit qu'il y a un problème.
 exiger('presque toutes les images sont là', ratees.length <= 0.02 * voulues.size, ratees.length ? `${ratees.length} ratées : ${ratees.slice(0, 5).join(', ')}` : 'aucune ratée');
 verdict('Les images');
