@@ -741,6 +741,12 @@ button:disabled { opacity: 0.45; cursor: default; }
 .sousnav::-webkit-scrollbar { display: none; }
 .soustab { flex: none; min-height: 40px; padding: 0 var(--esp-3); border-color: transparent; background: none; color: var(--encre-3); font-size: var(--t-2); }
 .soustab.on { color: var(--noir); background: var(--encre); border-color: var(--encre); }
+/* LE BALAYAGE SE VOIT (js/glisser.js) : sous le doigt, le nom de l'onglet où il mène sort du bord ; plein au seuil, comme
+   un onglet ouvert, le lâcher y va. */
+.glisse-indice { position: fixed; top: 50%; z-index: 300; max-width: 60vw; overflow: hidden; padding: var(--esp-3) var(--esp-4); border: 1px solid var(--filet); background: var(--fond-2); color: var(--encre-2); font: 700 var(--t-2)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+.glisse-indice[data-cote="d"] { right: 0; border-right: 0; border-radius: var(--r-2) 0 0 var(--r-2); }
+.glisse-indice[data-cote="g"] { left: 0; border-left: 0; border-radius: 0 var(--r-2) var(--r-2) 0; }
+.glisse-indice.pret { border-color: var(--encre); background: var(--encre); color: var(--noir); }
 /* Les petits boutons d'une rangée (regarder, la feuille, porter, acheter). */
 .mini { min-height: 36px; padding: 0 var(--esp-2); font-size: var(--t-1); }
 .mini.lien { border-color: transparent; background: none; color: var(--club-vif); padding-left: 0; }
@@ -1249,6 +1255,14 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cinq-case.vide { display: grid; place-items: center; aspect-ratio: 5 / 7; border: 1px dashed var(--filet); border-radius: var(--r-2); color: var(--encre-3); font: 800 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; cursor: default; }
 .cinq-gestes { grid-column: 1 / -1; display: flex; gap: var(--esp-1); }
 .cinq-gestes button { flex: 1 1 0; min-height: 40px; font-size: var(--t-1); }
+/* Le glisser-déposer (js/deposer.js) : la case d'où part la carte s'efface ; celle dessous s'allume, en or si elle la prend
+   (le titulaire de son rôle, ou le banc), en rouge sinon. Le fantôme, une copie de la case, suit le doigt par-dessus tout. */
+.cinq-case { -webkit-touch-callout: none; }
+.cinq-case.glisse { opacity: 0.35; }
+.cinq-case:is(.survol, .refus) .fiche { outline: 2px solid var(--or); outline-offset: 2px; }
+.cinq-case.survol .fiche { translate: 0 -4px; }
+.cinq-case.refus .fiche { outline-color: var(--mauvais); opacity: 0.6; }
+body > .fantome { position: fixed; z-index: 1000; margin: 0; list-style: none; pointer-events: none; transform: rotate(-3deg) scale(1.05); opacity: 0.92; }
 .une-note { margin: var(--esp-2) 0 0; padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--or); background: color-mix(in srgb, var(--or) 7%, var(--fond-1)); font-size: var(--t-2); }
 /* Les lotos du départ : leurs cartes de front, qu'on balaie ; « Prendre » sous chacune. */
 .loto { --loto-l: min(44vw, 200px, calc((100dvh - 540px) * 5 / 7)); grid-auto-columns: var(--loto-l); justify-content: center; }

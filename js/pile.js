@@ -53,8 +53,8 @@ export function brancherRetour(liste) {
   });
 }
 
-/** Remonte d'un niveau. Vrai si quelque chose a répondu. */
-function retour() {
+/** Remonte d'un niveau. Vrai si quelque chose a répondu. Tirer une couche vers le bas le fait aussi (js/glisser.js). */
+export function retour() {
   for (const n of niveaux) {
     if (n()) return true;
   }

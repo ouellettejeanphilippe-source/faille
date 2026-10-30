@@ -285,12 +285,15 @@ function tonCoach(P) {
  * LE CINQ (les Lignes de Cap 82-0 ; JP : *une ligne de trois cartes, même sur mobile*) : ton plan de match, puis
  * ton cinq en cartons de front — le haut, la jungle et le milieu, puis le bas, le soutien et le banc —, ses stats
  * chez toi sous chaque carte ; toucher une carte l'ouvre. `carteDe` : le carton d'un contrat (js/main.js).
+ * La carte du banc se glisse sur le titulaire de son rôle (ou lui sur le banc) : il entre, l'autre s'assoit — le même
+ * geste que « Faire jouer » (js/deposer.js).
  */
 export function vueCinq(P, carteDe) {
   const st = statsDuSplit(P.L);
   const b = P.eff.banc;
   const dix = P.mode === 'dixhuit';
-  const caseDe = (c, mot) => (c ? `<li class="cinq-case" data-contrat="${esc(cleDe(c.ref))}" tabindex="0">${carteDe(c)}<small>${mot === 'Banc' ? 'Banc · ' : ''}${ligneCourte(st, c)}</small></li>`
+  // Son rôle, et le banc marqué : le glisser-déposer les relit (js/main.js, `permis`).
+  const caseDe = (c, mot) => (c ? `<li class="cinq-case" data-contrat="${esc(cleDe(c.ref))}" data-r="${c.r}"${mot === 'Banc' ? ' data-banc' : ''} tabindex="0">${carteDe(c)}<small>${mot === 'Banc' ? 'Banc · ' : ''}${ligneCourte(st, c)}</small></li>`
     : `<li class="cinq-case vide">${mot}</li>`);
   const cases = Object.entries(ROLES).map(([r, mot]) => caseDe(P.eff.cinq[r], mot)).join('') + (dix ? '' : caseDe(b, 'Banc'));
   return `${dix ? '' : panneauStrategie(P)}

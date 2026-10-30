@@ -53,6 +53,8 @@ js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coac
 js/boutique.js        le Marché : les packs de joueurs, le plan de jeu (cartes, coach, packs de cartes)
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
+js/glisser.js         les gestes du doigt (repris de Cap 82-0) : balayer d'un onglet à l'autre, tirer une couche vers le bas pour la fermer
+js/deposer.js         le glisser-déposer, souris et doigt (l'appui tenu) : le banc sur son titulaire, au Cinq
 js/util.js            les petits outils partagés
 
 scripts/build_splits.mjs   Leaguepedia + Data Dragon → data/ (lent : l'API limite le débit)
