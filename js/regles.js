@@ -8,8 +8,9 @@ import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT
 import { GARDES, JOURNEES_ADJOINTS, LOTO } from './partie.js';
 import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, COACHS, XP, SEUILS_NIVEAU, NIVEAU_DES_POUVOIRS, NIVEAU_DES_TALENTS, TALENT, ADJOINTS, ADJOINTS_MAX, chances } from './rogue.js';
 import { BANS } from './repechage.js';
-import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE, MODES } from './meta.js';
+import { MEDAILLES, RANGS, DEBLOCAGES, EDITIONS, EXIGENCES, PRIME_EXIGENCE, MODES } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
+import { SERIES, TIRAGE_HOLO } from './fiche.js';
 import { STRATEGIES } from './strategie.js';
 
 const liste = items => `<ul class="regles-liste">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
@@ -66,7 +67,7 @@ export function ecranRegles() {
     `Une run rapporte ${MEDAILLES.split} par split joué, ${MEDAILLES.mandat} par mandat rempli, ${MEDAILLES.ronde} par ronde de séries gagnée, ${MEDAILLES.titre} par titre, ${MEDAILLES.run} de plus si elle est gagnée.`,
     `Les rangs, à vie : ${RANGS.map(([n, r]) => `${esc(r)} ${n}`).join(' · ')}.`,
     `Les déblocages : ${Object.values(DEBLOCAGES).map(d => `${d.ico} ${esc(d.nom)} ${d.prix}`).join(' · ')}.`,
-    `La collection : une copie par run où le joueur est passé chez toi ; ${FINITIONS.map(([n, f]) => `${n} ${esc(f)}`).join(' · ')}.`,
+    `La collection : une copie par run où le joueur est passé chez toi ; ses copies font l'édition de sa carte, qui change la carte entière — ${EDITIONS.slice().reverse().map(([n, f]) => `${esc(f)} à ${n}`).join(' · ')}. Une carte porte la série de son année (${Object.values(SERIES).map(x => `${x.annee} ${esc(x.nom)}`).join(', ')}), son numéro, et une Holo son tirage sur ${TIRAGE_HOLO}.`,
     `Les exigences 🔺, après un premier titre : un cran à la fois, chacun ajouté à ceux d'avant — ${EXIGENCES.map((x, k) => `${k + 1}. ${esc(x.nom)} (${esc(x.mot)})`).join(' ; ')}. Chaque cran paie ${Math.round(100 * PRIME_EXIGENCE)} % de médailles de plus ; gagner au plus haut ouvre le suivant.`,
   ])}
     <h3>Les trophées et les galons</h3>

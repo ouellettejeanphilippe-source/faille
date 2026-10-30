@@ -222,9 +222,13 @@ export function noter(m, pid, P, debut = Date.now()) {
   return change;
 }
 
-/* LA COLLECTION. Une carte par joueur d'un split (sa clé : split|équipe|nom|rôle) ; sa finition suit ses copies. */
-export const FINITIONS = [[5, 'Holo'], [3, 'Or'], [2, 'Argent'], [1, 'Base']];
-export const finitionDe = copies => (FINITIONS.find(([n]) => copies >= n) || FINITIONS[FINITIONS.length - 1])[1];
+/*
+ * LA COLLECTION. Une carte par joueur d'un split (sa clé : split|équipe|nom|rôle) ; son ÉDITION suit ses copies
+ * (Cap 82-0, js/rarete.js `EDITIONS` : Base, Cadre, Hors-cadre, Or, Holo — chacune change la carte entière,
+ * js/fiche.js). [copies qu'il faut, le nom, l'id de la classe `ed-…`].
+ */
+export const EDITIONS = [[8, 'Holo', 'holo'], [5, 'Or', 'or'], [3, 'Hors-cadre', 'hors'], [2, 'Cadre', 'cadre'], [1, 'Base', 'base']];
+export const editionDe = copies => (EDITIONS.find(([n]) => copies >= n) || EDITIONS[EDITIONS.length - 1])[1];
 
 /** La collection recomptée : Map(clé → { copies, galons: [{ id, quoi, run }] }). */
 export function collectionDe(m) {

@@ -17,7 +17,7 @@ Lis `LIVRAISON.md` — le plan de travail : les jalons, chaque item avec son fic
 ```
 index.html            la page unique
 style.css             tous les styles, mobile d'abord (390 px), sur le système de Cap 82-0
-fonts/                Barlow Condensed (OFL 1.1), la condensée de Cap 82-0
+fonts/                Barlow Condensed (OFL 1.1), la condensée de Cap 82-0, et les quinze polices des séries de cartes (fonts/POLICES.txt)
 sw.js                 travailleur de service : la coquille hors ligne (FICHIERS)
 data/index.json       la liste des splits bâtis
 data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats, chemins de leurs images
@@ -41,7 +41,7 @@ js/terrain.js         la Faille du direct : chaque événement à sa place, chaq
 js/commentaire.js     le commentateur du direct : des phrases montées pièce par pièce, tirées en paquet
 js/sons.js            les sons, synthétisés (Web Audio)
 js/cotes.js           les cotes cachées : sous-cotes et leurs remplacements par époque, valeur, niveau, badges ; le plafond et le coût
-js/fiche.js           la carte d'un joueur, habillée selon l'époque de son split ; ses petites images au vestiaire
+js/fiche.js           la carte d'un joueur : un carton 5:7 recto verso dans la série de son année (SERIES, une par année 2011 → 2025), son édition ; le retournement, l'inclinaison ; ses petites images au vestiaire
 js/images.js          d'où vient chaque image (img/lp, Data Dragon)
 js/data.js            le chargeur (index, shard, champions)
 js/sim.js             le moteur : une partie par événements, le split au jour le jour, les séries (MOTEUR.md)
@@ -107,7 +107,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 
 **Le méta et le direct (jalon 6)**
 - Le méta ne compte rien : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et la même partie notée deux fois ne paie qu'une fois — `check_meta`.
-- Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une finition ou un galon ne change rien au jeu.
+- Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une édition ou un galon ne change rien au jeu.
 - Un trophée, un galon, un record se lisent dans les feuilles, par une colonne, jamais par un vote ; les seuils des galons sont mesurés sur le moteur — `check_meta`.
 - Le direct rejoue la feuille, il ne décide rien ; le commentateur et la Faille tirent leur hasard de `hasard()`, et la même graine redit la même partie — `check_commentaire`, `check_terrain`.
 - Un pouvoir du coach lit ce qui est déjà joué au début d'une phase (lignes, milieu, fin) et frappe la phase par les canaux ; il ne tire aucun dé ; seul, il reste sous 1,5 victoire (grandi d'un talent, 2,5), joue dans 25 à 75 % des parties et se voit sur sa signature ; le personnage complet reste sous 4 — `check_rogue`, MOTEUR.md § 11.
@@ -119,7 +119,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **Les images**
 - Photos des joueurs et logos des équipes : copiés une fois dans `img/lp/`, hors du dépôt, par l'Action « Publier » qui garde son cache (le serveur de Leaguepedia refuse les autres sites ; on ne contourne pas ça). En local : `node scripts/images.mjs`. La photo d'un joueur est celle de son split, sinon la plus proche.
 - Champions : Data Dragon, demandé à Riot, gardé par le travailleur de service.
-- La carte d'un joueur s'inspire de l'esprit de l'interface de LoL de son époque, sans en copier ni police, ni logo, ni élément.
+- La carte d'un joueur est un carton 5:7 recto verso (Cap 82-0), dans la série de son année : chaque série s'inspire de l'esprit du client et des sites de l'esport de son année, sans en copier ni police, ni logo, ni élément ; ses polices sont libres (OFL, `fonts/POLICES.txt`). Le fond de la fenêtre est l'illustration de son champion (Data Dragon).
 
 **L'interface**
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
@@ -147,7 +147,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **niveau** : ce que le joueur valait dans son split, à son rôle — Remplaçant, Régulier, Pilier, ★ Étoile, ★ Phénomène. Pas « Soutien » : c'est un rôle.
 - **sous-cote** : un axe caché de son jeu (ligne, pression, dégâts, implication, survie, vision, objectifs, bassin) ; jamais à l'écran.
 - **badge** : ce qu'il fait, à un palier — Bronze, Argent, Or, Platine (« 🗡️ Bourreau de ligne Or ») ; deux au plus.
-- **carte** : la fiche d'un joueur, habillée selon l'époque (le client d'origine, la saison 4, hextech, l'esport).
+- **carte** : le carton 5:7 d'un joueur, recto verso ; sa **série** est celle de son année (Pionnier 2011 … Aurore 2025) ; son **édition** (Base, Cadre, Hors-cadre, Or, Holo) suit ses copies à ta collection et change la carte entière, jamais le jeu. Pas « finition ».
 - **bassin** : les champions qu'un joueur a joués dans le split, avec ses parties et sa fiche sur chacun.
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
 - **repêchage** : les bannissements et les champions d'une série de saison, ou d'une partie d'une série de séries ; le **confort** est ce qu'un joueur perd loin de son plus joué.
@@ -160,7 +160,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack** : comme dans Cap 82-0. Le **coach** : un personnage choisi au départ, son **expérience**, son **niveau** (1 à 5) ; un **pouvoir** s'ouvre à un niveau et joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient ; un **talent** fait grandir un pouvoir ; son **staff**, ses **adjoints** (chacun un échange). Le **palier** de confiance : la règle d'avant la version 4.
 - **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
-- **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run) et sa **finition** (Base, Argent, Or, Holo) ; un **album** par split.
+- **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run), qui font son **édition** ; un **album** par split.
 - **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
 - **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.
 - **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau ; **ce soir** : la partie qui vient, son affiche et son face-à-face ; le **sommaire** : une partie jouée, en un écran ; **la une** : le fait le plus lourd d'hier soir, dit par une voix ; les **nouvelles** : qui est en feu, qui est en panne.

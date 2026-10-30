@@ -10,7 +10,7 @@
  * Rien que du HTML ; aucune cote : le niveau, les vraies stats, les galons.
  */
 import { esc } from './util.js';
-import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, MEDAILLES, RANGS, refusAchat, possede, collectionDe, finitionDe, runsDe, pantheonDe } from './meta.js';
+import { medailles, rangDe, DEBLOCAGES, CLUBS, COULEURS, MEDAILLES, RANGS, refusAchat, possede, collectionDe, editionDe, EDITIONS, runsDe, pantheonDe } from './meta.js';
 import { RECORDS, TROPHEES, GALONS } from './palmares.js';
 import { ROLES, vignette } from './fiche.js';
 import { imageLP } from './images.js';
@@ -87,7 +87,7 @@ export function ecranCollection(m, index, totaux) {
   }).join('');
   return `<h2>Ta collection</h2>
     <p class="etat">${col.size} carte${col.size > 1 ? 's' : ''} · ${galons} galon${galons > 1 ? 's' : ''}</p>
-    <p class="sous">Chaque joueur passé chez toi — signé, pigé, sorti d'un pack — y entre, une copie par run : deux font une Argent, trois une Or, cinq une Holo. Ses galons s'y gravent.</p>
+    <p class="sous">Chaque joueur passé chez toi — signé, pigé, sorti d'un pack — y entre, une copie par run ; ses copies font son édition : deux, le Cadre ; trois, le Hors-cadre ; cinq, l'Or ; huit, la Holo. Ses galons s'y gravent.</p>
     <ul class="albums">${lignes}</ul>`;
 }
 
@@ -99,8 +99,8 @@ export function ecranAlbum(m, split, profils) {
       const cle = `${split.id}|${e.nom}|${j.n}|${j.r}`;
       const x = col.get(cle);
       if (!x || !x.copies) return `<li class="album-carte vide"><span class="vignette">?</span><span class="qui"><b>${esc(j.n)}</b><small>${ROLES[j.r]}</small></span></li>`;
-      const fin = finitionDe(x.copies);
-      return `<li class="album-carte fin-${fin.toLowerCase()}" data-carte-col="${esc(cle)}" tabindex="0">${vignette(j)}<span class="qui"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${esc(profils.joueurs.get(j).niveau)} · ${fin}</small>
+      const fin = editionDe(x.copies);
+      return `<li class="album-carte ed-${EDITIONS.find(([, n]) => n === fin)[2]}" data-carte-col="${esc(cle)}" tabindex="0">${vignette(j)}<span class="qui"><b>${esc(j.n)}</b><small>${ROLES[j.r]} · ${esc(profils.joueurs.get(j).niveau)} · ${fin}</small>
         ${x.galons.length ? `<small class="galons">${x.galons.map(g => GALONS[g.id][0]).join(' ')}</small>` : ''}</span></li>`;
     }).join('');
     return `<section class="album-equipe"><h3>${e.logo ? `<img src="${imageLP(e.logo)}" alt="">` : ''}${esc(e.nom)}</h3><ul class="album-cartes">${cartes}</ul></section>`;
