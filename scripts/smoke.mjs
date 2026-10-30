@@ -4,8 +4,9 @@
  *
  *   1. l'écran titre, « Nouvelle partie », le départ (ton coach, ton joueur
  *      de concession), « Commencer la run » ;
- *   2. le départ du Rogue : les cases (prendre, ou personne), le pack de départ ;
- *   3. le split : la décision du Bureau, une journée et son repêchage des
+ *   2. le départ du Rogue : les cases (prendre, ou personne), le pack de départ,
+ *      qui s'ouvre (le paquet, la pile de cartes, l'étalage) ;
+ *   3. le split : la ligne d'À faire, qui ouvre son choix en plein écran ; une journée et son repêchage des
  *      champions (un bannissement, un champion choisi), hier soir ;
  *   4. le direct : la Faille dessinée, un moment nommé, « La fin », fermer ;
  *   5. les sections de Cap 82-0 : les Joueurs, le Cinq (la carte d'un joueur), le
@@ -19,8 +20,9 @@
  *      d'un coup, les séries, le bilan ; l'exhibition, en direct.
  *
  * Il échoue sur une erreur de la console (hors images absentes : img/lp
- * n'est copié qu'au déploiement), un débordement horizontal, un bouton qui
- * ne mène nulle part.
+ * n'est copié qu'au déploiement), un débordement horizontal, une page qui
+ * défile (chaque écran tient en un écran : seul son corps défile en dedans),
+ * un bouton qui ne mène nulle part.
  *
  *   python3 -m http.server 8000 &
  *   node scripts/smoke.mjs http://localhost:8000
@@ -46,7 +48,35 @@ page.on('dialog', d => d.accept());
 const pause = ms => page.waitForTimeout(ms);
 const visible = sel => page.$eval(sel, e => !e.hidden && !!(e.offsetWidth || e.offsetHeight)).catch(() => false);
 const debordements = [];
-const sansDebordement = async ou => { if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) debordements.push(ou); };
+const sansDebordement = async ou => {
+  const d = await page.evaluate(() => ({ large: document.documentElement.scrollWidth > window.innerWidth + 1, haut: document.documentElement.scrollHeight > window.innerHeight + 1 }));
+  if (d.large) debordements.push(ou);
+  if (d.haut) debordements.push(`${ou} (la page défile)`);
+};
+/*
+ * L'OUVERTURE D'UN PACK (js/ouverture.js) : le paquet fermé, la déchirure, la pile (la carte du dessus se
+ * retourne), l'étalage de toutes les cartes, « Continuer ». Le paquet flotte : on touche la scène.
+ */
+const scene = { position: { x: 195, y: 260 } };
+const passerOuverture = async (n, nom) => {
+  await page.waitForSelector('#ouverture:not([hidden]) .paquet', { timeout: 15000 });
+  const ferme = await page.$eval('#ouverture .ouv', e => e.classList.contains('etat-ferme'));
+  await page.click('#ouverture .ouv-scene', scene);
+  await pause(700);
+  const pile = !n || await page.$eval('#ouverture .ouv', e => e.classList.contains('etat-pile') || e.classList.contains('etat-walkout'));
+  let vues = 0;
+  for (let k = 0; k < 3 * n + 4 && !(await visible('#ouverture .ouv-fin')); k++) {
+    if (await page.$('#ouverture .ouv-carte[data-pile="0"].retournee')) vues++;
+    await page.click('#ouverture .ouv-scene', scene);
+    await pause(await page.$('#ouverture .walkout') ? 2400 : 450);
+  }
+  const etale = (await page.$$('#ouverture .ouv-etalage .ouv-mini')).length;
+  await sansDebordement(`l'ouverture : ${nom}`);
+  etape(`${nom} s'ouvre : le paquet, ses cartes une à une, l'étalage`, ferme && pile && vues >= Math.min(1, n) && etale === n, `${vues} vues, ${etale} à l'étalage`);
+  await page.click('#ouverture .ouv-fin');
+  await pause(250);
+  etape(`${nom} : « Continuer » rend l'écran`, !(await visible('#ouverture')));
+};
 const etapes = [];
 const etape = (nom, ok, detail = '') => { etapes.push(nom); exiger(nom, ok, detail); };
 
@@ -87,17 +117,27 @@ const d1 = await departParCases();
 etape('les cases du départ : ta vedette prise', d1.cases >= 1 && d1.prises >= 1, `${d1.cases} cases, ${d1.prises} prises`);
 etape('le pack de départ attend', await visible('#pack') && !!(await page.$('#depart-cases h3')));
 await page.click('#pack');
-await pause(1200);
-etape('le pack comble les rôles vides de bouche-trous', (await page.$$('#depart-cases .joueur')).length === 5 - d1.prises && (await page.$$('#alignement .case.pleine')).length === 5);
+await passerOuverture(5 - d1.prises, 'le pack de départ');
+etape('le pack comble les rôles vides de bouche-trous', (await page.$$('#alignement .case.pleine')).length === 5);
 await sansDebordement('le départ du Rogue');
 etape('ton cinq est complet', await visible('#jouer'));
 await page.click('#jouer');
 await pause(1500);
 
 /* 3. Le split : la décision, une journée, son repêchage des champions, hier soir. */
-etape('le Bureau et sa décision', await visible('#vue') && !!(await page.$('#vue [data-choix]')));
-await page.click('#vue [data-choix]');
-await pause(200);
+etape('le Bureau et sa décision : une ligne d\'À faire', await visible('#vue') && !!(await page.$('#vue [data-afaire]')) && !(await page.$('#vue [data-choix]')));
+await sansDebordement('la Boîte');
+await page.click('#vue [data-afaire]');
+await pause(250);
+etape('la ligne ouvre son choix en plein écran : la voix, le fait, ses réponses', await visible('#choix') && (await page.$$('#choix .option[data-choix]')).length >= 2 && !!(await page.$('#choix .feuille-voix')));
+await page.keyboard.press('Escape');
+await pause(150);
+etape('« Plus tard » le laisse dans la boîte', !(await visible('#choix')) && !!(await page.$('#vue [data-afaire]')) && await visible('#decision'));
+await page.click('#decision');
+await pause(250);
+await page.click('#choix [data-choix]');
+await pause(250);
+etape('réglé, le choix se ferme', !(await visible('#choix')) && !(await page.$('#vue [data-afaire]')));
 etape('la bande des chiffres et la partie de ce soir', !!(await page.$('#bande .bande')) && !!(await page.$('#vue [data-soir]')) && /Jouer ce soir/.test(await page.$eval('#journee', e => e.textContent)));
 await page.click('#vue [data-soir]');
 await pause(250);
@@ -173,8 +213,8 @@ await pause(200);
 const pj = await page.$('#vue [data-pack-joueurs]:not([disabled])');
 if (pj) {
   await pj.click();
-  await pause(1000);
-  etape('un pack de joueurs s\'ouvre', (await page.$$('#vue .joueur.agent')).length === 3);
+  await passerOuverture(3, 'un pack de joueurs');
+  etape('ses trois joueurs attendent leur signature', (await page.$$('#vue .joueur.agent')).length === 3);
 }
 await page.click('.soustab[data-sous="plan"]');
 await pause(200);
@@ -194,8 +234,7 @@ etape('les meneurs, le palmarès et le classement', !!(await page.$('#vue .class
 await page.click('.navtab[data-section="bureau"]');
 await pause(200);
 for (let k = 0; k < 4 && !(await visible('#regarder')); k++) {
-  const choix = await page.$('#vue [data-choix]');
-  if (choix) { await choix.click(); await pause(150); }
+  if (await visible('#decision')) { await page.click('#decision'); await pause(150); await page.click('#choix [data-choix]'); await pause(150); }
 }
 if (await visible('#regarder')) {
   await page.click('#regarder');
@@ -211,8 +250,8 @@ if (await visible('#regarder')) {
 /* 6. Jusqu'aux séries, les séries, le bilan. */
 for (let k = 0; k < 60 && !(await visible('#bilan')); k++) {
   if (await visible('#repechage')) { await page.click('#repe-auto'); await pause(250); continue; }
-  const choix = await page.$('#vue [data-choix]');
-  if (choix && await choix.isVisible()) { await choix.click(); await pause(150); continue; }
+  if (await visible('#choix')) { await page.click('#choix [data-choix]'); await pause(150); continue; }
+  if (await visible('#ouverture')) { await page.keyboard.press('Escape'); await pause(150); continue; }
   for (const id of ['#decision', '#jusqua', '#series', '#ronde', '#bilan-ouvrir']) {
     if (await visible(id)) { await page.click(id); await pause(350); break; }
   }
@@ -225,7 +264,7 @@ if (await page.$('#bilan-suivant')) {
   await page.click('#bilan-suivant');
   await pause(600);
   await page.waitForSelector('#depart-cases [data-case-prendre], #depart-cases [data-case-passer]', { timeout: 15000 });
-  etape('le split suivant commence au départ : ceux qui restent au loto', await visible('#bati') && (await page.$$('#depart-cases .joueur')).length >= 1 && (await page.$$('#depart-cases .joueur')).length <= 3);
+  etape('le split suivant commence au départ : ceux qui restent au loto, en cartes', await visible('#bati') && (await page.$$('#depart-cases .loto-carte .carton-recto')).length >= 1 && (await page.$$('#depart-cases .loto-carte')).length <= 3);
 } else etape('la run finit au bilan', !!(await page.$('#bilan-nouvelle')));
 
 /* 7. Le menu. */

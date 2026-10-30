@@ -23,6 +23,10 @@
   11. l'écran titre, le menu, les parties, le départ
   12. la vitrine : déblocages, palmarès, collection, album
   13. le direct
+  14. le bureau de Cap 82-0 : l'écusson, la bande, la boîte, ce soir, le sommaire, le tableau des joueurs
+  15. l'ouverture d'un pack, et le paquet en tuile
+  16. la feuille d'un choix, et les lignes d'À faire
+  17. les cartes en rangées : la carte de plan de jeu, ta main, ton cinq en cartons
    ===================================================================== */
 
 /* ---- Barlow Condensed (fonts/, OFL 1.1) : les chiffres, les titres, les boutons ---- */
@@ -139,7 +143,7 @@ img.absente { display: none; }
 
 /* ---- Le tableau indicateur : une bande, un filet de la Faille en tête, les chiffres à droite ---- */
 .topbar {
-  position: sticky; top: 0; z-index: 60; min-height: var(--tete-h);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: var(--tete-h);
   display: flex; align-items: center; padding: var(--esp-2) var(--esp-4);
   background: linear-gradient(100deg, color-mix(in srgb, var(--club-vif) 24%, var(--fond-1)), var(--fond-1) 46%);
   border-bottom: 1px solid var(--filet); box-shadow: inset 0 3px 0 var(--club-vif);
@@ -179,17 +183,31 @@ img.absente { display: none; }
 .retour-btn .ico { width: 20px; height: 20px; transition: transform var(--t-lent) var(--e-ressort); }
 .retour-btn:hover .ico { transform: translateX(-3px); }
 
-/* ---- Un écran : une bande de titre, un corps, la barre d'action collée en bas ---- */
-main { max-width: var(--large); margin: 0 auto; padding: 0 var(--esp-4); }
-.ecran-tete { padding: var(--esp-5) 0 var(--esp-3); border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-3); }
+/* ---- Un écran tient en UN écran (Cap 82-0 : *la page elle-même ne défile jamais*) : posé entre le tableau indicateur
+   et la barre du bas, une colonne — sa tête, son corps qui défile en dedans s'il le faut, sa barre d'action en bas ---- */
+html, body { height: 100%; }
+body { overflow: hidden; }
+main { margin: 0; padding: 0; }
+.ecran {
+  position: fixed; top: var(--tete-h); left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; min-height: 0;
+  padding: 0 max(var(--esp-4), calc((100% - var(--large)) / 2));
+}
+#split { bottom: calc(var(--nav-h) + var(--safe-bas)); }
+/* Le corps d'un écran : il prend ce qui reste, et défile en dedans plutôt que la page. */
+.ecran > * { flex-shrink: 0; }
+.ecran > .corps { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-bottom: var(--esp-2); }
+.ecran-tete { flex: none; padding: var(--esp-3) 0 var(--esp-2); border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-2); }
 .ecran-tete h1, .couche > h2 {
   font-size: var(--t-6); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase;
   background: var(--chiffre); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.couche > h2 { font-size: var(--t-5); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); margin-bottom: var(--esp-2); }
+/* Le titre d'une couche reste en haut quand elle défile, comme la tête d'une feuille : plein, sur le noir. */
+.couche > h2 { position: sticky; top: 0; z-index: 6; font-size: var(--t-5); padding: var(--esp-3) var(--esp-4); margin: 0 calc(-1 * var(--esp-4)) var(--esp-2); border-bottom: 1px solid var(--filet); box-shadow: inset 0 3px 0 var(--or); background: var(--noir); color: var(--encre); -webkit-background-clip: border-box; background-clip: border-box; }
 .sous, .etat { color: var(--encre-2); margin: var(--esp-2) 0; font-size: var(--t-2); }
 /* Les intertitres : une étiquette condensée, en capitales, sur un filet. */
-h3 { margin: var(--esp-5) 0 var(--esp-2); padding-bottom: var(--esp-1); border-bottom: 1px solid var(--filet); font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-2); }
+h3 { margin: var(--esp-4) 0 var(--esp-2); padding-bottom: var(--esp-1); border-bottom: 1px solid var(--filet); font: 800 var(--t-2)/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-2); }
+.corps > h3:first-child { margin-top: var(--esp-2); }
 
 /* ---- Les couches (le vestiaire, la carte, la boutique…) : sous le tableau indicateur, elles défilent en dedans ---- */
 .couche {
@@ -201,21 +219,22 @@ h3 { margin: var(--esp-5) 0 var(--esp-2); padding-bottom: var(--esp-1); border-b
 }
 @keyframes entree { from { opacity: 0; transform: translateY(8px); } }
 
-/* ---- La barre d'action : collée en bas ; l'action principale pleine largeur, les autres en contour dessous ---- */
+/* ---- La barre d'action : en bas de l'écran ; l'action principale pleine largeur, les autres en contour dessous ---- */
 .actionbar {
-  position: sticky; bottom: 0; z-index: 5;
+  flex: none; position: sticky; bottom: 0; z-index: 5;
   display: flex; flex-wrap: wrap; gap: var(--esp-2);
-  margin-top: var(--esp-4); padding: var(--esp-3) 0 calc(var(--esp-3) + var(--safe-bas));
+  padding: var(--esp-2) 0 calc(var(--esp-2) + var(--safe-bas));
   background: linear-gradient(transparent, var(--noir) 30%);
 }
+.ecran > .actionbar { position: static; padding-bottom: var(--esp-2); background: none; border-top: 1px solid var(--filet); }
+/* Une barre sans bouton à montrer ne prend pas de place. */
+.actionbar:not(:has(> :not([hidden]))) { display: none; }
 .actionbar > button { flex: 1 1 0; min-width: 0; padding: 0 var(--esp-2); font-size: var(--t-2); }
 .actionbar > .go { flex: 1 1 100%; min-height: 52px; font-size: var(--t-4); }
-/* Au split, la barre d'action se pose au-dessus de la barre du bas. */
-.actionbar.avec-nav { bottom: calc(var(--nav-h) + var(--safe-bas)); }
-body:has(#nav:not([hidden])) main { padding-bottom: calc(var(--nav-h) + var(--safe-bas)); }
-body:has(#nav:not([hidden])) footer { margin-bottom: calc(var(--nav-h) + var(--safe-bas)); }
 
-footer { max-width: var(--large); margin: var(--esp-5) auto 0; padding: var(--esp-4); border-top: 1px solid var(--filet); color: var(--encre-3); font-size: var(--t-1); }
+/* Le pied (les sources, la mention de Riot) vit à l'écran titre, en bas. */
+footer { flex: none; padding: var(--esp-3) 0 calc(var(--esp-2) + var(--safe-bas)); border-top: 1px solid var(--filet); color: var(--encre-3); font-size: var(--t-1); line-height: 1.35; }
+footer p { margin: 0 0 var(--esp-1); }
 
 /* =====================================================================
    2. LES BRIQUES
@@ -230,12 +249,12 @@ button {
   font: 800 var(--t-3)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase;
   transition: transform var(--t-lent) var(--e-ressort), background var(--t-vite), border-color var(--t-vite), box-shadow var(--t-lent) var(--e-sortie);
 }
-button:hover:not(:disabled) { background: var(--fond-2); border-color: color-mix(in srgb, var(--club-vif) 70%, var(--encre-3)); box-shadow: var(--lueur-club); }
+@media (hover: hover) { button:hover:not(:disabled) { background: var(--fond-2); border-color: color-mix(in srgb, var(--club-vif) 70%, var(--encre-3)); box-shadow: var(--lueur-club); } }
 button:active:not(:disabled) { transform: translateY(1px) scale(0.96); transition-duration: 60ms; }
 button:disabled { opacity: 0.45; cursor: default; }
 /* L'action principale : pleine, en vert ; un reflet la traverse toutes les cinq secondes. */
 .go { position: relative; overflow: hidden; background: linear-gradient(180deg, color-mix(in srgb, var(--bon) 78%, #fff), var(--bon) 55%); border-color: var(--bon); color: var(--sur-bon); box-shadow: var(--lueur-bon); }
-.go:hover:not(:disabled) { background: color-mix(in srgb, var(--bon) 88%, #fff); border-color: var(--bon); }
+@media (hover: hover) { .go:hover:not(:disabled) { background: color-mix(in srgb, var(--bon) 88%, #fff); border-color: var(--bon); } }
 .go:not(:disabled)::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); transform: translateX(-140%) skewX(-18deg); animation: reflet 5s var(--e-sortie) 1.2s infinite; pointer-events: none; }
 @keyframes reflet { 0%, 78% { transform: translateX(-140%) skewX(-18deg); } 100% { transform: translateX(440%) skewX(-18deg); } }
 .go:disabled { background: var(--fond-2); border-color: var(--filet); color: var(--encre-3); box-shadow: none; }
@@ -271,6 +290,11 @@ button:disabled { opacity: 0.45; cursor: default; }
 .qui { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .qui b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qui small { color: var(--encre-2); font-size: var(--t-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Serré : une bande de 48 px, pour que ton cinq et sa case tiennent dans le même écran. */
+.alignement.serre { gap: var(--esp-1); }
+.alignement.serre .case { min-height: 48px; padding: var(--esp-1) var(--esp-3); }
+.alignement.serre .vignette { width: 36px; height: 36px; }
+.alignement.serre .qui b { font-size: var(--t-3); }
 
 /* =====================================================================
    4. LE VESTIAIRE — le bandeau de l'équipe tirée, puis une rangée par joueur
@@ -289,7 +313,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .combler span:last-child { text-align: right; }
 .liste-joueurs { list-style: none; margin: 0; padding: 0; }
 .joueur { display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); cursor: pointer; transition: background var(--t-vite); }
-.joueur:hover { background: var(--club-sourd); }
+@media (hover: hover) { .joueur:hover { background: var(--club-sourd); } }
 .joueur.pris { opacity: 0.45; }
 .joueur-id { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .joueur-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -601,12 +625,12 @@ button:disabled { opacity: 0.45; cursor: default; }
    7. LA BOUTIQUE ET LE REPÊCHAGE — des rangées à toucher, la rareté en filet à gauche
    ===================================================================== */
 .cartes-jeu, .repe-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-2); }
-.carte-jeu, .coach, .pack {
+.coach {
   width: 100%; display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-2) var(--esp-3); text-align: left;
   background: var(--panneau); border-radius: var(--r-2); box-shadow: var(--relief);
   font: 400 var(--t-3)/1.35 var(--corps); letter-spacing: 0; text-transform: none;
 }
-.carte-jeu.active, .coach.active { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--fond-1)); }
+.coach.active { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--fond-1)); }
 .jeu-ico { font-size: var(--t-5); flex: none; width: 32px; text-align: center; }
 .jeu-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .jeu-id b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
@@ -615,16 +639,16 @@ button:disabled { opacity: 0.45; cursor: default; }
 .jeu-id .pouvoir.ouvert { color: var(--bon); }
 .jeu-id .pouvoir b { font: inherit; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .prix { flex: none; font: 800 var(--t-4)/1 var(--display); color: var(--or); }
-.rarete-peu { box-shadow: inset 3px 0 0 var(--peu-commune), var(--relief); }
-.rarete-rare { box-shadow: inset 3px 0 0 var(--rare), var(--relief); }
-.rarete-legendaire { box-shadow: inset 3px 0 0 var(--legendaire), var(--relief); }
 .repe-joueur { padding: var(--esp-2) 0; border-bottom: 1px solid var(--filet); display: grid; gap: var(--esp-2); }
 .repe-qui { display: flex; gap: var(--esp-2); align-items: baseline; min-width: 0; }
 .repe-qui b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
 .repe-qui small { color: var(--encre-2); font-size: var(--t-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.repe-puces { display: flex; flex-wrap: wrap; gap: var(--esp-1); }
+/* Au repêchage, un joueur par rangée : ses champions défilent de côté plutôt que de faire défiler la page. */
+.repe-puces { display: flex; gap: var(--esp-1); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.repe-puces::-webkit-scrollbar { display: none; }
+.repe-puces > * { flex: none; }
 .champ { display: grid; justify-items: center; gap: 2px; width: 64px; min-height: 0; padding: var(--esp-1) 2px; font: 400 var(--t-1)/1.2 var(--corps); letter-spacing: 0; text-transform: none; }
-.champ img, .champ .ico-vide { width: 36px; height: 36px; border-radius: var(--r-1); }
+.champ img, .champ .ico-vide { width: 32px; height: 32px; border-radius: var(--r-1); }
 .champ small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .champ.choisi { border-color: var(--bon); background: color-mix(in srgb, var(--bon) 14%, var(--fond-1)); }
 .champ.prevu { border-color: var(--bleu); }
@@ -643,15 +667,6 @@ button:disabled { opacity: 0.45; cursor: default; }
   background: var(--fond-3); border: 1px solid var(--mauvais); border-radius: var(--r-2); box-shadow: var(--ombre);
   color: var(--encre); font-size: var(--t-2);
 }
-/* La boîte : un message par bande, l'expéditeur en étiquette. */
-.boite { list-style: none; margin: 0; padding: 0; }
-.message { display: grid; gap: var(--esp-1); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); }
-.message-de { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-3); }
-.message b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
-.message p { margin: 0; color: var(--encre-2); font-size: var(--t-2); }
-.choix { display: grid; gap: var(--esp-2); margin-top: var(--esp-2); }
-.choix button { display: grid; justify-items: start; gap: 2px; padding: var(--esp-2) var(--esp-3); text-align: left; background: var(--panneau); box-shadow: var(--relief); }
-.choix small { font: 400 var(--t-1)/1.3 var(--corps); letter-spacing: 0; text-transform: none; color: var(--encre-2); }
 /* Le banc et ce qu'on en fait ; les agents libres et où ils jouent. */
 .case-gestes, .places { display: flex; gap: var(--esp-1); flex-wrap: wrap; }
 /* Les gestes du banc passent sous le joueur : son nom garde sa place. */
@@ -695,6 +710,11 @@ button:disabled { opacity: 0.45; cursor: default; }
 .demande { font: 700 var(--t-1)/1.3 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre-2); }
 .demande b { font-size: var(--t-3); color: var(--encre); }
 .strategie .fait { font-size: var(--t-1); }
+/* Les stratégies en bande, comme les cartes à choisir de Cap 82-0 : une en grand, les autres de côté. */
+.bande-cartes { display: grid; grid-auto-flow: column; grid-auto-columns: 84%; gap: var(--esp-2); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: var(--esp-1); }
+.bande-cartes::-webkit-scrollbar { display: none; }
+.bande-cartes > li { scroll-snap-align: center; }
+.bande-cartes .strategie, .bande-cartes .coach-choix { height: 100%; align-content: start; }
 
 /* =====================================================================
    10. LA BARRE DU BAS — quatre portes au split : Bureau, Effectif, Marché, Ligue ; les sous-onglets ; hier soir, le calendrier
@@ -713,7 +733,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .navtab .ico { width: 22px; height: 22px; }
 .navtab-lbl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .navtab.on { color: var(--noir); background: var(--encre); }
-.navtab:hover:not(.on) { box-shadow: none; color: var(--encre); }
+@media (hover: hover) { .navtab:hover:not(.on) { box-shadow: none; color: var(--encre); } }
 /* Le Bureau dit qu'une décision l'attend, d'où qu'on soit. */
 .navtab.a-traiter::after { content: ""; position: absolute; top: 8px; left: calc(50% + 10px); width: 8px; height: 8px; border-radius: 50%; background: var(--mauvais); }
 /* Les sous-onglets : l'ouvert est un bloc plein et clair, les autres sont creux. */
@@ -721,6 +741,12 @@ button:disabled { opacity: 0.45; cursor: default; }
 .sousnav::-webkit-scrollbar { display: none; }
 .soustab { flex: none; min-height: 40px; padding: 0 var(--esp-3); border-color: transparent; background: none; color: var(--encre-3); font-size: var(--t-2); }
 .soustab.on { color: var(--noir); background: var(--encre); border-color: var(--encre); }
+/* LE BALAYAGE SE VOIT (js/glisser.js) : sous le doigt, le nom de l'onglet où il mène sort du bord ; plein au seuil, comme
+   un onglet ouvert, le lâcher y va. */
+.glisse-indice { position: fixed; top: 50%; z-index: 300; max-width: 60vw; overflow: hidden; padding: var(--esp-3) var(--esp-4); border: 1px solid var(--filet); background: var(--fond-2); color: var(--encre-2); font: 700 var(--t-2)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+.glisse-indice[data-cote="d"] { right: 0; border-right: 0; border-radius: var(--r-2) 0 0 var(--r-2); }
+.glisse-indice[data-cote="g"] { left: 0; border-left: 0; border-radius: 0 var(--r-2) var(--r-2) 0; }
+.glisse-indice.pret { border-color: var(--encre); background: var(--encre); color: var(--noir); }
 /* Les petits boutons d'une rangée (regarder, la feuille, porter, acheter). */
 .mini { min-height: 36px; padding: 0 var(--esp-2); font-size: var(--t-1); }
 .mini.lien { border-color: transparent; background: none; color: var(--club-vif); padding-left: 0; }
@@ -745,7 +771,6 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cal[data-serie] { cursor: pointer; }
 .cal-prochaine { background: var(--club-sourd); box-shadow: inset 3px 0 0 var(--club-vif); }
 /* Ton effectif : ses stats chez toi, sous son split. */
-.qui .chez-toi { color: var(--encre); font-variant-numeric: tabular-nums; white-space: normal; }
 .case[data-contrat] { cursor: pointer; }
 .qui .vieillit { color: var(--or); }
 .medailles-run { margin: var(--esp-4) 0; padding: var(--esp-3); border: 1px solid var(--or); border-radius: var(--r-2); color: var(--or); font: 800 var(--t-4)/1.3 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
@@ -1054,3 +1079,218 @@ button:disabled { opacity: 0.45; cursor: default; }
 .tj-qui span { display: grid; min-width: 0; }
 .tj-qui b { font: 800 var(--t-2)/1.15 var(--display); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tj-qui small { font: 400 var(--t-1)/1.2 var(--corps); color: var(--encre-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =====================================================================
+   15. L'OUVERTURE D'UN PACK (js/ouverture.js) — le paquet qui flotte, la déchirure, la pile qu'on balaie,
+       le walkout d'une vedette, l'étalage ; et le paquet en tuile, à la boutique
+   ===================================================================== */
+/* Le paquet : du papier métallisé serti en dents de scie, la Faille en filigrane, la marque ; un reflet qui passe. */
+.paquet-corps { position: relative; z-index: 1; display: flex; flex-direction: column; width: 100%; height: 100%; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.6)); --p1: #6b4a2b; --p2: #c98a52; --p3: #2b1a0e; --p-encre: #fff3e6; }
+.paquet-bronze { --p1: #6b3d1f; --p2: #d08a52; --p3: #2b160a; }
+.paquet-argent { --p1: #5d6672; --p2: #e6edf4; --p3: #1f252d; --p-encre: #ffffff; }
+.paquet-or { --p1: #8a6514; --p2: #ffe08a; --p3: #2d1f04; --p-encre: #fff8e0; }
+.paquet-recrues { --p1: #135b66; --p2: #5fe0ee; --p3: #04181c; }
+.paquet-pros { --p1: #3f1e78; --p2: #b48cff; --p3: #120626; }
+.paquet-legendes { --p1: #7a1426; --p2: #ffcf5a; --p3: #1a0408; }
+.paquet-depart { --p1: #4a4136; --p2: #b8a58a; --p3: #1a1612; }
+.paquet-rabat { flex: none; height: 6%; background: linear-gradient(90deg, var(--p1), var(--p2) 45%, var(--p1)); }
+.paquet-haut { clip-path: polygon(0 0, 100% 0, 100% 70%, 95% 100%, 90% 70%, 85% 100%, 80% 70%, 75% 100%, 70% 70%, 65% 100%, 60% 70%, 55% 100%, 50% 70%, 45% 100%, 40% 70%, 35% 100%, 30% 70%, 25% 100%, 20% 70%, 15% 100%, 10% 70%, 5% 100%, 0 70%); transform-origin: 90% 100%; }
+.paquet-bas { clip-path: polygon(0 30%, 5% 0, 10% 30%, 15% 0, 20% 30%, 25% 0, 30% 30%, 35% 0, 40% 30%, 45% 0, 50% 30%, 55% 0, 60% 30%, 65% 0, 70% 30%, 75% 0, 80% 30%, 85% 0, 90% 30%, 95% 0, 100% 30%, 100% 100%, 0 100%); }
+.paquet-face {
+  position: relative; flex: 1; overflow: hidden; container-type: inline-size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4cqw;
+  background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--p2) 55%, transparent), transparent 60%), linear-gradient(160deg, var(--p1), var(--p3) 70%);
+  border-left: 1px solid color-mix(in srgb, var(--p2) 50%, transparent); border-right: 1px solid color-mix(in srgb, var(--p2) 50%, transparent);
+}
+.paquet-face::after { content: ""; position: absolute; top: -10%; bottom: -10%; left: -60%; width: 34%; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent); transform: skewX(-16deg); animation: paquet-reflet 3.2s ease-in-out infinite; }
+/* La Faille en filigrane : la rivière en diagonale, trois lignes, deux bases. */
+.paquet-faille { position: absolute; inset: 14% 10%; border: 0.8cqw solid color-mix(in srgb, var(--p2) 45%, transparent); border-radius: 4cqw; opacity: 0.5; pointer-events: none; background: linear-gradient(135deg, transparent 47%, color-mix(in srgb, var(--p2) 60%, transparent) 47% 53%, transparent 53%); }
+.paquet-faille::before, .paquet-faille::after { content: ""; position: absolute; width: 22%; aspect-ratio: 1; border-radius: 50%; border: 0.8cqw solid color-mix(in srgb, var(--p2) 70%, transparent); }
+.paquet-faille::before { left: -4%; bottom: -4%; }
+.paquet-faille::after { right: -4%; top: -4%; }
+.paquet-marque { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1cqw; color: var(--p-encre); text-align: center; }
+.paquet-marque small { font: 800 7cqw/1 var(--display); letter-spacing: 0.4em; text-transform: uppercase; opacity: 0.85; }
+.paquet-marque b { font: 800 19cqw/0.9 var(--display); letter-spacing: 0.02em; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--p2)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0.6cqw 0 var(--p3)); }
+.paquet-n { position: relative; padding: 1.4cqw 4cqw; border-radius: 2cqw; background: color-mix(in srgb, var(--p3) 70%, transparent); color: var(--p-encre); font: 800 6.4cqw/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
+@keyframes paquet-reflet { 0%, 55% { transform: translateX(0) skewX(-16deg); } 100% { transform: translateX(480%) skewX(-16deg); } }
+
+/* La couche de l'ouverture : la nuit, une lumière au centre ; rien ne défile. */
+.ouverture { z-index: 80; top: 0; overflow: hidden; display: flex; flex-direction: column; background: radial-gradient(70% 50% at 50% 45%, color-mix(in srgb, var(--club-vif) 20%, var(--noir)), var(--noir) 75%); }
+.ouv { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); --pile-l: min(76vw, 320px, calc((100dvh - 240px) * 5 / 7)); }
+.ouv-tete { flex: none; display: grid; justify-items: center; gap: 2px; padding: var(--esp-4) 0 var(--esp-2); text-align: center; }
+.ouv-tete small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.2em; text-transform: uppercase; color: var(--encre-3); }
+.ouv-tete b { font: 800 var(--t-5)/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.ouv-scene { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; perspective: 1400px; touch-action: none; cursor: pointer; }
+.ouv-scene > * { grid-area: 1 / 1; }
+.ouv > .actionbar { background: none; }
+/* Le paquet fermé flotte ; sa lueur dit ce qu'il cache. */
+.paquet { position: relative; z-index: 3; width: min(54vw, 220px, calc((100dvh - 260px) * 0.62)); aspect-ratio: 5 / 8; padding: 0; border: 0; background: none; box-shadow: none; animation: paquet-flotte 2.8s ease-in-out infinite; }
+.paquet:hover:not(:disabled) { background: none; box-shadow: none; }
+.paquet-lueur { position: absolute; inset: -16% -26%; z-index: 0; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, var(--lueur-c, color-mix(in srgb, var(--club-vif) 45%, transparent)), transparent); animation: paquet-pouls 1.9s ease-in-out infinite; }
+.lueur-1 { --lueur-c: color-mix(in srgb, #ffffff 45%, transparent); }
+.lueur-2 { --lueur-c: color-mix(in srgb, var(--ed-or) 65%, transparent); }
+.paquet-mot { position: absolute; left: 50%; bottom: -36px; transform: translateX(-50%); white-space: nowrap; font: 800 var(--t-2)/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--or); animation: paquet-pouls 1.9s ease-in-out infinite; }
+@keyframes paquet-flotte { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-10px) rotate(1.5deg); } }
+@keyframes paquet-pouls { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+/* On déchire : il tremble, le rabat s'envole, la lumière éclate, les éclats partent, il tombe. */
+.etat-dechire .paquet { animation: paquet-secoue 0.46s ease-in forwards; }
+.etat-dechire .paquet-haut { animation: paquet-rabat 0.34s cubic-bezier(0.3, 0.7, 0.4, 1) forwards; }
+.etat-dechire .paquet-lueur { animation: paquet-eclat 0.46s ease-out forwards; }
+.etat-dechire .paquet-mot { opacity: 0; animation: none; }
+@keyframes paquet-secoue { 0% { transform: none; } 12% { transform: rotate(-5deg) scale(1.02); } 24% { transform: rotate(5deg) scale(1.04); } 36% { transform: rotate(-3deg) scale(1.05); } 55% { transform: scale(1.08); opacity: 1; } 100% { transform: translateY(90px) scale(0.84); opacity: 0; } }
+@keyframes paquet-rabat { to { transform: translate(60px, -90px) rotate(32deg); opacity: 0; } }
+@keyframes paquet-eclat { 0% { transform: scale(1); opacity: 1; } 60% { transform: scale(1.9); opacity: 1; } 100% { transform: scale(2.4); opacity: 0; } }
+.ouv-eclats { position: relative; z-index: 4; width: 0; height: 0; pointer-events: none; }
+.ouv-eclats i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 2px; opacity: 0; background: var(--or); box-shadow: 0 0 10px var(--or); }
+.ouv-eclats i:nth-child(3n) { background: var(--club-vif); box-shadow: 0 0 10px var(--club-vif); }
+.ouv-eclats i:nth-child(4n) { background: #fff; width: 5px; height: 5px; }
+.etat-dechire .ouv-eclats i { animation: eclat-part 0.7s cubic-bezier(0.1, 0.7, 0.3, 1) 0.18s forwards; }
+@keyframes eclat-part { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); } }
+.etat-ferme .paquet-lueur, .etat-dechire .paquet-lueur { display: block; }
+:is(.etat-pile, .etat-walkout, .etat-etale) .paquet { display: none; }
+/* La pile : la carte du dessus en grand ; deux autres face cachée derrière. Elle se retourne, suit le doigt, part de son côté. */
+.ouv-pile { position: relative; z-index: 2; display: grid; width: var(--pile-l); visibility: hidden; }
+:is(.etat-pile, .etat-walkout) .ouv-pile { visibility: visible; }
+.ouv-carte { grid-area: 1 / 1; position: relative; aspect-ratio: 5 / 7; transform-style: preserve-3d; transform-origin: 50% 60%; --ry: 180deg;
+  transform: translateX(calc(var(--glisse, 0) * 1px)) rotate(calc(var(--glisse, 0) * 0.05deg)) rotateY(var(--ry)); transition: transform 0.55s var(--e-ressort), opacity var(--t-lent); }
+.ouv-carte.retournee { --ry: 0deg; }
+.ouv-carte.glisse { transition: none; cursor: grabbing; }
+.ouv-carte[data-pile="1"] { z-index: 4; transform: translateY(-14px) scale(0.94) rotateY(180deg); }
+.ouv-carte[data-pile="2"] { z-index: 3; transform: translateY(-26px) scale(0.88) rotateY(180deg); }
+.ouv-carte[data-pile="0"] { z-index: 5; }
+.ouv-carte[data-pile="loin"] { z-index: 1; opacity: 0; transform: translateY(-26px) scale(0.88) rotateY(180deg); }
+.ouv-carte[data-pile="passee"] { z-index: 6; opacity: 0; pointer-events: none; transform: translateX(-140%) rotate(-16deg); transition: transform 0.4s ease-in, opacity 0.4s ease-in; }
+.ouv-carte[data-pile="passee"][data-sens="d"] { transform: translateX(140%) rotate(16deg); }
+.ouv-face, .ouv-dos { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ouv-dos { transform: rotateY(180deg); display: grid; place-items: center; overflow: hidden; border-radius: 4.5% / 3.2%; container-type: inline-size;
+  background: radial-gradient(80% 60% at 50% 40%, color-mix(in srgb, var(--club-vif) 40%, #0b1a20), #05080b); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--club-vif) 60%, transparent), 0 12px 24px rgba(0, 0, 0, 0.6); }
+.ouv-dos .paquet-faille { --p2: var(--club-vif); inset: 10%; opacity: 0.6; }
+.ouv-dos b { position: relative; font: 800 16cqw/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--club-vif) 80%, white); text-shadow: 0 0 6cqw var(--club-vif); }
+.ouv-face .fiche { margin: 0; max-width: none; }
+.ouverture :is(.fiche-plaque, .carton-verso, .signer-carte) { display: none; }
+/* Une rare luit en se retournant ; la vedette éclate, et l'écran avec elle. */
+.ouv-carte.retournee[data-eclat="1"] .ouv-face { animation: carte-luit 1.2s ease-out 0.35s; }
+.ouv-carte.retournee[data-eclat="2"] .ouv-face { animation: carte-eclate 1.6s ease-out 0.35s; }
+@keyframes carte-luit { 0% { filter: none; } 35% { filter: drop-shadow(0 0 18px #fff); } 100% { filter: none; } }
+@keyframes carte-eclate { 0% { filter: none; } 25% { filter: drop-shadow(0 0 34px var(--ed-or)) brightness(1.25); } 100% { filter: drop-shadow(0 0 14px color-mix(in srgb, var(--ed-or) 60%, transparent)); } }
+.ouv-scene.flash::after { content: ""; position: absolute; inset: -20%; z-index: 9; pointer-events: none; background: radial-gradient(closest-side, color-mix(in srgb, var(--ed-or) 70%, white), transparent); animation: ecran-flash 0.7s ease-out forwards; }
+@keyframes ecran-flash { from { opacity: 0.9; } to { opacity: 0; } }
+/* LE WALKOUT : trois temps sur des rayons qui tournent — l'année, le rôle, le logo — avant la vedette. */
+.walkout { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: hidden; pointer-events: none; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ed-or) 26%, var(--noir)), var(--noir) 72%); }
+.walkout::before { content: ""; position: absolute; inset: -60%; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ed-or) 20%, transparent) 0 6deg, transparent 6deg 18deg); animation: wo-rayons 6s linear infinite; }
+.wo-pas { grid-area: 1 / 1; position: relative; opacity: 0; font: 800 var(--t-7)/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; text-align: center; color: var(--ed-or); text-shadow: 0 0 28px color-mix(in srgb, var(--ed-or) 70%, transparent); }
+.wo-pas img { display: block; width: min(40vw, 160px); height: min(40vw, 160px); object-fit: contain; filter: drop-shadow(0 0 24px color-mix(in srgb, var(--ed-or) 70%, transparent)); }
+.walkout[data-pas="1"] .wo-pas:nth-child(1), .walkout[data-pas="2"] .wo-pas:nth-child(2) { animation: wo-entre 650ms var(--e-ressort) forwards; }
+.walkout[data-pas="3"] .wo-pas:nth-child(3) { animation: wo-reste 650ms var(--e-ressort) forwards; }
+@keyframes wo-entre { 0% { opacity: 0; transform: scale(2.4); } 35% { opacity: 1; transform: scale(0.94); } 55% { transform: scale(1.04); } 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.1); } }
+@keyframes wo-reste { 0% { opacity: 0; transform: scale(2.4); } 35% { opacity: 1; transform: scale(0.94); } 60%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes wo-rayons { to { transform: rotate(360deg); } }
+/* Les points : où on en est dans la pile. */
+.ouv-points { flex: none; display: flex; justify-content: center; gap: 6px; min-height: 10px; margin: var(--esp-2) 0 0; }
+.ouv-points i { width: 8px; height: 8px; border-radius: 50%; background: var(--fond-3); }
+.ouv-points i.vu { background: var(--encre-3); }
+.ouv-points i.on { background: var(--or); box-shadow: 0 0 8px var(--or); }
+/* L'étalage : toutes les cartes à plat, la vedette au centre de l'attention. */
+.ouv-etalage { display: none; width: 100%; max-width: 560px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2); align-content: center; justify-content: center; }
+.ouv-etalage[data-n="1"] { grid-template-columns: var(--pile-l); }
+.ouv-etalage[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 150px)); }
+.etat-etale .ouv-etalage { display: grid; }
+.ouv-mini { animation: mini-entre 0.45s var(--e-ressort) backwards; }
+.ouv-mini:nth-child(2) { animation-delay: 60ms; } .ouv-mini:nth-child(3) { animation-delay: 120ms; } .ouv-mini:nth-child(4) { animation-delay: 180ms; } .ouv-mini:nth-child(5) { animation-delay: 240ms; }
+.ouv-mini[data-eclat="2"] { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--ed-or) 70%, transparent)); }
+.ouv-mini .fiche { margin: 0; max-width: none; }
+@keyframes mini-entre { from { opacity: 0; transform: translateY(24px) scale(0.9); } }
+@media (prefers-reduced-motion: reduce) { .ouv-carte { transition: none; } }
+
+/* Le paquet en tuile, à la boutique : le pack lui-même, son prix et ses chances dessous. */
+.paquets { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2); }
+.tuile-pack { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: stretch; gap: var(--esp-1); padding: var(--esp-2) var(--esp-2) var(--esp-1); background: var(--panneau); border-radius: var(--r-2); text-transform: none; letter-spacing: 0; font: 400 var(--t-1)/1.25 var(--corps); }
+.tuile-pack .tuile-paquet { display: block; aspect-ratio: 5 / 8; transition: transform var(--t-lent) var(--e-ressort); }
+.tuile-pack:hover:not(:disabled) .tuile-paquet { transform: translateY(-4px) rotate(-2deg); }
+.tuile-pack .prix { align-self: center; font-size: var(--t-4); }
+.tuile-pack small { color: var(--encre-2); text-align: center; }
+.tuile-pack:disabled .tuile-paquet { filter: grayscale(0.8) brightness(0.6); }
+
+/* =====================================================================
+   16. LA FEUILLE D'UN CHOIX (#choix) — la Boîte n'a que ses lignes ; une ligne ouvre son choix en plein écran :
+       la voix, le fait, ses réponses en tuiles à coins vifs, « Plus tard »
+   ===================================================================== */
+.feuille { display: flex; flex-direction: column; overflow: hidden; }
+.feuille-tete { flex: none; display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-3) 0; border-bottom: 1px solid var(--filet); box-shadow: inset 0 3px 0 var(--or); margin: 0 calc(-1 * var(--esp-4)); padding-left: var(--esp-4); padding-right: var(--esp-4); }
+.feuille-ico { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r-1); background: var(--fond-3); font-size: 22px; }
+.feuille-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.feuille-id small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--or); }
+.feuille-id b { font: 800 var(--t-5)/1.05 var(--display); letter-spacing: 0.03em; text-transform: uppercase; }
+.feuille-fermer { flex: none; width: 44px; padding: 0; font-size: var(--t-4); }
+.feuille > .corps { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-top: var(--esp-3); }
+.feuille > .actionbar { flex: none; }
+.feuille-voix { margin: 0 0 var(--esp-3); padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--or); background: color-mix(in srgb, var(--or) 6%, transparent); font-size: var(--t-3); line-height: 1.45; }
+.options { display: grid; gap: var(--esp-2); }
+.option { width: 100%; display: grid; justify-items: start; gap: var(--esp-1); min-height: 64px; padding: var(--esp-3) var(--esp-4); text-align: left; border-radius: var(--r-0); border-left: 4px solid var(--club-vif); background: linear-gradient(100deg, color-mix(in srgb, var(--club-vif) 10%, var(--fond-2)), var(--fond-1)); box-shadow: var(--relief); letter-spacing: 0; text-transform: none; font: 400 var(--t-2)/1.35 var(--corps); }
+.option b { font: 800 var(--t-4)/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.option small { color: var(--encre-2); font-size: var(--t-2); }
+.option:hover:not(:disabled) { border-left-color: var(--or); }
+.option:active:not(:disabled) { transform: scale(0.98); }
+.option.aucun { border-left-color: var(--filet); background: var(--fond-1); }
+/* À faire, dans la Boîte : une ligne par choix — la voix, le sujet, son état. */
+.afaire { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--esp-1); }
+.afaire-ligne { width: 100%; display: flex; align-items: center; gap: var(--esp-3); min-height: 56px; padding: var(--esp-2) var(--esp-3); text-align: left; border-radius: var(--r-0); border-left: 3px solid var(--or); background: color-mix(in srgb, var(--or) 7%, var(--fond-1)); letter-spacing: 0; text-transform: none; font: 400 var(--t-2)/1.3 var(--corps); }
+.afaire-ico { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--fond-3); font-size: 18px; }
+.afaire-id { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.afaire-id small { font: 700 var(--t-1)/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-3); }
+.afaire-id b { font: 800 var(--t-3)/1.15 var(--display); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.afaire-etat { flex: none; font: 800 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--or); }
+
+/* =====================================================================
+   17. LES CARTES EN RANGÉES — la carte de plan de jeu (un carton 5:7 aux couleurs de sa rareté), ta main
+       de cartes, ton cinq en cartons de front (Cap 82-0 : *une ligne de trois cartes, même sur mobile*)
+   ===================================================================== */
+.cj {
+  --cj-c: #8b97a6; --cj-f: #1a2029;
+  position: relative; display: grid; grid-template-rows: auto 1fr auto auto auto; justify-items: center; gap: 2cqw; width: 100%; aspect-ratio: 5 / 7;
+  container-type: inline-size; overflow: hidden; padding: 6cqw 6cqw 4cqw; border-radius: 4.5% / 3.2%; text-align: center; color: var(--encre);
+  background: radial-gradient(90% 55% at 50% 30%, color-mix(in srgb, var(--cj-c) 38%, transparent), transparent 70%), linear-gradient(170deg, color-mix(in srgb, var(--cj-c) 22%, var(--cj-f)), #07090c);
+  box-shadow: inset 0 0 0 1.6cqw color-mix(in srgb, var(--cj-c) 70%, #000), inset 0 0 0 2.2cqw color-mix(in srgb, white 20%, transparent), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
+}
+.cj-peu { --cj-c: var(--peu-commune); }
+.cj-rare { --cj-c: var(--rare); }
+.cj-legendaire { --cj-c: var(--legendaire); }
+.cj-legendaire::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 190, 0.35) 45%, transparent 60%); background-size: 250% 100%; animation: cj-reflet 3.4s ease-in-out infinite; }
+@keyframes cj-reflet { 0%, 40% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+.cj-rarete { padding: 1cqw 4cqw; border-radius: 1.6cqw; background: color-mix(in srgb, var(--cj-c) 80%, #000); font: 800 5.4cqw/1.1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
+.cj-coach { position: absolute; top: 4.5cqw; right: 5cqw; font-size: 9cqw; line-height: 1; }
+.cj-ico { align-self: center; font-size: 34cqw; line-height: 1; filter: drop-shadow(0 2cqw 3cqw rgba(0, 0, 0, 0.6)); }
+.cj-nom { font: 800 10cqw/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; overflow-wrap: anywhere; }
+.cj-texte { font: 600 6.2cqw/1.25 var(--corps); color: var(--encre-2); }
+.cj-pied { font: 700 4cqw/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--encre-3); }
+/* Ta main : les cartes en grille de trois ; celles du plan se lèvent, à l'or. */
+.main-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2); }
+.cj-bouton { display: block; width: 100%; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; transition: transform var(--t-lent) var(--e-ressort), filter var(--t-lent); }
+.cj-bouton:hover:not(:disabled) { background: none; box-shadow: none; }
+.cj-bouton:not(.au-plan) { filter: saturate(0.6) brightness(0.8); }
+.cj-bouton.au-plan { transform: translateY(-6px); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--or) 70%, transparent)); }
+.cj-bouton.au-plan .cj::before { content: "Au plan"; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 1.4cqw; background: var(--or); color: #241800; font: 800 5cqw/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
+/* Ton cinq en cartons : trois de front, puis deux et le banc ; le rôle au-dessus, ses stats chez toi dessous. */
+.cinq-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2) var(--esp-2); --carte-l: min(30vw, calc((100dvh - 430px) * 5 / 14), 150px); justify-content: center; grid-template-columns: repeat(3, var(--carte-l)); }
+.cinq-case { display: grid; gap: 2px; min-width: 0; cursor: pointer; }
+.cinq-case .fiche { margin: 0; max-width: none; }
+.cinq-case .fiche-plaque, .cinq-case .carton-verso { display: none; }
+.cinq-case > small { font: 700 var(--t-1)/1.2 var(--display); letter-spacing: 0.04em; color: var(--encre-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cinq-case.vide { display: grid; place-items: center; aspect-ratio: 5 / 7; border: 1px dashed var(--filet); border-radius: var(--r-2); color: var(--encre-3); font: 800 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; cursor: default; }
+.cinq-gestes { grid-column: 1 / -1; display: flex; gap: var(--esp-1); }
+.cinq-gestes button { flex: 1 1 0; min-height: 40px; font-size: var(--t-1); }
+/* Le glisser-déposer (js/deposer.js) : la case d'où part la carte s'efface ; celle dessous s'allume, en or si elle la prend
+   (le titulaire de son rôle, ou le banc), en rouge sinon. Le fantôme, une copie de la case, suit le doigt par-dessus tout. */
+.cinq-case { -webkit-touch-callout: none; }
+.cinq-case.glisse { opacity: 0.35; }
+.cinq-case:is(.survol, .refus) .fiche { outline: 2px solid var(--or); outline-offset: 2px; }
+.cinq-case.survol .fiche { translate: 0 -4px; }
+.cinq-case.refus .fiche { outline-color: var(--mauvais); opacity: 0.6; }
+body > .fantome { position: fixed; z-index: 1000; margin: 0; list-style: none; pointer-events: none; transform: rotate(-3deg) scale(1.05); opacity: 0.92; }
+.une-note { margin: var(--esp-2) 0 0; padding: var(--esp-2) var(--esp-3); border-left: 3px solid var(--or); background: color-mix(in srgb, var(--or) 7%, var(--fond-1)); font-size: var(--t-2); }
+/* Les lotos du départ : leurs cartes de front, qu'on balaie ; « Prendre » sous chacune. */
+.loto { --loto-l: min(44vw, 200px, calc((100dvh - 540px) * 5 / 7)); grid-auto-columns: var(--loto-l); justify-content: center; }
+.loto-carte { display: grid; gap: var(--esp-1); align-content: start; }
+.loto-carte .fiche { margin: 0; max-width: none; }
+.loto-carte :is(.fiche-plaque, .carton-verso) { display: none; }
+.loto-carte .signer { width: 100%; min-width: 0; }
+.loto-carte .vieillit { font-size: var(--t-1); color: var(--or); }

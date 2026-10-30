@@ -9,20 +9,21 @@ import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, NIVEAU_DES_POUVOIRS, coul
 import { prixDuCoach } from './partie.js';
 import { PACKS_JOUEURS, prixPackJoueurs, chancesJoueurs, marcheOuvert, placements, cleDe } from './gestion.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
+import { paquetHtml } from './ouverture.js';
 
 const PALIERS = ['', 'I', 'II', 'III'];
 const GAINS = `${JETONS.victoire} par victoire, ${JETONS.defaite} par défaite, ${JETONS.ronde} par ronde de séries gagnée`;
 
-/** Une carte de plan de jeu. */
-function carteJeu(id, { active = false, bouton = true } = {}) {
+/**
+ * UNE CARTE DE PLAN DE JEU, au format d'une carte (Cap 82-0 : *une carte de jeu a le format d'une carte de
+ * hockey*) : un carton 5:7 aux couleurs de sa rareté, son icône en grand, son nom, la couleur de son coach, ce
+ * qu'elle fait en mots (`dire`), jamais en cote.
+ */
+export function carteDeJeu(id) {
   const [ico, nom, rarete, eff] = CARTES[id];
   const co = couleurDe(id);
-  const corps = `<span class="jeu-ico">${ico}</span><span class="jeu-id"><b>${esc(nom)}</b>
-    <small>${RARETES[rarete]}${co ? ` · ${COACHS[co].ico} ${esc(COACHS[co].nom)}` : ''}</small>
-    <small>${dire(eff).map(esc).join(' · ')}</small></span>`;
-  return bouton
-    ? `<li><button class="carte-jeu rarete-${rarete}${active ? ' active' : ''}" data-carte="${id}">${corps}</button></li>`
-    : `<li class="carte-jeu rarete-${rarete}">${corps}</li>`;
+  return `<span class="cj cj-${rarete}"><span class="cj-rarete">${RARETES[rarete]}</span>${co ? `<span class="cj-coach" title="${esc(COACHS[co].nom)}">${COACHS[co].ico}</span>` : ''}
+    <span class="cj-ico">${ico}</span><span class="cj-nom">${esc(nom)}</span><span class="cj-texte">${dire(eff).map(esc).join(' · ')}</span><span class="cj-pied">Faille · plan de jeu</span></span>`;
 }
 
 
@@ -38,23 +39,23 @@ function packsDeJoueurs(P, joueurs) {
   const o = P.offrePack;
   let tire = '';
   if (o && joueurs) {
-    tire = `<h3>Dans le pack${o.pris ? ' · signé' : ''}</h3><ul class="liste-joueurs">${joueurs.map(c => {
+    tire = `<h3>Ton dernier pack${o.pris ? ' · signé' : ' · signe-en un'}</h3><ul class="liste-joueurs">${joueurs.map(c => {
       const places = o.pris ? '' : placements(P.eff, c).map(pl => {
         const qui = pl.place === 'titulaire' ? `${ROLES[c.r]}${pl.descend ? ` · ${esc(pl.descend.n)} au banc` : pl.sort ? ` · ${esc(pl.sort.n)} part` : ''}` : `Banc${pl.sort ? ` · ${esc(pl.sort.n)} part` : ''}`;
         return `<button data-pack-signer="${esc(cleDe(c.ref))}" data-place="${pl.place}">${qui}</button>`;
       }).join('') || '<small>Trop cher pour ton plafond : il va à ta collection.</small>';
       return `<li class="joueur agent">${vignette(c)}<span class="joueur-id"><b>${esc(c.n)}</b><small>${ROLES[c.r]} · ${esc(c.niveau)}</small><small>${esc(c.equipe)} · ${esc(c.split)}</small></span>${coutHtml(c.cout)}<span class="places">${places}</span></li>`;
-    }).join('')}</ul><p class="sous">Les trois entrent à ta collection. Tu en signes un, sans frais, avant la journée suivante.</p>`;
+    }).join('')}</ul><p class="sous">Les trois entrent à ta collection ; un se signe sans frais, avant la journée suivante.</p>`;
   }
   const packs = Object.entries(PACKS_JOUEURS).map(([id, p]) => {
     const prix = prixPackJoueurs(P.R, id);
-    const ch = chancesJoueurs(id).slice(0, 3).map(([n, k]) => `${n} : 1 pack sur ${k}`).join(' · ');
-    return `<li><button class="pack" data-pack-joueurs="${id}"${!ouvert || jetons < prix ? ' disabled' : ''}>
-      <span class="jeu-id"><b>${esc(p.nom)} · ${p.n} joueurs</b><small>${ch}</small></span><span class="prix">${prix} 🪙</span></button></li>`;
+    const [n, k] = chancesJoueurs(id)[0];
+    return `<li><button class="tuile-pack" data-pack-joueurs="${id}"${!ouvert || jetons < prix ? ' disabled' : ''}>
+      <span class="tuile-paquet">${paquetHtml(id, id === 'legendes' ? 'Légendes' : id, `${p.n} joueurs`)}</span><span class="prix">${prix} 🪙</span><small>${esc(n)} : 1 sur ${k}</small></button></li>`;
   }).join('');
-  return `<h3>Les packs de joueurs</h3>
-    <p class="sous">${ouvert ? 'Trois vrais joueurs de tous les splits, tirés par leur niveau : les vedettes sont rares. Jusqu\'à la date limite.' : 'La date limite est passée : les packs de joueurs reviennent au prochain split.'}</p>
-    ${tire}<ul class="cartes-jeu">${packs}</ul>`;
+  return `${tire}<h3>Les packs de joueurs</h3>
+    <ul class="paquets">${packs}</ul>
+    <p class="sous">${ouvert ? 'Trois vrais joueurs de tous les splits, tirés par leur niveau : les vedettes sont rares. Jusqu\'à la date limite.' : 'La date limite est passée : les packs de joueurs reviennent au prochain split.'}</p>`;
 }
 
 /**
@@ -84,7 +85,7 @@ export function vuePlanDeJeu(P, ouvertes) {
   // Avant la version 4, le coach s'achète ici ; depuis, il fait la run (sa carte est à l'Effectif).
   const ancienne = P.v < 4;
   const plan = R.cartes.length
-    ? `<ul class="cartes-jeu">${R.cartes.map(id => carteJeu(id, { active: R.plan.includes(id) })).join('')}</ul>`
+    ? `<ul class="main-cartes">${R.cartes.map(id => `<li><button class="cj-bouton${R.plan.includes(id) ? ' au-plan' : ''}" data-carte="${id}">${carteDeJeu(id)}</button></li>`).join('')}</ul>`
     : '<p class="sous">Aucune carte encore : ouvre un pack.</p>';
   const coachs = Object.entries(COACHS).map(([id, co]) => {
     const enPoste = R.coach && R.coach.id === id;
@@ -99,19 +100,19 @@ export function vuePlanDeJeu(P, ouvertes) {
   }).join('');
   const packs = Object.entries(PACKS).map(([id, p]) => {
     const prix = prixDuPack(R, id);
-    const ch = chances(id).filter(([r]) => r !== 'commune').map(([r, n]) => `${RARETES[r]} : 1 pack sur ${n}`).join(' · ');
-    return `<li><button class="pack" data-pack="${id}"${jetons < prix ? ' disabled' : ''}>
-      <span class="jeu-id"><b>${esc(p.nom)} · ${p.n} cartes</b><small>${ch}</small></span><span class="prix">${prix} 🪙</span></button></li>`;
+    const [r, n] = chances(id).filter(([x]) => x !== 'commune').pop();
+    return `<li><button class="tuile-pack" data-pack="${id}"${jetons < prix ? ' disabled' : ''}>
+      <span class="tuile-paquet">${paquetHtml(id, id, `${p.n} cartes`)}</span><span class="prix">${prix} 🪙</span><small>${RARETES[r]} : 1 sur ${n}</small></button></li>`;
   }).join('');
   return `<p class="etat">🪙 ${jetons} jetons — ${GAINS}</p>
-    ${ouvertes ? `<h3>Dans le pack</h3>${ouvertes.length ? `<ul class="cartes-jeu">${ouvertes.map(id => carteJeu(id, { bouton: false })).join('')}</ul>` : '<p class="sous">Tu as déjà toutes les cartes.</p>'}` : ''}
+    ${ouvertes && !ouvertes.length ? '<p class="sous">Tu as déjà toutes les cartes.</p>' : ''}
     <h3>Ton plan de jeu · ${R.plan.length}/${PLAN}</h3>
-    <p class="sous">Touche une carte pour la mettre au plan ou l'en retirer ; il joue toutes tes séries.</p>
     ${plan}
+    ${R.cartes.length ? '<p class="sous">Touche une carte : elle entre au plan, ou en sort ; il joue toutes tes séries.</p>' : ''}
     ${ancienne ? `<h3>Le coach</h3>
     <p class="sous">Un seul en poste. Sa confiance monte à chaque série jouée avec une carte de sa couleur au plan : palier I à 3, II à 6, III à 9 ; chaque palier ouvre un pouvoir, qui lit la partie au début de sa phase et la frappe quand sa condition tient.</p>
     <ul class="cartes-jeu">${coachs}</ul>` : ''}
     <h3>Les packs de cartes</h3>
-    <p class="sous">Des cartes de plan de jeu. Chaque pack hausse le prix du suivant ; une carte ne sort qu'une fois.</p>
-    <ul class="cartes-jeu">${packs}</ul>`;
+    <ul class="paquets">${packs}</ul>
+    <p class="sous">Chaque pack hausse le prix du suivant ; une carte ne sort qu'une fois.</p>`;
 }

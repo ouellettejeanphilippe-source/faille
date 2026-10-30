@@ -74,5 +74,10 @@ export function ecranRegles() {
     ${liste([
     ...Object.values(TROPHEES).map(([ico, nom, mot]) => `${ico} ${esc(nom)} : ${esc(mot)}.`),
     ...Object.values(GALONS).map(([ico, nom, mot]) => `${ico} ${esc(nom)}, un galon : ${esc(mot)}.`),
+  ])}
+    <h3>Les sources</h3>
+    ${liste([
+    'Les joueurs, les équipes, les parties : Leaguepedia (lol.fandom.com), CC BY-SA 3.0. Les champions et leurs illustrations : Data Dragon (Riot Games).',
+    'Faille n\'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.',
   ])}`;
 }

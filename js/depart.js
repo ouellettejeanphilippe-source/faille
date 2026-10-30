@@ -33,24 +33,26 @@ function refus(P, c) {
 export const rangee = (c, bouton = '', extra = '') => `<li class="joueur agent">${vignette(c)}<span class="joueur-id"><b>${esc(c.n)}</b><small>${ROLES[c.r]} · ${esc(c.niveau)}</small><small>${esc(c.equipe)} · ${esc(c.split)}</small>${extra}</span>${coutHtml(c.cout)}${bouton}</li>`;
 
 /**
- * LA CASE EN COURS : son loto en rangées, « Prendre » sur chacune (ou pourquoi
- * pas), et « Personne ». `c` : caseEnCours(P) ; `contrats` : Map(clé → contrat,
- * ou null) ; `vieux` : Map(clé → la version qui vieillit).
+ * LA CASE EN COURS : son loto en cartes qu'on balaie (Cap 82-0 : *les cartes à
+ * choisir se balaient en grand*), « Prendre » sous chacune (ou pourquoi pas),
+ * et « Personne ». `c` : caseEnCours(P) ; `contrats` : Map(clé → contrat, ou
+ * null) ; `vieux` : Map(clé → la version qui vieillit) ; `carteDe` : le carton
+ * d'un contrat (js/main.js).
  */
-export function ecranCase(P, c, contrats, vieux = new Map()) {
+export function ecranCase(P, c, contrats, vieux, carteDe) {
   const [ico, titre, phrase] = CASES[c.source];
   const n = casesDe(P).length;
   const lignes = c.loto.map(({ cle }) => {
     const x = contrats.get(cle) || null;
-    if (!x) return `<li class="joueur agent"><span class="joueur-id"><b>${esc(cle.split('|')[2])}</b><small>Introuvable : ses splits ont changé</small></span></li>`;
+    if (!x) return `<li class="loto-carte"><span class="cinq-case vide">${esc(cle.split('|')[2])} · introuvable</span></li>`;
     const v = vieux.get(cle);
     const non = refus(P, v || x);
     const age = v ? `<small class="vieillit">Vieillit : ${esc(v.split)} · ${esc(v.niveau)} · ${pts(v.cout)}</small>` : '';
-    return rangee(x, `<button class="signer" data-case-prendre="${esc(cle)}"${non ? ' disabled' : ''}>${non || 'Prendre'}</button>`, age);
+    return `<li class="loto-carte">${carteDe(x)}${age}<button class="signer" data-case-prendre="${esc(cle)}"${non ? ' disabled' : ''}>${non || `Prendre · ${pts((v || x).cout)}`}</button></li>`;
   }).join('');
   return `<h3>${ico} ${esc(titre)} · case ${c.k + 1} sur ${n}${c.niveau ? ` · ${esc(c.niveau)}` : ''}</h3>
     <p class="sous">${esc(phrase)}</p>
-    ${lignes ? `<ul class="liste-joueurs">${lignes}</ul>` : '<p class="sous">Rien à ce niveau ni en dessous : la case passe.</p>'}
+    ${lignes ? `<ul class="loto bande-cartes">${lignes}</ul>` : '<p class="sous">Rien à ce niveau ni en dessous : la case passe.</p>'}
     <div class="puces"><button class="puce" data-case-passer>${c.source === 'vedette' ? 'Sans lui' : 'Personne'}</button></div>`;
 }
 
@@ -59,13 +61,6 @@ export function avantLePack(P) {
   const l = libresDe(P.eff);
   return `<h3>🧰 Le pack de départ</h3>
     <p class="sous">Tes cases sont faites. Le pack comble ${l.map(r => ROLES[r]).join(', ')} de bouche-trous : des Remplaçants et de bas Réguliers de splits tirés au hasard. Chaque carte va à ton effectif et à ta collection.${P.fx.bouchetrous ? ' Des bouche-trous moins pires : ils sortent un cran plus haut.' : ''}</p>`;
-}
-
-/** LE PACK OUVERT : les bouche-trous qui viennent d'entrer. `contrats` : leurs contrats. */
-export function ecranPack(contrats) {
-  return `<h3>🧰 Le pack de départ · ${contrats.length} bouche-trou${contrats.length > 1 ? 's' : ''}</h3>
-    <p class="sous">Ils font le cinq avec tes cartes. Le marché, les packs de joueurs et les lotos d'un split à l'autre feront le reste.</p>
-    <ul class="liste-joueurs">${contrats.map(c => rangee(c)).join('')}</ul>`;
 }
 
 /** TON JOUEUR DE CONCESSION, au départ de la première run : trois étoiles, tu en prends une. `etoiles` : [{ cle, c }] (null : on cherche). */
