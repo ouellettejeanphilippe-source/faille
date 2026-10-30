@@ -37,14 +37,22 @@
   </header>
 
   <main>
-    <section id="titre" class="ecran"></section>
+    <section id="titre" class="ecran">
+      <div id="titre-corps" class="corps"></div>
+      <footer>
+        <p id="source"></p>
+        <p>Faille n'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.</p>
+      </footer>
+    </section>
 
     <section id="bati" class="ecran" hidden>
-      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous" id="bati-sous"></p><p id="bati-mandat" class="mandat"></p></div>
-      <ol id="alignement" class="alignement"></ol>
-      <p id="etat" class="etat"></p>
-      <!-- Au Rogue : la case en cours (son loto), puis le pack de départ (js/depart.js). -->
-      <div id="depart-cases"></div>
+      <div class="ecran-tete"><h1>Ton cinq</h1><p id="bati-mandat" class="mandat"></p></div>
+      <div class="corps">
+        <ol id="alignement" class="alignement serre"></ol>
+        <p id="etat" class="etat"></p>
+        <!-- Au Rogue : la case en cours (son loto), puis le pack de départ (js/depart.js). -->
+        <div id="depart-cases"></div>
+      </div>
       <div class="actionbar">
         <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg><span>Tourner la roulette</span></button>
         <button id="pack" class="go" hidden>🧰 Ouvrir le pack de départ</button>
@@ -56,8 +64,8 @@
     <section id="split" class="ecran" hidden>
       <div id="bande"></div>
       <nav class="sousnav" id="sousnav" hidden></nav>
-      <div id="vue"></div>
-      <div class="actionbar avec-nav">
+      <div id="vue" class="corps"></div>
+      <div class="actionbar">
         <button id="decision" class="go" hidden>Une décision t'attend</button>
         <button id="journee" class="go">Jouer ce soir</button>
         <button id="series" class="go" hidden>Lancer les séries</button>
@@ -92,6 +100,9 @@
     <section id="feuille" class="couche" hidden></section>
     <section id="direct" class="couche" hidden></section>
     <section id="carte" class="couche" hidden></section>
+    <!-- Un choix en plein écran (la Boîte n'a que ses lignes) ; l'ouverture d'un pack, par-dessus tout. -->
+    <section id="choix" class="couche feuille" hidden></section>
+    <section id="ouverture" class="couche ouverture" hidden></section>
   </main>
 
   <nav class="navbar" id="nav" hidden>
@@ -102,9 +113,5 @@
     <button class="navtab" data-section="ligue"><svg class="ico" aria-hidden="true"><use href="#i-ligue"/></svg><span class="navtab-lbl">Ligue</span></button>
   </nav>
   <p id="avis" class="avis" role="status" hidden></p>
-  <footer>
-    <p id="source"></p>
-    <p>Faille n'est pas approuvé par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés de Riot Games. Riot Games et toutes les propriétés associées sont des marques de commerce ou des marques déposées de Riot Games, Inc.</p>
-  </footer>
 </body>
 </html>

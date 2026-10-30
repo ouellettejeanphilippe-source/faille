@@ -96,7 +96,7 @@ export function ecranDepart(m, { etoiles = null, vedette = null } = {}) {
     : `<p class="sous">Trois ★ Étoiles de splits tirés au hasard : prends-en une. Elle ouvre chaque run, à sa place sous le plafond, et ne se change plus.</p>${choixDeVedette(etoiles)}`;
   const rogue = `<h3>Ton coach</h3>
     <p class="sous">Il fait la run au complet. Il gagne de l'expérience avec tes victoires — plus encore à sa couleur — et ouvre ses pouvoirs aux niveaux 1, 3 et 5 ; aux niveaux 2 et 4, un talent fait grandir celui que tu choisis.</p>
-    <ul class="coachs">${coachs}</ul>
+    <ul class="coachs bande-cartes">${coachs}</ul>
     <h3>★ Ton joueur de concession</h3>${concession}
     <h3>Tes déblocages</h3>${deb ? `<ul class="trophees">${deb}</ul>` : '<p class="sous">Aucun encore : tes médailles en achètent, au menu.</p>'}
     ${exig}`;
