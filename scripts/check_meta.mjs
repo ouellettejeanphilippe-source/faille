@@ -17,7 +17,7 @@
  *   node scripts/check_meta.mjs
  */
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
-import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, finitionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence, choisirVedette, vedetteDe, MODES, modeDe } from '../js/meta.js';
+import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, editionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence, choisirVedette, vedetteDe, MODES, modeDe } from '../js/meta.js';
 import { tirerEtoiles, cleDe } from '../js/gestion.js';
 import { hasard } from '../js/hasard.js';
 import { statsDuSplit, tropheesDuSplit, galonsDuSplit, recordsDuSplit, meneurs, MENEURS, GALONS } from '../js/palmares.js';
@@ -93,7 +93,7 @@ const fautesCol = [...attendues].filter(([c, n]) => !col.has(c) || col.get(c).co
 exiger('chaque carte passée chez toi est à la collection, une copie par partie', !fautesCol.length, fautesCol.slice(0, 3).map(([c]) => c).join(' · ') || `${col.size} cartes`);
 const signees = parties.every(P => [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).every(c => P.cartes.includes(`${c.ref.id}|${c.ref.e}|${c.ref.n}|${c.ref.r}`)));
 exiger('ton cinq de fin de run est à la collection', signees);
-exiger('la finition suit les copies', finitionDe(1) === 'Base' && finitionDe(2) === 'Argent' && finitionDe(4) === 'Or' && finitionDe(9) === 'Holo');
+exiger('l\'édition suit les copies', editionDe(1) === 'Base' && editionDe(2) === 'Cadre' && editionDe(4) === 'Hors-cadre' && editionDe(5) === 'Or' && editionDe(9) === 'Holo');
 const galonsSansCarte = parties.flatMap(P => P.run.passes.flatMap(p => p.galons)).filter(g => !col.has(g.cle));
 exiger('chaque galon nomme une carte de la collection', !galonsSansCarte.length, `${parties.flatMap(P => P.run.passes.flatMap(p => p.galons)).length} galons`);
 

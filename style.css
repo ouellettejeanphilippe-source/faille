@@ -30,6 +30,22 @@
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/BarlowCondensed-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/BarlowCondensed-800-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 800; font-display: swap; src: url("fonts/BarlowCondensed-800-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+/* ---- Les polices des séries de cartes (fonts/, OFL 1.1, fonts/POLICES.txt) : une voix par année, le latin seulement ---- */
+@font-face { font-family: "Playfair Display"; font-style: normal; font-weight: 700 900; font-display: swap; src: url("fonts/PlayfairDisplay-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Michroma"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Michroma-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Anton"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Anton-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Russo One"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/RussoOne-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Oswald"; font-style: normal; font-weight: 500 700; font-display: swap; src: url("fonts/Oswald-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Bebas Neue"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/BebasNeue-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Rajdhani"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/Rajdhani-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Orbitron"; font-style: normal; font-weight: 700 900; font-display: swap; src: url("fonts/Orbitron-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Exo 2"; font-style: italic; font-weight: 800 900; font-display: swap; src: url("fonts/Exo2-800i-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Graduate"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Graduate-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Teko"; font-style: normal; font-weight: 500 700; font-display: swap; src: url("fonts/Teko-500-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Kanit"; font-style: italic; font-weight: 900; font-display: swap; src: url("fonts/Kanit-900i-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Big Shoulders Display"; font-style: normal; font-weight: 700 900; font-display: swap; src: url("fonts/BigShouldersDisplay-700-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Archivo Black"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/ArchivoBlack-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Righteous"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Righteous-400-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
 /* ---- Les jetons ---- */
 :root {
@@ -59,10 +75,9 @@
   /* Les deux camps de la Faille, au direct. */
   --camp-bleu: #5aa2ff;
   --camp-rouge: #ff6b6b;
-  /* Les finitions d'une carte de ta collection. */
-  --fin-argent: #c4cbd4;
-  --fin-or: #ffd23a;
-  --fin-holo: linear-gradient(120deg, #9fe3ea, #c99bff 35%, #ffd23a 65%, #7cf0b0);
+  /* Les éditions d'une carte de ta collection (js/fiche.js) : l'or et le prisme de la holo. */
+  --ed-or: #ffd23a;
+  --ed-holo: linear-gradient(120deg, #9fe3ea, #c99bff 35%, #ffd23a 65%, #7cf0b0);
   /* Les raretés d'une carte de plan de jeu. */
   --peu-commune: #5fb760;
   --rare: #4f8fe0;
@@ -285,69 +300,269 @@ button:disabled { opacity: 0.45; cursor: default; }
 .signer:not(:disabled) { background: var(--fond-3); }
 
 /* =====================================================================
-   5. LA CARTE. La structure est la même pour toutes les époques ; chaque
-   époque (`ere-…`, js/fiche.js) ne change que ses variables et quelques
-   traits : ses couleurs sont celles du client de son temps, pas les jetons.
+   5. LA CARTE : UN CARTON 5:7, RECTO VERSO (js/fiche.js, repris du carton de
+   Cap 82-0). Tout se mesure en largeur de carte (cqw) : la même carte à toutes
+   les tailles. Les couches, du fond vers l'œil : le carton de la série (son
+   fond) ; l'illustration du champion (le fond de la fenêtre) ; le réfracteur du
+   Cadre ; la photo ; le décor de la série ; la lumière de l'Or et de la Holo ;
+   le métal de l'édition ; les mots. Chaque SÉRIE (cs-…, une par année) ne
+   change que ses variables, sa fenêtre, sa plaque, sa police et ses ornements.
    ===================================================================== */
-.carte {
-  --c-fond: #111; --c-bord: #333; --c-tete: #1b1b1b; --c-texte: #eee; --c-pale: #999; --c-accent: #c8aa6e;
-  --c-police: var(--corps); --c-rayon: var(--r-2);
-  width: 100%; max-width: 440px; margin: var(--esp-4) auto; background: var(--c-fond); color: var(--c-texte);
-  border: 2px solid var(--c-bord); border-radius: var(--c-rayon); overflow: hidden; font-family: var(--c-police); box-shadow: var(--ombre);
-}
-.carte-tete { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 64px; background: var(--c-tete); overflow: hidden; }
-.carte-tete::before { content: ""; position: absolute; inset: 0; background: var(--illus, none) center 20% / cover; opacity: .35; }
-.carte-tete > * { position: relative; }
-.carte-logo { width: 44px; height: 44px; object-fit: contain; }
-.carte-split { font-size: var(--t-2); color: var(--c-pale); }
-.carte-corps { display: flex; gap: 12px; padding: 12px; }
-.carte-photo { width: 120px; height: 140px; border: 1px solid var(--c-bord); border-radius: calc(var(--c-rayon) / 2); font-size: var(--t-6); }
-.carte-id { min-width: 0; }
-.carte-id h3 { margin: 0 0 4px; padding: 0; border: 0; font: 700 var(--t-5)/1.1 var(--c-police); letter-spacing: 0; text-transform: none; overflow-wrap: anywhere; color: var(--c-accent); }
-.carte-id p { margin: 0 0 6px; color: var(--c-pale); font-size: var(--t-2); }
-.carte-id p b { color: var(--c-texte); }
-.carte-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--c-bord); }
-.carte-stats div { padding: 6px 8px; border-right: 1px solid var(--c-bord); border-bottom: 1px solid var(--c-bord); }
-.carte-stats div:nth-child(3n) { border-right: 0; }
-.carte-stats dt { font-size: var(--t-1); color: var(--c-pale); text-transform: uppercase; letter-spacing: .05em; }
-.carte-stats dd { margin: 0; font-weight: 700; }
-.carte h4 { margin: 12px 12px 6px; font: 700 var(--t-1)/1.2 var(--c-police); text-transform: uppercase; letter-spacing: .08em; color: var(--c-pale); }
-.bassin { list-style: none; margin: 0; padding: 0 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
-.bassin li { display: grid; justify-items: center; text-align: center; gap: 2px; font-size: var(--t-1); min-width: 0; }
-.bassin img, .ico-vide { width: 44px; height: 44px; border-radius: 6px; border: 1px solid var(--c-bord, var(--filet)); background: var(--fond-3); }
-.bassin b { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bassin small { color: var(--c-pale); }
-.carte .signer-carte { width: calc(100% - 24px); margin: 14px 12px 12px; min-height: 52px; }
+@property --rx { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --ry { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --mx { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --my { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --lueur { syntax: '<number>'; inherits: true; initial-value: 0; }
 
-/* 2011-2013, le client d'origine : bleu acier, cadre argenté, reflets. */
-.ere-origine {
-  --c-fond: linear-gradient(#16263a, #0b1520); --c-bord: #8ea6bf; --c-tete: linear-gradient(#4a6d92, #1d324a 60%, #14263a);
-  --c-texte: #e8eef5; --c-pale: #a9bccf; --c-accent: #f2d58a; --c-police: Georgia, 'Times New Roman', serif; --c-rayon: 6px;
-  box-shadow: inset 0 0 0 1px #c8d6e4, 0 0 18px #4a6d9255;
-}
-.ere-origine .carte-id h3 { text-shadow: 0 1px 0 #000, 0 0 8px #f2d58a66; }
+/* ---- La fiche : le carton, sa plaque, « Signer » ---- */
+.fiche { width: 100%; max-width: 400px; margin: var(--esp-3) auto; }
+.fiche-faces { position: relative; aspect-ratio: 5 / 7; }
+.fiche-faces > .carton { position: absolute; inset: 0; }
+.fiche:not(.au-verso) .carton-verso, .fiche.au-verso .carton-recto { visibility: hidden; }
+.fiche-faces.tourne-1 { animation: cj-tourne-1 0.2s ease-in forwards; }
+.fiche-faces.tourne-2 { animation: cj-tourne-2 0.34s var(--e-ressort); }
+@keyframes cj-tourne-1 { to { transform: perspective(1100px) rotateY(90deg) scale(0.96); } }
+@keyframes cj-tourne-2 { from { transform: perspective(1100px) rotateY(-90deg) scale(0.96); } to { transform: perspective(1100px) rotateY(0deg) scale(1); } }
+.fiche-plaque { display: flex; align-items: center; gap: var(--esp-2); padding: var(--esp-2) 0; border-bottom: 1px solid var(--filet); }
+.fiche-badges { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.fiche .signer-carte { width: 100%; margin-top: var(--esp-3); min-height: 52px; }
 
-/* 2014-2016, le client des saisons 4 à 6 : bleu nuit, filet doré, coins taillés. */
-.ere-saison4 {
-  --c-fond: #0a1428; --c-bord: #d8b46a; --c-tete: linear-gradient(90deg, #0f2140, #1a3358); --c-texte: #e4e9f2; --c-pale: #8fa3bf; --c-accent: #d8b46a;
-  --c-rayon: 0; clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+/* ---- Le carton ---- */
+.carton {
+  --band: #243044; --vive: #5aa2ff; --ink: #fff; --fonce: #151b26;
+  --c-fond: #10151d; --c-encre: #f2f4f7; --c-encre-2: color-mix(in srgb, var(--c-encre) 70%, transparent); --c-police: var(--display); --c-accent: var(--vive);
+  --or-feuille: linear-gradient(100deg, #9a6b12 0%, #f3d27a 22%, #fff4c9 34%, #c89528 50%, #f7dd8c 68%, #a4761a 100%);
+  --metal: repeating-linear-gradient(90deg, color-mix(in srgb, white 17%, transparent) 0 0.25cqw, transparent 0.25cqw 0.7cqw), linear-gradient(calc(135deg + var(--ry, 0deg) * 3), #4f5c69 0%, #eef4f9 16%, #8796a6 32%, #fbfdff 48%, #4f5c69 66%, #eef4f9 84%, #4f5c69 100%);
+  position: relative; display: block; width: 100%; aspect-ratio: 5 / 7; container-type: inline-size;
+  isolation: isolate; overflow: hidden; border-radius: 4.5% / 3.2%;
+  background: var(--c-fond); color: var(--c-encre); font-family: var(--c-police); line-height: 1; text-align: left; cursor: pointer;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--encre) 24%, transparent), 0 1px 0 color-mix(in srgb, black 45%, transparent), 0 12px 16px -8px rgba(0, 0, 0, 0.7);
+  transition: --rx 0.65s var(--e-ressort), --ry 0.65s var(--e-ressort), --mx 0.5s ease, --my 0.5s ease, --lueur 0.45s ease, box-shadow 0.2s ease;
 }
-.ere-saison4 .carte-id h3 { letter-spacing: .06em; text-transform: uppercase; font-size: var(--t-4); }
+.carton > * { position: absolute; }
+/* Le fond de la fenêtre : l'illustration de son champion le plus joué (Data Dragon), sous la photo. */
+.carton-fond { z-index: 0; inset: 0 0 auto; height: 100cqw; background: var(--illus, none) center 25% / cover; opacity: 0.55; }
+.carton-fond::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--fonce) 20%, transparent), transparent 30%, color-mix(in srgb, var(--fonce) 85%, transparent)); }
+.carton-fini { inset: 0; z-index: 1; pointer-events: none; background: repeating-linear-gradient(115deg, transparent 0 1.4cqw, color-mix(in srgb, white 7%, transparent) 1.4cqw 1.7cqw), conic-gradient(from calc(var(--ry, 0deg) * 4) at var(--mx, 50%) var(--my, 50%), transparent, color-mix(in srgb, var(--vive) 16%, transparent), transparent 30%); }
+.carton-photo { z-index: 2; inset: 0 0 auto; height: 100cqw; overflow: hidden; display: grid; place-items: center; }
+.carton-photo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; filter: contrast(1.05) saturate(1.05); -webkit-mask-image: linear-gradient(black 70%, transparent 100%); mask-image: linear-gradient(black 70%, transparent 100%); }
+.carton-photo > img.absente { display: none; }
+.carton-initiales { font: 800 28cqw/1 var(--display); color: color-mix(in srgb, var(--ink) 28%, transparent); }
+.carton-photo:has(> img:not(.absente)) .carton-initiales, .carton-fond[style] ~ .carton-photo .carton-initiales { display: none; }
+.carton-deco { inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0.9cqw 0.5cqw -0.6cqw color-mix(in srgb, white 30%, transparent), inset 0 0 0 0.4cqw color-mix(in srgb, currentColor 22%, transparent); }
+.carton-deco::before, .carton-deco::after { content: ''; position: absolute; }
+.carton-orne { display: contents; }
+.carton-orne > i { position: absolute; z-index: 1; pointer-events: none; }
+.carton-orne > i::before, .carton-orne > i::after { content: ''; position: absolute; }
+/* La couche d'interface, la même dans toutes les séries : le rôle, le ruban du niveau, l'édition. */
+.carton-role { z-index: 5; top: 0; left: 0; display: grid; place-items: center; min-width: 14cqw; height: 11cqw; padding: 0 2.6cqw 0.6cqw; border-radius: 0 0 1.6cqw 0; background: var(--ink); color: var(--band); box-shadow: inset 0 0 0 0.42cqw var(--band); font: 800 5.2cqw/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.carton-niveau { z-index: 5; top: 12.4cqw; left: 0; padding: 1.3cqw 3.2cqw 1.3cqw 2.8cqw; white-space: nowrap; font: 800 3.8cqw/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - 1.8cqw) 50%, 100% 100%, 0 100%); background: var(--band); color: var(--ink); }
+.carton-niveau.etoile { background: linear-gradient(115deg, #b98a24, #fff0b3 30%, #c9961f 55%, #ffe48a 80%); color: #2a1d04; }
+.carton-niveau.phenomene { background: linear-gradient(115deg, #3a0c4d, #8c1f6e 45%, #b8235a 70%, #3a0c4d); color: #ffe39a; }
+.carton-edition { z-index: 5; top: 0; right: 0; display: flex; align-items: center; height: 11cqw; padding: 0 2.6cqw 0.5cqw; border-radius: 0 0 0 1.6cqw; background: color-mix(in srgb, var(--fonce) 75%, black); color: var(--ink); box-shadow: inset 0 0 0 0.4cqw color-mix(in srgb, var(--ink) 55%, transparent); font: 800 3.4cqw/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; }
+.ed-base .carton-edition { display: none; }
+/* La plaque du nom, le logo, les champions, les petits caractères : chaque série les place. */
+.carton-nom { z-index: 4; left: 5cqw; right: 29cqw; top: 103cqw; height: 20cqw; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.carton-nom .nom { display: block; font-size: min(11cqw, calc(66cqw / var(--n, 8) * 1.6)); font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; overflow: hidden; color: var(--c-accent); }
+.carton-nom .equipe { display: block; margin-top: 1.2cqw; font-size: 3.4cqw; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
+.carton-logo { z-index: 4; right: 5cqw; top: 103cqw; width: 20cqw; height: 20cqw; display: grid; place-items: center; }
+.carton-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.5)); }
+.carton-logo img.absente { display: none; }
+.carton-champs { z-index: 4; left: 5cqw; top: 125cqw; display: flex; gap: 1.6cqw; }
+.carton-champs .ico-champ { width: 9cqw; height: 9cqw; border-radius: 1.2cqw; border: 0.4cqw solid color-mix(in srgb, var(--c-encre) 30%, transparent); background: var(--fonce); object-fit: cover; font: 800 3cqw/9cqw var(--display); text-align: center; display: inline-block; }
+.carton-imprime { z-index: 4; right: 5cqw; bottom: 3.6cqw; display: flex; gap: 2cqw; align-items: baseline; font-size: 2.8cqw; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; opacity: 0.72; }
+.carton-imprime b { font-weight: 800; letter-spacing: 0.06em; }
+.carton-tirage { z-index: 5; right: 5cqw; bottom: 8.4cqw; padding: 0.8cqw 1.6cqw; border: 0.3cqw solid currentColor; font-size: 3cqw; font-weight: 800; letter-spacing: 0.1em; }
+/* Le vernis : une bande de lumière en biais ; le reflet qui suit la main sur la carte qu'on penche. */
+.carton::after { content: ''; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: inherit; background: linear-gradient(122deg, color-mix(in srgb, white 30%, transparent) 0%, transparent 22% 58%, color-mix(in srgb, white 10%, transparent) 66%, transparent 78%); mix-blend-mode: soft-light; }
+.carton:is(.incline, .relache)::after { background: radial-gradient(farthest-corner circle at var(--mx) var(--my), rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 24%, transparent 56%); opacity: var(--lueur); }
+.carton.incline { transition-duration: 0.08s, 0.08s, 0.08s, 0.08s, 0.2s, 0.2s; box-shadow: inset 0 1px 0 color-mix(in srgb, white 24%, transparent), 0 18px 26px -8px rgba(0, 0, 0, 0.62); }
+.carton:is(.incline, .relache) { transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)); }
+@media (prefers-reduced-motion: reduce) { .carton { transition: none; } .fiche-faces.tourne-1, .fiche-faces.tourne-2 { animation: none; } }
 
-/* 2017-2022, le client hextech : noir bleuté, or et cyan, losanges. */
-.ere-hextech {
-  --c-fond: #010a13; --c-bord: #785a28; --c-tete: linear-gradient(#0a1a24, #010a13); --c-texte: #f0e6d2; --c-pale: #a09b8c; --c-accent: #c8aa6e;
-  --c-rayon: 2px; box-shadow: inset 0 0 0 3px #010a13, inset 0 0 0 4px #463714;
-}
-.ere-hextech .carte-id h3 { background: linear-gradient(#f0e6d2, #c8aa6e); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .04em; text-transform: uppercase; }
-.ere-hextech h4::before, .ere-hextech h4::after { content: " ◆ "; color: #0ac8b9; }
-.ere-hextech .signer-carte:not(:disabled) { background: #1e2328; color: #cdbe91; border: 2px solid #c8aa6e; box-shadow: none; }
+/* ---- Le verso : le même carton, sans photo ; ce qu'il porte défile en dedans s'il déborde ---- */
+.carton-verso { background: var(--v-fond, var(--c-fond)); }
+.verso-corps { position: absolute; inset: 5cqw; z-index: 4; overflow: auto; scrollbar-width: none; display: grid; align-content: start; gap: 2.4cqw; font: 400 3.5cqw/1.35 var(--corps); color: var(--c-encre); }
+.verso-corps::-webkit-scrollbar { display: none; }
+.verso-tete { display: grid; gap: 0.6cqw; padding-bottom: 2cqw; border-bottom: 0.3cqw solid color-mix(in srgb, currentColor 30%, transparent); }
+.verso-tete b { font: 800 8cqw/1 var(--c-police); letter-spacing: 0.02em; text-transform: uppercase; color: var(--c-accent); overflow-wrap: anywhere; }
+.verso-tete small { font-size: 3.2cqw; color: var(--c-encre-2); }
+.verso-no { font: 700 3cqw/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.7; }
+.verso-stats { width: 100%; border-collapse: collapse; font-size: 3.5cqw; }
+.verso-stats th { text-align: left; font-weight: 400; color: var(--c-encre-2); padding: 0.9cqw 0; border-bottom: 0.2cqw solid color-mix(in srgb, currentColor 14%, transparent); }
+.verso-stats td { text-align: right; font: 800 4cqw/1 var(--display); font-variant-numeric: tabular-nums; padding: 0.9cqw 0; border-bottom: 0.2cqw solid color-mix(in srgb, currentColor 14%, transparent); }
+.verso-corps h4 { margin: 1cqw 0 0; font: 700 3cqw/1.2 var(--c-police); text-transform: uppercase; letter-spacing: 0.14em; color: var(--c-encre-2); }
+.bassin { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6cqw; }
+.bassin li { display: grid; justify-items: center; text-align: center; gap: 0.6cqw; font-size: 2.8cqw; min-width: 0; }
+.bassin img, .ico-vide { width: 12cqw; height: 12cqw; border-radius: 1.4cqw; border: 0.3cqw solid color-mix(in srgb, currentColor 25%, transparent); background: var(--fonce); }
+.bassin b { font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bassin small { color: var(--c-encre-2); }
+.verso-chez-toi { margin: 0; padding: 1.6cqw 2cqw; border-left: 0.6cqw solid var(--c-accent); font-size: 3.3cqw; }
+.verso-galons { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8cqw; font-size: 3.2cqw; color: var(--c-encre-2); }
+.verso-galons b { color: var(--c-encre); }
+.verso-edition { margin: 0; font: 700 3cqw/1.3 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-accent); }
+.verso-pied { display: flex; justify-content: space-between; gap: 2cqw; margin-top: auto; padding-top: 2cqw; border-top: 0.3cqw solid color-mix(in srgb, currentColor 30%, transparent); font-size: 2.6cqw; color: var(--c-encre-2); }
 
-/* 2023 →, les sites de l'esport : noir, blanc, gros caractères. */
-.ere-esport { --c-fond: #000; --c-bord: #2b2b2b; --c-tete: #000; --c-texte: #fff; --c-pale: #8a8a8a; --c-accent: #fff; --c-rayon: 4px; }
-.ere-esport .carte-id h3 { font-size: var(--t-6); font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; }
-.ere-esport .carte-tete::before { opacity: .55; }
-.ere-esport .carte-stats dd { font-size: var(--t-4); }
+/* ---- LES ÉDITIONS (js/meta.js EDITIONS) : chacune garde ce que la précédente avait ---- */
+/* Le Cadre : le réfracteur sur le carton, et un cadre de métal brossé tout autour. */
+.carton-cadre { inset: 0; z-index: 5; pointer-events: none; padding: 2.6cqw; border-radius: inherit; background: var(--metal); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; box-shadow: inset 0 0 0 0.3cqw rgba(0, 0, 0, 0.5); }
+/* Le Hors-cadre : la photo sort de sa fenêtre et prend toute la carte ; les mots passent par-dessus, ombrés. */
+:is(.ed-hors, .ed-or, .ed-holo) :is(.carton-fond, .carton-photo) { inset: 0; height: auto; }
+:is(.ed-hors, .ed-or, .ed-holo) .carton-photo > img { -webkit-mask-image: linear-gradient(black 60%, transparent 96%); mask-image: linear-gradient(black 60%, transparent 96%); }
+:is(.ed-hors, .ed-or, .ed-holo) :is(.carton-nom, .carton-imprime, .carton-champs) { text-shadow: 0 0.3cqw 1cqw rgba(0, 0, 0, 0.85); }
+/* L'Or : le cadre et le nom en feuille d'or, la lumière dorée qui suit la main. */
+.ed-or { --metal: var(--or-feuille); }
+.ed-or .carton-nom .nom, .ed-or .verso-tete b { background: var(--or-feuille); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.carton-lueur { inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(60% 50% at var(--mx, 50%) var(--my, 30%), color-mix(in srgb, #ffd23a 28%, transparent), transparent 70%); mix-blend-mode: screen; }
+/* La Holo : le prisme qui tourne avec la main, l'arc-en-ciel qui balaie la carte, le tirage numéroté. */
+.ed-holo { --metal: conic-gradient(from calc(var(--ry, 0deg) * 6 + 20deg), #9fe3ea, #c99bff, #ffd23a, #7cf0b0, #ff8fb1, #9fe3ea); }
+.ed-holo .carton-lueur { background: linear-gradient(calc(110deg + var(--ry, 0deg) * 4), transparent 20%, color-mix(in srgb, #9fe3ea 30%, transparent) 35%, color-mix(in srgb, #c99bff 30%, transparent) 45%, color-mix(in srgb, #ffd23a 30%, transparent) 55%, color-mix(in srgb, #7cf0b0 30%, transparent) 65%, transparent 80%); mix-blend-mode: screen; }
+.ed-holo .carton-nom .nom, .ed-holo .verso-tete b { background: var(--ed-holo); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* =====================================================================
+   LES SÉRIES : une par année, 2011 → 2025 (js/fiche.js SERIES). Chacune
+   s'inspire du client et des sites de l'esport de son année, sans en copier
+   ni police, ni logo, ni élément. Sa police est en tête de feuille.
+   ===================================================================== */
+/* 2011 · PIONNIER — le parchemin et l'acier bleu du premier client : un carton crème, la fenêtre sous une arche, le nom en didone, un filet d'argent. */
+.cs-pionnier { --c-fond: linear-gradient(170deg, #f1e7cf, #dccaa3); --c-encre: #2a2117; --c-encre-2: #6b5a3e; --c-accent: #1f3a5a; --c-police: "Playfair Display", Georgia, serif; }
+.cs-pionnier .carton-photo { inset: 6cqw 6cqw auto; height: 92cqw; border-radius: 40cqw 40cqw 1cqw 1cqw; background: linear-gradient(#4a6d92, #1d324a); }
+.cs-pionnier .carton-fond { inset: 6cqw 6cqw auto; height: 92cqw; border-radius: 40cqw 40cqw 1cqw 1cqw; }
+.cs-pionnier .carton-orne > i:nth-child(1) { inset: 5cqw 5cqw auto; height: 94cqw; border-radius: 41cqw 41cqw 1.4cqw 1.4cqw; box-shadow: 0 0 0 1cqw #8ea6bf, 0 0 0 1.6cqw #2a2117; }
+.cs-pionnier .carton-nom .nom { font-weight: 700; text-transform: none; letter-spacing: 0; }
+.cs-pionnier .carton-nom .equipe { color: var(--c-encre-2); }
+.cs-pionnier .carton-imprime { font-family: var(--display); }
+.cs-pionnier .carton-deco::before { left: 5cqw; right: 5cqw; top: 100.5cqw; height: 0.4cqw; background: #8ea6bf; }
+.fiche.cs-pionnier .carton-verso { --v-fond: linear-gradient(170deg, #f4ecd8, #e3d3b0); }
+
+/* 2012 · ACIER — des plaques d'acier rivetées, la fenêtre à pans coupés, le nom en capitales techno sur une barre sombre. */
+.cs-acier { --c-fond: linear-gradient(100deg, #7d868e, #d9dee2 16%, #959ea6 30%, #f1f3f5 47%, #88919a 63%, #cfd5da 80%, #7f8890); --c-encre: #20262c; --c-encre-2: #47515a; --c-accent: #e6ecf1; --c-police: "Michroma", var(--display); }
+.cs-acier .carton-photo, .cs-acier .carton-fond { inset: 6cqw 6cqw auto; height: 92cqw; clip-path: polygon(4cqw 0, calc(100% - 4cqw) 0, 100% 4cqw, 100% calc(100% - 4cqw), calc(100% - 4cqw) 100%, 4cqw 100%, 0 calc(100% - 4cqw), 0 4cqw); background: linear-gradient(#2a3138, #0d1014); }
+.cs-acier .carton-orne > i:nth-child(1) { inset: 0; background: radial-gradient(circle, #fff 0 0.22cqw, #59616a 0.7cqw, transparent 0.9cqw) 2.2cqw 2.2cqw / 10cqw 10cqw repeat; opacity: 0.6; -webkit-mask: linear-gradient(#000, #000) padding-box, linear-gradient(#000, #000); -webkit-mask-composite: xor; mask: linear-gradient(#000, #000) padding-box, linear-gradient(#000, #000); mask-composite: exclude; padding: 4.5cqw; }
+.cs-acier .carton-nom { left: 5cqw; right: 28cqw; top: 102cqw; height: 21cqw; padding: 0 3cqw; border-radius: 1cqw; background: linear-gradient(#434b53, #1b2025); box-shadow: inset 0 0.4cqw 0 rgba(255, 255, 255, 0.2), 0 0 0 0.5cqw #59626a; }
+.cs-acier .carton-nom .nom { font-weight: 400; letter-spacing: 0; font-size: min(8cqw, calc(60cqw / var(--n, 8) * 1.7)); }
+.cs-acier .carton-nom .equipe { color: color-mix(in srgb, var(--vive) 65%, white); opacity: 1; }
+.cs-acier .carton-imprime { font-family: "Michroma", sans-serif; font-weight: 400; letter-spacing: 0.3em; font-size: 2.2cqw; opacity: 1; }
+.fiche.cs-acier .carton-verso { --v-fond: linear-gradient(100deg, #959ea6, #dfe3e7 30%, #a7afb6 60%, #d5dade); --c-accent: #0f4c75; }
+
+/* 2013 · FLEUVE — le bleu profond du fleuve, un filet doré, la fenêtre pleine largeur qui fond dans l'eau, le nom condensé et lourd. */
+.cs-fleuve { --c-fond: linear-gradient(180deg, #0b1d33, #071525 60%, #04101c); --c-encre: #e8eef5; --c-encre-2: #a9bccf; --c-accent: #f2d58a; --c-police: "Anton", var(--display); }
+.cs-fleuve .carton-photo > img { -webkit-mask-image: linear-gradient(black 55%, transparent 100%); mask-image: linear-gradient(black 55%, transparent 100%); }
+.cs-fleuve .carton-orne > i:nth-child(1) { left: 0; right: 0; top: 98cqw; height: 0.6cqw; background: linear-gradient(90deg, transparent, #f2d58a, transparent); }
+.cs-fleuve .carton-orne > i:nth-child(2) { left: 0; right: 0; top: 96cqw; height: 20cqw; background: repeating-linear-gradient(180deg, color-mix(in srgb, #5aa2ff 10%, transparent) 0 0.4cqw, transparent 0.4cqw 2.2cqw); opacity: 0.6; }
+.cs-fleuve .carton-nom .nom { font-weight: 400; letter-spacing: 0.04em; font-size: min(13cqw, calc(66cqw / var(--n, 8) * 1.9)); }
+.fiche.cs-fleuve .carton-verso { --v-fond: linear-gradient(180deg, #0d2238, #06121f); }
+
+/* 2014 · NUIT — le bleu nuit aux coins taillés, un cadre d'or fin, la plaque du nom en biseau. */
+.cs-nuit { --c-fond: #0a1428; --c-encre: #e4e9f2; --c-encre-2: #8fa3bf; --c-accent: #d8b46a; --c-police: "Russo One", var(--display); border-radius: 0; clip-path: polygon(6cqw 0, 100% 0, 100% calc(100% - 6cqw), calc(100% - 6cqw) 100%, 0 100%, 0 6cqw); }
+.cs-nuit .carton-photo, .cs-nuit .carton-fond { inset: 4cqw 4cqw auto; height: 94cqw; clip-path: polygon(5cqw 0, 100% 0, 100% calc(100% - 5cqw), calc(100% - 5cqw) 100%, 0 100%, 0 5cqw); }
+.cs-nuit .carton-orne > i:nth-child(1) { inset: 2.6cqw; border: 0.5cqw solid #d8b46a; clip-path: polygon(5cqw 0, 100% 0, 100% calc(100% - 5cqw), calc(100% - 5cqw) 100%, 0 100%, 0 5cqw); opacity: 0.8; }
+.cs-nuit .carton-nom { padding-left: 3cqw; border-left: 0.8cqw solid #d8b46a; }
+.cs-nuit .carton-nom .nom { font-weight: 400; letter-spacing: 0.03em; }
+.fiche.cs-nuit .carton-verso { --v-fond: linear-gradient(#0f2140, #0a1428); }
+
+/* 2015 · FILET D'OR — le marine du client, deux rails d'or qui encadrent la fenêtre, le nom en condensée sobre et un logo dans un médaillon. */
+.cs-filet { --c-fond: linear-gradient(#0f2140, #09162b); --c-encre: #e4e9f2; --c-encre-2: #8fa3bf; --c-accent: #e9c982; --c-police: "Oswald", var(--display); }
+.cs-filet .carton-photo, .cs-filet .carton-fond { inset: 7cqw 7cqw auto; height: 90cqw; }
+.cs-filet .carton-orne > i:nth-child(1) { inset: 5.6cqw 5.6cqw auto; height: 92.8cqw; box-shadow: inset 0 0 0 0.5cqw #c8aa6e, inset 0 0 0 1.2cqw #09162b, inset 0 0 0 1.6cqw #785a28; }
+.cs-filet .carton-logo { border-radius: 50%; background: radial-gradient(circle, #1a3358, #0a1428 70%); box-shadow: 0 0 0 0.5cqw #c8aa6e; padding: 3cqw; }
+.cs-filet .carton-nom .nom { font-weight: 700; letter-spacing: 0.02em; }
+.fiche.cs-filet .carton-verso { --v-fond: linear-gradient(#10224a, #09162b); }
+
+/* 2016 · CRISTAL — le cristal à facettes : la fenêtre taillée en pointe, des reflets cyan, le nom en capitales serrées. */
+.cs-cristal { --c-fond: linear-gradient(160deg, #0b1a24, #06111a 60%, #04090f); --c-encre: #e6f6fb; --c-encre-2: #8fb8c9; --c-accent: #7df3ff; --c-police: "Bebas Neue", var(--display); }
+.cs-cristal .carton-photo, .cs-cristal .carton-fond { inset: 0 0 auto; height: 108cqw; clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); }
+.cs-cristal .carton-orne > i:nth-child(1) { inset: 0 0 auto; height: 108cqw; background: linear-gradient(115deg, transparent 40%, color-mix(in srgb, #7df3ff 14%, transparent) 50%, transparent 60%), linear-gradient(245deg, transparent 55%, color-mix(in srgb, white 8%, transparent) 65%, transparent 75%); z-index: 3; }
+.cs-cristal .carton-deco::before { left: 0; right: 0; top: 92.5cqw; height: 16cqw; clip-path: polygon(0 0, 100% 0, 50% 100%); background: transparent; box-shadow: inset 0 0 0 0.5cqw #7df3ff; opacity: 0.7; }
+.cs-cristal .carton-nom { top: 108cqw; height: 17cqw; }
+.cs-cristal .carton-nom .nom { font-weight: 400; letter-spacing: 0.06em; font-size: min(13cqw, calc(66cqw / var(--n, 8) * 2)); }
+.cs-cristal .carton-logo { top: 106cqw; }
+.cs-cristal .carton-champs { top: 126cqw; }
+.fiche.cs-cristal .carton-verso { --v-fond: linear-gradient(160deg, #0d2130, #06111a); }
+
+/* 2017 · LOSANGE — le noir bleuté, l'or et le cyan, des losanges aux coins et sur la plaque. */
+.cs-losange { --c-fond: #010a13; --c-encre: #f0e6d2; --c-encre-2: #a09b8c; --c-accent: #c8aa6e; --c-police: "Rajdhani", var(--display); box-shadow: inset 0 0 0 3px #010a13, inset 0 0 0 4px #463714; }
+.cs-losange .carton-photo, .cs-losange .carton-fond { inset: 5cqw 5cqw auto; height: 95cqw; }
+.cs-losange .carton-orne > i:nth-child(1) { inset: 3.6cqw 3.6cqw auto; height: 97.8cqw; box-shadow: inset 0 0 0 0.4cqw #785a28; }
+.cs-losange .carton-orne > i:nth-child(1)::before, .cs-losange .carton-orne > i:nth-child(1)::after { width: 4cqw; height: 4cqw; background: #0ac8b9; transform: rotate(45deg); left: -2cqw; top: -2cqw; box-shadow: 0 0 0 0.5cqw #010a13, 0 0 0 0.9cqw #c8aa6e; }
+.cs-losange .carton-orne > i:nth-child(1)::after { left: auto; right: -2cqw; }
+.cs-losange .carton-nom .nom { font-weight: 700; letter-spacing: 0.04em; background: linear-gradient(#f0e6d2, #c8aa6e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cs-losange .carton-imprime::before { content: '◆'; color: #0ac8b9; }
+.fiche.cs-losange .carton-verso { --v-fond: linear-gradient(#0a1a24, #010a13); }
+
+/* 2018 · PRISME — un noir profond et une arête de prisme qui décompose la lumière le long du bord, le nom en géométrique. */
+.cs-prisme { --c-fond: radial-gradient(120% 80% at 50% 30%, #141a24, #05070a 75%); --c-encre: #f4f6fa; --c-encre-2: #9aa5b5; --c-accent: #fff; --c-police: "Orbitron", var(--display); }
+.cs-prisme .carton-orne > i:nth-child(1) { inset: 0; padding: 1.8cqw; background: linear-gradient(calc(160deg + var(--ry, 0deg) * 3), #ff5f6d, #ffc371, #f9f871, #6bf1a8, #5ec8ff, #9b7bff, #ff6fd8); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; z-index: 3; opacity: 0.85; }
+.cs-prisme .carton-photo, .cs-prisme .carton-fond { inset: 0 0 auto; height: 104cqw; }
+.cs-prisme .carton-nom { top: 105cqw; }
+.cs-prisme .carton-nom .nom { font-weight: 700; letter-spacing: 0.02em; font-size: min(9.5cqw, calc(64cqw / var(--n, 8) * 1.6)); }
+.cs-prisme .carton-logo { top: 105cqw; }
+.fiche.cs-prisme .carton-verso { --v-fond: radial-gradient(120% 80% at 50% 0%, #161d28, #05070a 75%); }
+
+/* 2019 · NÉON — l'aréna la nuit : un noir d'écran, un tube de néon à la couleur de l'équipe sous la fenêtre, le nom en italique grasse. */
+.cs-neon { --c-fond: linear-gradient(#121014, #08070a); --c-encre: #fff; --c-encre-2: #a7a3ad; --c-accent: color-mix(in srgb, var(--vive) 72%, #fff); --c-police: "Exo 2", var(--display); }
+.cs-neon .carton-photo, .cs-neon .carton-fond { inset: 0 0 auto; height: 102cqw; }
+.cs-neon .carton-orne > i:nth-child(1) { left: 6cqw; right: 6cqw; top: 101cqw; height: 0.8cqw; border-radius: 1cqw; background: var(--c-accent); box-shadow: 0 0 1.5cqw var(--c-accent), 0 0 5cqw color-mix(in srgb, var(--vive) 60%, transparent), 0 0 12cqw color-mix(in srgb, var(--vive) 35%, transparent); z-index: 3; }
+.cs-neon .carton-nom .nom { font-style: italic; font-weight: 800; letter-spacing: 0; text-shadow: 0 0 2cqw color-mix(in srgb, var(--vive) 60%, transparent); }
+.cs-neon .carton-nom .equipe { font-style: italic; }
+.fiche.cs-neon .carton-verso { --v-fond: radial-gradient(70% 50% at 50% 0%, color-mix(in srgb, var(--vive) 22%, transparent), transparent 70%), linear-gradient(#121014, #08070a); }
+
+/* 2020 · ÉCLIPSE — l'année à huis clos : un noir mat, un anneau de lumière derrière le joueur, le nom en lettres de collège. */
+.cs-eclipse { --c-fond: #060607; --c-encre: #f2f2f2; --c-encre-2: #8d8d93; --c-accent: #f6c76b; --c-police: "Graduate", var(--display); }
+.cs-eclipse .carton-photo, .cs-eclipse .carton-fond { inset: 8cqw 10cqw auto; height: 80cqw; border-radius: 50%; }
+.cs-eclipse .carton-fond { opacity: 0.4; }
+.cs-eclipse .carton-orne > i:nth-child(1) { inset: 6cqw 8cqw auto; height: 84cqw; border-radius: 50%; box-shadow: 0 0 0 0.6cqw #f6c76b, 0 0 4cqw #f6c76b66, inset 0 0 6cqw #f6c76b33; }
+.cs-eclipse .carton-nom { text-align: center; align-items: center; left: 5cqw; right: 5cqw; top: 100cqw; height: 18cqw; }
+.cs-eclipse .carton-nom .nom { font-weight: 400; letter-spacing: 0.1em; font-size: min(9cqw, calc(80cqw / var(--n, 8) * 1.4)); }
+.cs-eclipse .carton-logo { top: 119cqw; right: 5cqw; width: 14cqw; height: 14cqw; }
+.cs-eclipse .carton-champs { top: 121cqw; }
+.fiche.cs-eclipse .carton-verso { --v-fond: radial-gradient(60% 40% at 50% 0%, #1c1912, #060607 80%); }
+
+/* 2021 · SPECTRE — le violet sombre et des bandes spectrales, la fenêtre haute, le nom en condensée longue. */
+.cs-spectre { --c-fond: linear-gradient(170deg, #160f26, #0a0714 70%); --c-encre: #efe9fb; --c-encre-2: #a497c2; --c-accent: #c99bff; --c-police: "Teko", var(--display); }
+.cs-spectre .carton-photo, .cs-spectre .carton-fond { inset: 0 0 auto; height: 104cqw; }
+.cs-spectre .carton-orne > i:nth-child(1) { inset: 0 0 auto; height: 104cqw; background: repeating-linear-gradient(90deg, transparent 0 11cqw, color-mix(in srgb, #c99bff 10%, transparent) 11cqw 12cqw); z-index: 3; -webkit-mask: linear-gradient(transparent 40%, black 100%); mask: linear-gradient(transparent 40%, black 100%); }
+.cs-spectre .carton-nom { top: 103cqw; }
+.cs-spectre .carton-nom .nom { font-weight: 700; letter-spacing: 0.04em; font-size: min(14cqw, calc(66cqw / var(--n, 8) * 2.1)); }
+.fiche.cs-spectre .carton-verso { --v-fond: linear-gradient(170deg, #1a1230, #0a0714 70%); }
+
+/* 2022 · RUPTURE — le carton fendu en diagonale : la fenêtre en biais, la plaque qui coupe, le nom en italique noire. */
+.cs-rupture { --c-fond: linear-gradient(#1a1b1f, #0b0c0f); --c-encre: #f4f4f4; --c-encre-2: #9b9ea6; --c-accent: var(--vive); --c-police: "Kanit", var(--display); }
+.cs-rupture .carton-photo, .cs-rupture .carton-fond { inset: 0 0 auto; height: 110cqw; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%); }
+.cs-rupture .carton-orne > i:nth-child(1) { left: -10cqw; right: -10cqw; top: 97cqw; height: 2cqw; background: var(--vive); transform: rotate(-11deg); z-index: 3; box-shadow: 0 0 3cqw color-mix(in srgb, var(--vive) 60%, transparent); }
+.cs-rupture .carton-nom { top: 108cqw; }
+.cs-rupture .carton-nom .nom { font-style: italic; font-weight: 900; letter-spacing: -0.01em; font-size: min(10cqw, calc(62cqw / var(--n, 8) * 1.4)); padding-right: 1cqw; }
+.cs-rupture .carton-logo { top: 104cqw; }
+.fiche.cs-rupture .carton-verso { --v-fond: linear-gradient(#1a1b1f, #0b0c0f); }
+
+/* 2023 · MONDIAL — le site de l'esport : du blanc, du noir, une bande du club, le nom en très gros, la photo détourée en bas. */
+.cs-mondial { --c-fond: #f5f5f3; --c-encre: #111; --c-encre-2: #5c5c5c; --c-accent: #111; --c-police: "Big Shoulders Display", var(--display); }
+.cs-mondial .carton-photo, .cs-mondial .carton-fond { inset: 0 0 auto; height: 100cqw; }
+.cs-mondial .carton-fond { opacity: 0.9; }
+.cs-mondial .carton-orne > i:nth-child(1) { left: 0; right: 0; top: 100cqw; height: 3cqw; background: var(--band); z-index: 3; }
+.cs-mondial .carton-nom { top: 104cqw; right: 26cqw; }
+.cs-mondial .carton-nom .nom { font-weight: 900; letter-spacing: -0.01em; font-size: min(14cqw, calc(66cqw / var(--n, 8) * 1.9)); }
+.cs-mondial .carton-role { background: #111; color: #fff; box-shadow: none; }
+.cs-mondial .carton-imprime { opacity: 1; color: #5c5c5c; }
+.fiche.cs-mondial .carton-verso { --v-fond: #f5f5f3; }
+
+/* 2024 · MONOCHROME — le noir, le blanc, la photo en pleine hauteur et le nom immense ; la couleur de l'équipe sur un seul trait. */
+.cs-monochrome { --c-fond: #000; --c-encre: #fff; --c-encre-2: #8a8a8a; --c-accent: #fff; --c-police: "Archivo Black", var(--display); border-radius: 2% / 1.4%; }
+.cs-monochrome .carton-photo, .cs-monochrome .carton-fond { inset: 0; height: auto; }
+.cs-monochrome .carton-fond { filter: grayscale(1); opacity: 0.5; }
+.cs-monochrome .carton-photo > img { filter: grayscale(0.2) contrast(1.1); -webkit-mask-image: linear-gradient(black 50%, transparent 95%); mask-image: linear-gradient(black 50%, transparent 95%); }
+.cs-monochrome .carton-orne > i:nth-child(1) { left: 5cqw; width: 1.2cqw; top: 100cqw; height: 24cqw; background: var(--vive); z-index: 3; }
+.cs-monochrome .carton-nom { left: 9cqw; top: 100cqw; height: 24cqw; right: 26cqw; }
+.cs-monochrome .carton-nom .nom { font-weight: 400; letter-spacing: -0.02em; font-size: min(12cqw, calc(62cqw / var(--n, 8) * 1.9)); }
+.cs-monochrome .carton-role { background: #fff; color: #000; box-shadow: none; }
+.fiche.cs-monochrome .carton-verso { --v-fond: #000; }
+
+/* 2025 · AURORE — une aurore qui monte du bas, la fenêtre pleine, le nom arrondi et clair. */
+.cs-aurore { --c-fond: linear-gradient(180deg, #06080f 40%, #0b2a3a 70%, #11413a 85%, #3a2a4f 100%); --c-encre: #f2fbff; --c-encre-2: #9fc2cf; --c-accent: #b7f5e3; --c-police: "Righteous", var(--display); }
+.cs-aurore .carton-photo, .cs-aurore .carton-fond { inset: 0 0 auto; height: 104cqw; }
+.cs-aurore .carton-orne > i:nth-child(1) { left: 0; right: 0; bottom: 0; height: 50cqw; background: linear-gradient(180deg, transparent, color-mix(in srgb, #4ef0c0 20%, transparent) 50%, color-mix(in srgb, #c99bff 24%, transparent)); z-index: 3; filter: blur(2cqw); }
+.cs-aurore .carton-nom .nom { font-weight: 400; letter-spacing: 0.02em; text-transform: none; }
+.fiche.cs-aurore .carton-verso { --v-fond: linear-gradient(180deg, #06080f 40%, #0b2a3a 80%, #1c3540); }
 
 /* =====================================================================
    6. LE SPLIT — des bandes : une série par rangée, le classement en tableau, ta rangée en bleu-vert
@@ -581,17 +796,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 .album-carte { display: flex; align-items: center; gap: var(--esp-3); padding: var(--esp-1) var(--esp-2); border: 1px solid var(--filet); border-radius: var(--r-1); cursor: pointer; }
 .album-carte.vide { opacity: 0.35; cursor: default; border-style: dashed; }
 .album-carte .galons { color: var(--or); }
-.album-carte.fin-argent { border-color: var(--fin-argent); }
-.album-carte.fin-or { border-color: var(--fin-or); box-shadow: 0 0 12px -4px var(--fin-or); }
-.album-carte.fin-holo { border: 2px solid transparent; background: linear-gradient(var(--fond-1), var(--fond-1)) padding-box, var(--fin-holo) border-box; }
-/* La carte d'un joueur de ta collection : sa finition sur le cadre, ses galons gravés dessous. */
-.carte.fin-argent { border-color: var(--fin-argent); }
-.carte.fin-or { border-color: var(--fin-or); box-shadow: 0 0 28px -6px var(--fin-or), var(--ombre); }
-.carte.fin-holo { border: 3px solid transparent; background: linear-gradient(var(--c-fond-plein, #0a0d14), var(--c-fond-plein, #0a0d14)) padding-box, var(--fin-holo) border-box; }
-.carte-id p.carte-finition { color: var(--c-accent); font-weight: 700; }
-.carte-chez-toi { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--c-bord); font-size: var(--t-2); color: var(--c-texte); }
-.carte-galons { list-style: none; margin: 0; padding: 0 12px; display: grid; gap: 4px; font-size: var(--t-2); color: var(--c-pale); }
-.carte-galons b { color: var(--c-texte); }
+.album-carte.ed-cadre { border-color: #c4cbd4; }
+.album-carte.ed-hors { border-color: var(--encre); }
+.album-carte.ed-or { border-color: var(--ed-or); box-shadow: 0 0 12px -4px var(--ed-or); }
+.album-carte.ed-holo { border: 2px solid transparent; background: linear-gradient(var(--fond-1), var(--fond-1)) padding-box, var(--ed-holo) border-box; }
 
 /* =====================================================================
    13. LE DIRECT — le pointage, la courbe de l'or, le fil du commentateur

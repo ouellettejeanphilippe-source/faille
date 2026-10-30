@@ -3,7 +3,7 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.10.0';  // 0.10.0 : les deux modes (le 18-0, le Rogue), le départ par cases et le pack de départ, l'exhibition
+const VERSION = 'faille-0.11.0';  // 0.11.0 : la carte en carton 5:7 recto verso, une série par année, les éditions
 
 const FICHIERS = [
   './', 'index.html', 'style.css',
@@ -12,8 +12,11 @@ const FICHIERS = [
   'js/repechage.js', 'js/tableau-repechage.js', 'js/rogue.js', 'js/boutique.js', 'js/gestion.js', 'js/partie.js', 'js/bureau.js', 'js/strategie.js',
   'js/palmares.js', 'js/meta.js', 'js/sauvegardes.js', 'js/menu.js', 'js/depart.js', 'js/vitrine.js', 'js/regles.js', 'js/direct.js', 'js/commentaire.js', 'js/terrain.js', 'js/sons.js', 'js/soir.js',
   'data/index.json', 'data/champions.json',
-  // La condensée de Cap 82-0 (OFL 1.1).
+  // La condensée de Cap 82-0 (OFL 1.1), et les polices des séries de cartes (fonts/POLICES.txt).
   'fonts/BarlowCondensed-700-latin.woff2', 'fonts/BarlowCondensed-700-latin-ext.woff2', 'fonts/BarlowCondensed-800-latin.woff2', 'fonts/BarlowCondensed-800-latin-ext.woff2',
+  'fonts/PlayfairDisplay-700-latin.woff2', 'fonts/Michroma-400-latin.woff2', 'fonts/Anton-400-latin.woff2', 'fonts/RussoOne-400-latin.woff2', 'fonts/Oswald-500-latin.woff2',
+  'fonts/BebasNeue-400-latin.woff2', 'fonts/Rajdhani-700-latin.woff2', 'fonts/Orbitron-700-latin.woff2', 'fonts/Exo2-800i-latin.woff2', 'fonts/Graduate-400-latin.woff2',
+  'fonts/Teko-500-latin.woff2', 'fonts/Kanit-900i-latin.woff2', 'fonts/BigShouldersDisplay-700-latin.woff2', 'fonts/ArchivoBlack-400-latin.woff2', 'fonts/Righteous-400-latin.woff2',
 ];
 
 self.addEventListener('install', ev => {

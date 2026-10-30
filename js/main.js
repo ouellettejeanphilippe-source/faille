@@ -29,7 +29,7 @@ import { esc, pts } from './util.js';
 import { imageLP, iconeChampion } from './images.js';
 import { brancherRetour } from './pile.js';
 import { profilsDuSplit, TARIFS } from './cotes.js';
-import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
+import { ROLES, badge, vignette, icones, coutHtml, carte, retournerFiche, brancherInclinaison } from './fiche.js';
 import { tempoDuSplit, equipeReelle, classement, jouerPartie } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
@@ -897,7 +897,12 @@ async function demarrer() {
   };
   $('#vestiaire-liste').addEventListener('click', toucherVestiaire);
   $('#vestiaire-liste').addEventListener('keydown', toucherVestiaire);
-  $('#carte').addEventListener('click', ev => { if (ev.target.closest('.signer-carte') && G.carte !== null) signer(G.carte); });
+  // La carte : « Signer » signe ; la toucher, ou « ↻ », la retourne.
+  $('#carte').addEventListener('click', ev => {
+    if (ev.target.closest('.signer-carte')) { if (G.carte !== null) signer(G.carte); return; }
+    if (ev.target.closest('[data-retourner]')) retournerFiche(ev.target.closest('.fiche'));
+  });
+  brancherInclinaison(document);
   brancherRetour(COUCHES.map(id => () => fermer(id)));
   rendre();
 }

@@ -158,7 +158,7 @@ await page.click('.navtab[data-section="cinq"]');
 await pause(200);
 await page.click('#vue [data-contrat]');
 await pause(300);
-etape('la carte d\'un joueur de ton effectif, ses stats chez toi', !!(await page.$('#carte .carte-chez-toi')));
+etape('la carte d\'un joueur de ton effectif, ses stats chez toi', !!(await page.$('#carte .verso-chez-toi')));
 await page.keyboard.press('Escape');
 await page.click('#ouvrir-strategie');
 await pause(200);
@@ -243,7 +243,7 @@ for (const o of ['deblocages', 'collection', 'palmares', 'parties', 'regles']) {
     await pause(600);
     await page.click('#album [data-carte-col]');
     await pause(300);
-    etape('une carte de ta collection', !!(await page.$('#carte .carte-finition')));
+    etape('une carte de ta collection, son édition', !!(await page.$('#carte .verso-edition')) && !!(await page.$('#carte .fiche[class*="ed-"]')));
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
   }
@@ -305,7 +305,13 @@ for (let k = 0; k < 30 && !(await visible('#jouer')); k++) {
     // La carte d'un joueur du vestiaire, puis on signe depuis la rangée.
     await page.click('#vestiaire-liste .joueur');
     await pause(200);
-    etape('la carte d\'un joueur du vestiaire', await visible('#carte .carte'));
+    etape('la carte d\'un joueur du vestiaire : un carton 5:7 dans la série de son année', await visible('#carte .carton-recto') && !!(await page.$('#carte .fiche[class*="cs-"]')));
+    const boite = await page.$eval('#carte .carton-recto', e => { const r = e.getBoundingClientRect(); return r.width / r.height; });
+    etape('le carton est au format 5:7', Math.abs(boite - 5 / 7) < 0.02, boite.toFixed(3));
+    await page.click('#carte .fiche-plaque [data-retourner]');
+    await pause(700);
+    etape('la carte se retourne : les stats au verso', !!(await page.$('#carte .fiche.au-verso')) && await visible('#carte .carton-verso .verso-stats'));
+    await sansDebordement('la carte');
     await page.keyboard.press('Escape');
     await pause(150);
   }

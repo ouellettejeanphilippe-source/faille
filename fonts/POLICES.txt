@@ -1,0 +1,22 @@
+Les polices de fonts/ sont toutes sous la SIL Open Font License 1.1 (le texte de la licence : OFL.txt).
+Elles viennent de Google Fonts (https://fonts.google.com), sous-ensemble latin, en woff2, reprises de Cap 82-0.
+
+Le jeu
+  Barlow Condensed       Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+
+Les séries de cartes, une par année (style.css « LES SÉRIES », js/fiche.js SERIES)
+  Playfair Display       Copyright 2017 The Playfair Display Project Authors      2011 Pionnier
+  Michroma               Copyright 2011 Vernon Adams                              2012 Acier
+  Anton                  Copyright 2020 The Anton Project Authors                 2013 Fleuve
+  Russo One              Copyright 2011 Jovanny Lemonad                           2014 Nuit
+  Oswald                 Copyright 2016 The Oswald Project Authors                2015 Filet d'or
+  Bebas Neue             Copyright 2019 The Bebas Neue Project Authors            2016 Cristal
+  Rajdhani               Copyright 2014 Indian Type Foundry                       2017 Losange
+  Orbitron               Copyright 2018 The Orbitron Project Authors              2018 Prisme
+  Exo 2                  Copyright 2013 The Exo 2 Project Authors                 2019 Néon
+  Graduate               Copyright 2011 Eduardo Tunni                             2020 Éclipse
+  Teko                   Copyright 2014 Indian Type Foundry                       2021 Spectre
+  Kanit                  Copyright 2020 The Kanit Project Authors                 2022 Rupture
+  Big Shoulders Display  Copyright 2019 The Big Shoulders Project Authors         2023 Mondial
+  Archivo Black          Copyright 2017 The Archivo Black Project Authors         2024 Monochrome
+  Righteous              Copyright 2011 Astigmatic                                2025 Aurore
