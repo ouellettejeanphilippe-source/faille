@@ -27,7 +27,7 @@ img/lp/               les photos des joueurs et les logos des équipes, HORS DU 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, le mode, les déblocages, le club, la collection du départ, le journal) ; les deux modes (le 18-0, le Rogue), les cases du départ (la vedette, le classeur, ceux qui restent) et le pack de départ
 js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), l'Effectif (ton cinq, le tableau de tes joueurs), les agents libres ; la stratégie ; le bilan d'un split
+js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), les Joueurs (le tableau), le Cinq (ton cinq, ton plan), les agents libres ; la stratégie ; le bilan d'un split
 js/soir.js            « Ce soir » avant une partie (l'affiche, la forme, le face-à-face, leur cinq), le sommaire d'une partie jouée ; la une, les nouvelles, autour de la ligue
 js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
 js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
@@ -125,7 +125,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
-- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; le Bureau en quatre onglets (Boîte, Proprio, Coach, Vestiaire), une maison par sujet ; une décision se règle dans la boîte.
+- Le split en sections, les mêmes que Cap 82-0 (JP : *même séparation des pages*) : au Rogue, cinq portes dans la barre du bas — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq, Marché (agents, packs, plan de jeu, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché, le Bureau sans proprio ni coach. Une maison par sujet ; une décision se règle dans la boîte.
 - Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.

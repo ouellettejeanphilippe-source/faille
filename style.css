@@ -485,11 +485,10 @@ button:disabled { opacity: 0.45; cursor: default; }
    ===================================================================== */
 .navbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
   padding: 0 max(0px, calc((100% - var(--large)) / 2)) var(--safe-bas);
   background: var(--fond-1); border-top: 1px solid var(--filet);
 }
-.navbar.trois { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .navtab[hidden] { display: none; }
 .navtab {
   position: relative; flex-direction: column; gap: 4px; min-width: 0; min-height: var(--nav-h); padding: var(--esp-1) 2px;

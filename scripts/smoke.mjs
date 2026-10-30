@@ -8,8 +8,9 @@
  *   3. le split : la décision du Bureau, une journée et son repêchage des
  *      champions (un bannissement, un champion choisi), hier soir ;
  *   4. le direct : la Faille dessinée, un moment nommé, « La fin », fermer ;
- *   5. les sections : l'Effectif (la carte d'un joueur), le Marché (agents,
- *      packs de joueurs, plan de jeu), la Ligue (classement, calendrier, meneurs) ;
+ *   5. les sections de Cap 82-0 : les Joueurs, le Cinq (la carte d'un joueur), le
+ *      Marché (agents, packs de joueurs, plan de jeu, album), la Ligue (classement,
+ *      calendrier, meneurs, palmarès) ;
  *   6. jusqu'aux séries, les séries, le bilan, ceux qui restent ;
  *   7. le menu : déblocages, collection (un album, une carte), palmarès,
  *      parties (exporter, puis importer ce fichier), règles, le titre ;
@@ -145,18 +146,16 @@ await page.click('#direct [data-retour]');
 await pause(200);
 
 /* 5. Les sections. */
-await page.click('.navtab[data-section="effectif"]');
+await page.click('.navtab[data-section="joueurs"]');
 await pause(300);
-await page.click('.soustab[data-sous="joueurs"]');
-await pause(200);
 await page.click('#vue [data-tri="k"]');
 await pause(150);
 etape('le tableau des joueurs se trie', (await page.$$('#vue .tableau-joueurs tbody tr')).length >= 5 && !!(await page.$('#vue [data-tri="k"].on')));
 await page.click('#vue [data-vue-joueurs="vraie"]');
 await pause(150);
 await sansDebordement('les joueurs');
-await page.click('.soustab[data-sous="cinq"]');
-await pause(150);
+await page.click('.navtab[data-section="cinq"]');
+await pause(200);
 await page.click('#vue [data-contrat]');
 await pause(300);
 etape('la carte d\'un joueur de ton effectif, ses stats chez toi', !!(await page.$('#carte .carte-chez-toi')));
@@ -180,13 +179,16 @@ if (pj) {
 await page.click('.soustab[data-sous="plan"]');
 await pause(200);
 etape('le plan de jeu', !!(await page.$('#vue [data-pack]')));
+await page.click('.soustab[data-sous="album"]');
+await pause(300);
+etape('l\'Album du Marché : ta collection', (await page.$$('#vue .album-ligne')).length >= 1);
 await page.click('.navtab[data-section="ligue"]');
-for (const k of ['calendrier', 'meneurs', 'classement']) {
+for (const k of ['calendrier', 'meneurs', 'palmares', 'classement']) {
   await page.click(`.soustab[data-sous="${k}"]`);
   await pause(150);
   await sansDebordement(`la ligue, ${k}`);
 }
-etape('les meneurs et le classement', !!(await page.$('#vue .classement li')));
+etape('les meneurs, le palmarès et le classement', !!(await page.$('#vue .classement li')) && (await page.$$('.navtab:not([hidden])')).length === 5);
 
 /* « Regarder » : la journée se joue et sa partie s'ouvre en direct. */
 await page.click('.navtab[data-section="bureau"]');
@@ -314,7 +316,7 @@ await sansDebordement('le repêchage du 18-0');
 etape('le cinq du 18-0 est complet', await visible('#jouer'));
 await page.click('#jouer');
 await pause(2500);
-etape('le 18-0 joue le split d\'un coup, droit au classement', await visible('#split') && await visible('#series') && !(await visible('#journee')) && !!(await page.$('#vue .classement li')) && (await page.$$('.navtab:not([hidden])')).length === 3);
+etape('le 18-0 joue le split d\'un coup, droit au classement', await visible('#split') && await visible('#series') && !(await visible('#journee')) && !!(await page.$('#vue .classement li')) && (await page.$$('.navtab:not([hidden])')).length === 4);
 await page.click('.navtab[data-section="bureau"]');
 await pause(200);
 etape('au 18-0, le Bureau sans décision ni plan', !(await page.$('#vue [data-choix]')) && !(await page.$('#ouvrir-strategie')) && (await page.$$('.soustab')).length === 2);

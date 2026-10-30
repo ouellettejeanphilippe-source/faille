@@ -263,7 +263,7 @@ function tonCoach(P) {
     <p class="sous">Un adjoint parmi trois, gratuit, aux journées 6 et 12 de chaque split ; chacun est un échange, qui paie quand il s'emboîte avec ta stratégie, tes cartes, ton coach.</p>`;
 }
 
-/** TON CINQ : ton plan de match, ton cinq et ton banc (leurs stats chez toi), et ce qu'on fait du banc. */
+/** LE CINQ (les Lignes de Cap 82-0) : ton plan de match, ton cinq et ton banc (leurs stats chez toi), et ce qu'on fait du banc. */
 export function vueCinq(P) {
   const st = statsDuSplit(P.L);
   const b = P.eff.banc;

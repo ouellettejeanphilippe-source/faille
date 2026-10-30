@@ -56,21 +56,29 @@ const $$ = s => document.querySelectorAll(s);
 
 const G = {
   index: null, champions: null, splits: new Map(), P: null, pid: null, de: null, meta: null, options: null, vue: 'titre',
-  section: 'bureau', sous: { bureau: 'boite', effectif: 'cinq', marche: 'agents', ligue: 'classement' }, joueurs: { vue: 'saison', tri: 'kda' }, regarderApres: false,
+  section: 'bureau', sous: { bureau: 'boite', marche: 'agents', ligue: 'classement' }, joueurs: { vue: 'saison', tri: 'kda' }, regarderApres: false,
   carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null,
   contrats: new Map(), etoiles: null, vedette: null, exhib: null,
 };
 /* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
 const COUCHES = ['#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#exhibition', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
+/*
+ * LES SECTIONS, les mêmes que Cap 82-0 (JP : *même séparation des pages*) :
+ * au Rogue, cinq portes — le Bureau (Boîte, Proprio, Coach, Vestiaire), les
+ * Joueurs, le Cinq (les Lignes de Cap 82-0), le Marché (Boutique : agents,
+ * packs, plan de jeu ; Album), la Ligue (Classement, Calendrier, Meneurs,
+ * Séries, Palmarès) ; au 18-0, quatre, sans le Marché, et le Bureau sans
+ * proprio ni coach.
+ */
 const SOUS = {
   bureau: [['boite', 'Boîte'], ['proprio', 'Proprio'], ['coach', 'Coach'], ['vestiaire', 'Vestiaire']],
-  effectif: [['cinq', 'Ton cinq'], ['joueurs', 'Joueurs']],
-  marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu']],
-  ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries']],
+  joueurs: null,
+  cinq: null,
+  marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu'], ['album', 'Album']],
+  ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries'], ['palmares', 'Palmarès']],
 };
-/* Au 18-0, ni proprio, ni coach, ni marché : la Boîte et le Vestiaire, l'Effectif, la Ligue. */
-const SOUS_DIXHUIT = { bureau: [['boite', 'Boîte'], ['vestiaire', 'Vestiaire']], effectif: SOUS.effectif, ligue: SOUS.ligue };
+const SOUS_DIXHUIT = { bureau: [['boite', 'Boîte'], ['vestiaire', 'Vestiaire']], joueurs: null, cinq: null, ligue: SOUS.ligue };
 const sousDe = P => (P.mode === 'dixhuit' ? SOUS_DIXHUIT : SOUS);
 
 /* Un split chargé, avec ses profils et son tempo, gardé pour la suite. */
@@ -233,11 +241,14 @@ const RENDUS = {
   '#regles': () => { $('#regles').innerHTML = ecranRegles(); },
   '#deblocages': () => { $('#deblocages').innerHTML = ecranDeblocages(G.meta); },
   '#palmares': () => { $('#palmares').innerHTML = ecranPalmares(G.meta); },
-  '#collection': () => { $('#collection').innerHTML = ecranCollection(G.meta, G.index.splits, new Map([...G.splits].map(([id, s]) => [id, s.split.equipes.reduce((n, e) => n + e.joueurs.length, 0)]))); },
+  '#collection': () => { $('#collection').innerHTML = vueCollection(); },
   '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta, { etoiles: G.etoiles, vedette: G.vedette }); },
   '#exhibition': () => { $('#exhibition').innerHTML = ecranExhibition(G.exhib); },
   '#strategie': () => { if (G.P && G.P.L) $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
 };
+
+/* Ta collection, split par split : au menu, et à l'Album du Marché. */
+const vueCollection = () => ecranCollection(G.meta, G.index.splits, new Map([...G.splits].map(([id, s]) => [id, s.split.equipes.reduce((n, e) => n + e.joueurs.length, 0)])));
 
 function ouvrir(nom) {
   const id = `#${nom}`;
@@ -592,11 +603,10 @@ function rendreSplit() {
   } else $('#ronde').textContent = 'Ronde suivante';
   $('#bilan-ouvrir').hidden = !S || S.champion === null;
   for (const b of $$('.navtab')) {
-    b.hidden = dix && b.dataset.section === 'marche';
+    b.hidden = !(b.dataset.section in sousDe(P));
     b.classList.toggle('on', b.dataset.section === G.section);
     b.classList.toggle('a-traiter', b.dataset.section === 'bureau' && aTraiter(P) > 0);
   }
-  $('#nav').classList.toggle('trois', dix);
   const sous = sousDe(P)[G.section];
   $('#sousnav').hidden = !sous;
   if (sous) $('#sousnav').innerHTML = sous.filter(([k]) => k !== 'series' || L.series).map(([k, mot]) => `<button class="soustab${G.sous[G.section] === k ? ' on' : ''}" data-sous="${k}">${mot}</button>`).join('');
@@ -610,15 +620,17 @@ function rendreVue() {
   if (s === 'bureau') {
     const k = G.sous.bureau;
     $('#vue').innerHTML = k === 'proprio' ? vueProprio(P) : k === 'coach' ? vueCoach(P) : k === 'vestiaire' ? vueVestiaire(P, ctx(), G.entr) : vueBoite(P, ctx());
-  } else if (s === 'effectif') $('#vue').innerHTML = G.sous.effectif === 'joueurs' ? vueJoueurs(P, ctx(), G.joueurs.vue, G.joueurs.tri) : vueCinq(P);
+  } else if (s === 'joueurs') $('#vue').innerHTML = vueJoueurs(P, ctx(), G.joueurs.vue, G.joueurs.tri);
+  else if (s === 'cinq') $('#vue').innerHTML = vueCinq(P);
   else if (s === 'marche') {
     const k = G.sous.marche;
     if (k === 'agents') rendreAgents();
     else if (k === 'joueurs') $('#vue').innerHTML = vuePacksJoueurs(P, P.offrePack ? P.offrePack.refs.map(ref => contratDe(ctx(), ref)) : null);
+    else if (k === 'album') $('#vue').innerHTML = vueCollection();
     else $('#vue').innerHTML = vuePlanDeJeu(P, G.ouvertes);
   } else {
     const k = G.sous.ligue === 'series' && !L.series ? 'classement' : G.sous.ligue;
-    $('#vue').innerHTML = { classement: tableauClassement, calendrier, meneurs: tableauMeneurs, series: tableauSeries }[k](L);
+    $('#vue').innerHTML = k === 'palmares' ? ecranPalmares(G.meta) : { classement: tableauClassement, calendrier, meneurs: tableauMeneurs, series: tableauSeries }[k](L);
   }
 }
 
@@ -720,6 +732,7 @@ async function toucherVue(ev) {
   if (serie && (!b || b === serie) && (ev.type === 'click' || ev.key === 'Enter')) { ouvrirFeuille(serie.dataset.serie); return; }
   if (!b || b.disabled || ev.type !== 'click') return;
   if (b.id === 'ouvrir-strategie') ouvrir('strategie');
+  else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
   else if (b.dataset.sous) { G.sous[G.section] = b.dataset.sous; rendreSplit(); }
   else if (b.dataset.soir !== undefined) ouvrirCeSoir();
   else if (b.dataset.sommaire) ouvrirSommaire(b.dataset.sommaire);
