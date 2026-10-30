@@ -25,14 +25,15 @@ data/champions.json   les champions joués : nom → id de Data Dragon (leurs im
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
-js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, les déblocages, le club, le journal)
+js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, le mode, les déblocages, le club, la collection du départ, le journal) ; les deux modes (le 18-0, le Rogue), les cases du départ (la vedette, le classeur, ceux qui restent) et le pack de départ
 js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), l'Effectif (ton cinq, le tableau de tes joueurs), les agents libres ; la stratégie ; le bilan d'un split
+js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), les Joueurs (le tableau), le Cinq (ton cinq, ton plan), les agents libres ; la stratégie ; le bilan d'un split
 js/soir.js            « Ce soir » avant une partie (l'affiche, la forme, le face-à-face, leur cinq), le sommaire d'une partie jouée ; la une, les nouvelles, autour de la ligue
 js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
 js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
 js/sauvegardes.js     les parties (un index, une clé chacune, l'export et l'import), le méta et les options, dans le stockage
-js/menu.js            l'écran titre, le menu, les parties, le départ d'une run
+js/menu.js            l'écran titre, le menu, les parties, le départ d'une partie (le mode, le coach, le joueur de concession, le club)
+js/depart.js          le départ du Rogue à l'écran : une case et son loto, le pack de départ, les étoiles de concession ; l'exhibition
 js/vitrine.js         les déblocages et ton club, le palmarès, la collection et ses albums
 js/regles.js          la page des règles, chaque chiffre lu de sa constante
 js/direct.js          une partie en direct : la Faille, le pointage, la courbe de l'or, le fil
@@ -100,6 +101,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
 - Le plafond tient après chaque action, le marché ferme à la date limite, les relances restent dans leur nombre — `check_gestion`.
+- Deux modes (`MODES`, js/meta.js) : le 18-0 (la roulette, le split d'un coup, les séries partie par partie, aucune carte ni décision ni jeton ; la collection, pas les médailles) et le Rogue, qui part faible — ses cases au loto (la vedette, le classeur tiré de la collection, ceux qui restent ; jamais au choix), puis le pack de départ de bouche-trous ; la roulette et les gardés y sont refusés — `check_gestion`, `check_meta`, smoke.
 - Un lien d'origine passe par les canaux et se mesure en paires, comme une carte — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
 - La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.
 
@@ -123,7 +125,7 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
-- Le split en quatre sections (Bureau, Effectif, Marché, Ligue), la barre du bas ; le Bureau en quatre onglets (Boîte, Proprio, Coach, Vestiaire), une maison par sujet ; une décision se règle dans la boîte.
+- Le split en sections, les mêmes que Cap 82-0 (JP : *même séparation des pages*) : au Rogue, cinq portes dans la barre du bas — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq, Marché (agents, packs, plan de jeu, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché, le Bureau sans proprio ni coach. Une maison par sujet ; une décision se règle dans la boîte.
 - Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
@@ -150,7 +152,8 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 - **remplacement** : la formule qu'une sous-cote prend quand son époque ne mesure pas la stat de tête.
 - **repêchage** : les bannissements et les champions d'une série de saison, ou d'une partie d'une série de séries ; le **confort** est ce qu'un joueur perd loin de son plus joué.
 - **canal** : une prise du moteur par où passe un effet (ligne, combat, objectifs, tardif, rythme, siège, fin, confort).
-- **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et ceux qu'on **garde**.
+- **run** : plusieurs splits de suite sous le **mandat** du proprio ; le **bilan** d'un split, et **ceux qui restent** (au loto, jamais au choix). Les deux **modes** : **le 18-0** (juste le repêchage, le split d'un coup, rien d'autre) et **le Rogue** (la run).
+- **le départ** d'une run de Rogue : ses **cases** — **ton joueur de concession** (la vedette, choisie une fois, qui revient à chaque run), **le classeur** (des **lotos** de trois cartes de ta collection, par niveau) —, puis **le pack de départ** de **bouche-trous** (des Remplaçants et de bas Réguliers tirés au hasard). Pas « plombier ».
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».

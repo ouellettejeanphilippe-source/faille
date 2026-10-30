@@ -27,7 +27,16 @@
  *                    récent, et le plafond tient avec elle ;
  *   la collection    chaque joueur passé chez toi y entre ;
  *   la sauvegarde    le journal, passé par JSON et rejoué, redonne la même
- *                    partie, à la fin comme au milieu.
+ *                    partie, à la fin comme au milieu ;
+ *   le départ        (version 5) le Rogue part de ses cases — la vedette, le
+ *                    classeur tiré de la collection, ceux qui restent au loto —
+ *                    puis du pack de départ : chaque loto rejoue, reste à son
+ *                    niveau ou en dessous, hors des rôles comblés ; un
+ *                    bouche-trou par rôle vide, Régulier au plus ; la roulette
+ *                    et les gardés sont refusés ; la première run reste dure ;
+ *   le 18-0          la roulette, le split d'un coup (rien n'attend), les
+ *                    séries partie par partie, aucune carte ni décision ni
+ *                    jeton dépensé ; un seul split, puis la fin.
  *
  *   node scripts/check_gestion.mjs
  */
@@ -38,12 +47,13 @@ import { profilsDuSplit, PLAFOND, TARIFS } from '../js/cotes.js';
 import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, aTravailler, tirer, tirerAdversaires, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion } from '../js/gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, adjointsOfferts, JOURNEES_ADJOINTS } from '../js/partie.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, adjointsOfferts, JOURNEES_ADJOINTS, parCases, casesDe, caseEnCours, lotoDe, attendPack, refDe, LOTO } from '../js/partie.js';
 import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
 import { COACHS, XP, SEUILS_NIVEAU, ADJOINTS_MAX, couleurDe } from '../js/rogue.js';
 import { confort } from '../js/repechage.js';
 import { STRATEGIES } from '../js/strategie.js';
+import { collectionPour } from './lib/robot.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -63,12 +73,12 @@ exiger('des splits à lire', ids.length > 0, `${ids.length} splits`);
 
 /* L'empreinte d'une partie : ce qu'un joueur verrait. */
 const empreinte = P => JSON.stringify({
-  etape: P.etape, strategie: P.strategie, run: P.run, jetons: jetonsDe(P.L, P.R), cartes: P.R.cartes, plan: P.R.plan, coach: P.R.coach,
+  etape: P.etape, mode: P.mode, cases: P.cases, strategie: P.strategie, run: P.run, jetons: jetonsDe(P.L, P.R), cartes: P.R.cartes, plan: P.R.plan, coach: P.R.coach,
   eff: [...Object.values(P.eff.cinq), P.eff.banc].map(c => c && cleDe(c.ref)), relances: P.relances, bons: P.bons,
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { cases: 0, prises: 0, lotosPleins: 0, bouches: 0, vedettes: 0, premiersTitres: 0, runsRogue: 0, dixhuit: 0, adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -117,21 +127,99 @@ const agir = (P, a) => {
   return r;
 };
 
-async function unRun(graine, version = null) {
+/*
+ * LE DÉPART PAR CASES (Rogue, version 5) : chaque case ouvre son loto — il
+ * rejoue, tient LOTO cartes au plus, de son niveau ou d'en dessous, hors des
+ * rôles comblés — et le robot prend ce qui se paie, ou passe ; puis le pack de
+ * départ, un bouche-trou par rôle vide, et la roulette est refusée.
+ */
+async function departParCases(P, de, graine) {
+  const attendues = casesDe(P).length;
+  let c;
+  while ((c = caseEnCours(P))) {
+    bilan.cases++;
+    if (JSON.stringify(c.loto) !== JSON.stringify(lotoDe(P, c.k))) faute('un loto ne rejoue pas');
+    if (c.loto.length > LOTO) faute(`un loto de ${c.loto.length}`);
+    if (c.loto.some(x => P.eff.cinq[x.cle.split('|')[3]])) faute('un loto offre un rôle comblé');
+    if (c.source !== 'vedette' && c.loto.some(x => ORDRE.indexOf(x.niveau) < ORDRE.indexOf(c.niveau))) faute(`un loto ${c.niveau} offre ${c.loto.map(x => x.niveau)}`);
+    if (c.loto.length === LOTO) bilan.lotosPleins++;
+    if (c.source === 'vedette') bilan.vedettes++;
+    const ok = c.loto.filter(x => { try { return !P.eff.cinq[contratDe(ctx, refDe(x.cle)).r]; } catch { return false; } });
+    const cle = ok.length && (c.source === 'vedette' || de() < 0.85) ? piger(ok, de).cle : null;
+    if (cle && graine === 2 && c.k === 0) exigerRefus('une carte hors du loto est refusée', refuse(P, { t: 'case', cle: 'x|y|z|haut' }));
+    if (tenter(P, { t: 'case', cle })) { surveiller(P); if (cle) bilan.prises++; } else agir(P, { t: 'case', cle: null });
+  }
+  if (P.cases.length !== attendues) faute(`${P.cases.length} cases ouvertes pour ${attendues}`);
+  if (graine === 2 && P.run.n === 1) exigerRefus('la roulette est refusée au Rogue', refuse(P, { t: 'tirage', mode: 'tour', ...(await tirer(hasard(2), ids, lire, P.eff, 'tour')) }));
+  if (!attendPack(P) && libresDe(P.eff).length) faute('le pack de départ n\'attend pas');
+  if (attendPack(P)) {
+    const refs = await tirerBoucheTrous(de, ids, lire, P.eff, P.fx.bouchetrous);
+    const libres = libresDe(P.eff);
+    if (refs.length !== libres.length || libres.some(r => !refs.some(x => x.r === r))) faute(`un pack de départ de ${refs.length} pour ${libres.length} rôles`);
+    for (const ref of refs) if (!NIVEAUX_BOUCHE_TROUS.has(contratDe(ctx, ref).niveau)) faute(`un bouche-trou ${contratDe(ctx, ref).niveau}`);
+    if (graine === 2 && P.run.n === 1 && refs.length > 1) exigerRefus('un pack de départ incomplet est refusé', refuse(P, { t: 'boucheTrous', refs: refs.slice(1) }));
+    agir(P, { t: 'boucheTrous', refs });
+    bilan.bouches += refs.length;
+    if (refs.some(r => !P.cartes.includes(cleDe(r)))) faute('un bouche-trou hors de la collection');
+    exigerRefus('le pack de départ ne s\'ouvre qu\'une fois', refuse(P, { t: 'boucheTrous', refs: [] }));
+  }
+}
+const ORDRE = TARIFS.map(([n]) => n);
+
+/* LE 18-0 : la roulette, le split d'un coup, les séries partie par partie ; rien d'autre. */
+async function unDixHuit(graine) {
+  const de = hasard(graine);
+  const P = nouvellePartie(graine, { mode: 'dixhuit', deb: Object.keys(DEBLOCAGES), exig: 2, coach: 'stratege', club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' } });
+  if (P.deb.length || P.exig || P.coach || P.R.coach || plafondDe(P.eff) !== PLAFOND) faute('le 18-0 pose des déblocages, des exigences ou un coach');
+  if (casesDe(P).length || parCases(P)) faute('le 18-0 a des cases');
+  while (Object.keys(P.eff.cinq).length < 5) {
+    if (!P.tirage) agir(P, { t: 'tirage', mode: 'tour', ...(await tirer(de, ids, lire, P.eff, 'tour')) });
+    const v = vestiaireDe(P, ctx);
+    const j = piger(signables(P.eff, v.equipe, v.profils.joueurs), de);
+    agir(P, { t: 'signer', n: j.n, r: j.r });
+  }
+  agir(P, { t: 'lancer', adversaires: await tirerAdversaires(de, ids, lire, equipeReelle), graine: Math.floor(de() * 2 ** 32) });
+  exigerRefus('au 18-0, ni carte ni stratégie', refuse(P, { t: 'strategie', id: 'dragons' }) && refuse(P, { t: 'pack', id: 'bronze' }) && refuse(P, { t: 'packJoueurs', id: 'recrues', refs: [] }));
+  agir(P, { t: 'jusqua' });
+  if (P.L.jour !== P.L.journees.length || enAttente(P)) faute('le 18-0 s\'arrête en chemin');
+  if (P.L.commanditaire) faute('un commanditaire au 18-0');
+  agir(P, { t: 'series' });
+  let parties = 0;
+  while (P.L.series.champion === null) {
+    const s = P.L.series.rondes[P.L.series.rondes.length - 1].find(x => (x.a === 0 || x.b === 0) && x.gagnant === null);
+    const avant = s ? s.parties.length : 0;
+    agir(P, { t: 'ronde' });
+    if (s && s.parties.length !== avant + 1) faute('au 18-0, une série ne se joue pas partie par partie');
+    parties += s ? 1 : 0;
+  }
+  if (P.R.achats.length || P.R.cartes.length || P.staff.length || P.talents.length) faute('le 18-0 a dépensé ou gagné des cartes');
+  agir(P, { t: 'bilan' });
+  if (P.etape !== 'fin' || !P.run.fin || P.run.passes[0].mandat !== 'titre') faute(`le 18-0 ne finit pas en un split : ${P.etape}, ${P.run.fin}`);
+  bilan.dixhuit++;
+  return { P, parties };
+}
+
+async function unRun(graine, version = null, col = [], vedette = null) {
   const de = hasard(graine);
   // Une run sur deux avec tous les déblocages du méta, une sur trois au plus haut des exigences : les règles tiennent avec eux.
   const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
   const coach = Object.keys(COACHS)[graine % 4];
-  const P = nouvellePartie(graine, { deb: graine % 2 ? [] : Object.keys(DEBLOCAGES), club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach });
-  if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'demie' || Object.keys(RELANCES).some(k => relancesMax(P, k) !== RELANCES[k][1] - (graine % 2 ? 1 : 0)) || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
+  const deb = graine % 2 ? [] : Object.keys(DEBLOCAGES);
+  const P = nouvellePartie(graine, { deb, club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach, col, vedette });
+  if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'demie' || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
     faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
   }
   if (exig) bilan.exigences++;
   // Une partie d'avant la version 3 garde sa règle : une série de séries se joue d'un bloc, d'un seul repêchage.
   if (version) P.v = version;
+  // Les cases du premier départ : la vedette, puis le classeur (une case Régulier, celles des déblocages, moins l'exigence).
+  const classeur = Math.max(0, 1 + P.fx.pilier + P.fx.etoile + P.fx.cases);
+  if (parCases(P) && casesDe(P).length !== (vedette ? 1 : 0) + classeur) faute(`${casesDe(P).length} cases au classeur pour ${classeur}${vedette ? ' et une vedette' : ''}`);
+  if (parCases(P)) bilan.runsRogue++;
   let milieu = null;
   while (P.etape !== 'fin' && P.run.n <= SPLITS_MAX) {
-    // LE REPÊCHAGE : un tour par case, parfois une relance.
+    if (parCases(P)) await departParCases(P, de, graine);
+    // LE REPÊCHAGE (le 18-0, une vieille partie) : un tour par case, parfois une relance.
     while (P.etape === 'bati' && Object.keys(P.eff.cinq).length < 5) {
       if (!P.tirage) {
         const t = await tirer(de, ids, lire, P.eff, 'tour');
@@ -150,7 +238,7 @@ async function unRun(graine, version = null) {
     }
     // Une relance de trop est refusée.
     if (P.run.n === 1 && graine === 1) {
-      const Q = nouvellePartie(9);
+      const Q = nouvellePartie(9, { mode: 'dixhuit' });
       const t = await tirer(hasard(9), ids, lire, Q.eff, 'tour');
       appliquer(Q, { t: 'tirage', mode: 'tour', ...t }, ctx);
       for (let k = 0; k < RELANCES.equipe[1]; k++) appliquer(Q, { t: 'tirage', mode: 'equipe', ...(await tirer(hasard(k), ids, lire, Q.eff, 'equipe', Q.tirage)) }, ctx);
@@ -269,12 +357,30 @@ async function unRun(graine, version = null) {
     }
     const L = P.L;
     agir(P, { t: 'bilan' });
+    if (parCases(P) && P.run.n === 1 && P.run.passes[0].champion) bilan.premiersTitres++;
     // Le commanditaire a été choisi avant la première journée, et il a payé ses parties réussies.
     if (!L.commanditaire) faute('un split sans commanditaire');
     bilan.commandite += P.R.reports[P.R.reports.length - 1].commandite;
     const pass = P.run.passes[P.run.passes.length - 1];
     if (pass.rempli !== mandatRempli(L, pass.mandat)) faute('le bilan ne suit pas le mandat');
-    if (P.etape === 'gardes') {
+    if (P.etape === 'gardes' && parCases(P)) {
+      // Ceux qui restent (version 5) : les gardés sont refusés, le prochain départ les tire au loto, et un gardé peut y vieillir.
+      const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean);
+      if (P.run.n === 1) exigerRefus('les gardés sont refusés au Rogue', refuse(P, { t: 'garder', cles: [cleDe(tous[0].ref)] }));
+      agir(P, { t: 'suivant' });
+      if (P.restes.length !== tous.length || casesDe(P).length !== gardesDe(P) || casesDe(P).some(c => c.source !== 'restes')) faute('ceux qui restent ne font pas les cases du prochain départ');
+      const c = caseEnCours(P);
+      if (c && c.loto.length) {
+        const x = contratDe(ctx, refDe(c.loto[0].cle));
+        const v = await prochaineVersion(index, lire, x);
+        if (v) {
+          exigerRefus('on ne vieillit pas en quelqu\'un d\'autre', refuse(P, { t: 'case', cle: c.loto[0].cle, vieux: { ...v, n: 'personne' } }));
+          agir(P, { t: 'case', cle: c.loto[0].cle, vieux: v });
+          bilan.vieillis++;
+          if (!Object.values(P.eff.cinq).some(y => cleDe(y.ref) === cleDe(v))) faute('un gardé du loto n\'a pas vieilli');
+        }
+      }
+    } else if (P.etape === 'gardes') {
       const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).map(c => cleDe(c.ref));
       if (P.run.n === 1 && tous.length > gardesDe(P)) exigerRefus('un gardé de trop est refusé', refuse(P, { t: 'garder', cles: tous.slice(0, gardesDe(P) + 1) }));
       const choix = tous.filter(() => de() < 0.4).slice(0, gardesDe(P));
@@ -306,10 +412,14 @@ async function unRun(graine, version = null) {
 }
 
 const pasRejouees = [];
-for (let g = 1; g <= RUNS + 2; g++) {
-  // Les deux dernières runs se jouent sous les versions 2 et 3 : une vieille sauvegarde se rejoue pareil.
+let col = [];
+for (let g = 1; g <= RUNS + 3; g++) {
+  // Les trois dernières runs se jouent sous les versions 2, 3 et 4 : une vieille sauvegarde se rejoue pareil (la roulette, les gardés).
   const version = g > RUNS ? g - RUNS + 1 : null;
-  const { P, milieu } = await unRun(g, version);
+  // Une run sur deux avec une vedette ; la collection de la run d'avant nourrit le classeur de la suivante.
+  const vedette = g % 2 === 0 ? cleDe((await tirerEtoiles(hasard(g), ids, lire, 1))[0]) : null;
+  const { P, milieu } = await unRun(g, version, col, vedette);
+  col = collectionPour(ctx, [...new Set([...col.map(x => x.cle), ...P.cartes])]);
   if (version && (P.v !== version || sauvegarde(P).v !== version)) pasRejouees.push(`la version ${version} ne se garde pas`);
   const fin = empreinte(P);
   const relu = rejouer(JSON.parse(JSON.stringify(sauvegarde(P))), ctx);
@@ -317,7 +427,15 @@ for (let g = 1; g <= RUNS + 2; g++) {
   if (milieu && empreinte(rejouer(milieu.sv, ctx)) !== milieu.e) pasRejouees.push(`${g} à mi-split`);
 }
 
+const dixhuits = [];
+for (let g = 31; g <= 32; g++) dixhuits.push(await unDixHuit(g));
+for (const { P } of dixhuits) if (empreinte(rejouer(JSON.parse(JSON.stringify(sauvegarde(P))), ctx)) !== empreinte(P)) pasRejouees.push(`18-0 ${P.graine}`);
+
 for (const [nom, ok] of refusVus) exiger(nom, ok);
+exiger('le Rogue part de ses cases et de son pack de départ', bilan.runsRogue > 0 && bilan.cases > 0 && bilan.prises > 0 && bilan.lotosPleins > 0 && bilan.vedettes > 0 && bilan.bouches > 0,
+  `${bilan.runsRogue} runs, ${bilan.cases} cases (${bilan.prises} prises, ${bilan.lotosPleins} lotos pleins, ${bilan.vedettes} vedettes), ${bilan.bouches} bouche-trous`);
+exiger('la première run reste dure : le titre au premier split est rare', bilan.premiersTitres <= bilan.runsRogue / 3, `${bilan.premiersTitres} titres au premier split sur ${bilan.runsRogue} runs`);
+exiger('le 18-0 : la roulette, le split d\'un coup, les séries partie par partie, rien d\'autre', bilan.dixhuit === 2 && dixhuits.some(x => x.parties > 0), dixhuits.map(x => `${x.parties} parties de séries, ${x.P.run.fin}`).join(' · '));
 exiger('aucune faute au fil des runs', !fautes.size, [...fautes].slice(0, 4).join(' · ') || `${RUNS} runs, ${bilan.splits} splits, ${bilan.actions} actions`);
 exiger('le marché et le banc ont servi', bilan.marche > 0 && bilan.banc > 0, `${bilan.marche} signatures, ${bilan.banc} gestes au banc`);
 exiger('les événements ont servi', bilan.evenements > 0, `${bilan.evenements} décisions`);

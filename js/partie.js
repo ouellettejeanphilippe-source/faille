@@ -12,22 +12,38 @@
  * `ctx` : { splits: Map(id → { split, profils, tempo }), classes } — les
  * splits que le journal nomme doivent y être chargés (refsDuJournal).
  *
- * Les étapes : 'bati' (le repêchage de ton cinq), 'split' (la saison, puis
- * les séries), 'gardes' (le split est fini, le mandat rempli : qui reste ?),
- * 'fin' (la run est gagnée, ou le mandat manqué).
+ * Les étapes : 'bati' (ton cinq se bâtit), 'split' (la saison, puis les
+ * séries), 'gardes' (le split est fini, le mandat rempli : le bilan), 'fin'
+ * (la run est gagnée, ou le mandat manqué).
+ *
+ * LES DEUX MODES (Cap 82-0, js/meta.js MODES). Le 18-0 : la roulette et le
+ * vestiaire bâtissent ton cinq, le split se joue d'un coup, les séries partie
+ * par partie ; aucune carte, aucun coach, aucune décision, aucun jeton. Le
+ * Rogue (version 5) PART FAIBLE : au départ d'une run, tes CASES — ton joueur
+ * de concession, puis le classeur, des lotos de trois cartes de ta collection
+ * par niveau dont tu gardes une ou aucune, sous le plafond — puis le PACK DE
+ * DÉPART de bouche-trous comble les rôles vides (js/gestion.js) ; entre deux
+ * splits, ceux qui restent se tirent au loto par niveau, jamais au choix
+ * (Cap 82-0 : *garder des joueurs de run en run devrait être fait dans une
+ * loto*). Une partie d'avant la version 5 garde sa roulette et ses gardés.
  */
 import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
-import { PLAFOND, signable } from './cotes.js';
+import { PLAFOND, TARIFS, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
 import { hasard, graineDe } from './hasard.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
-import { effetDe } from './meta.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
+import { effetDe, MODES } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 4;
+export const VERSION = 5;
+/** Un loto : trois cartes, tu en gardes une ou aucune. */
+export const LOTO = 3;
+/* Les niveaux des cases de ceux qui restent, dans l'ordre où elles s'ouvrent (GARDES, plus le noyau). */
+const NIVEAUX_RESTES = ['Pilier', 'Régulier', '★ Étoile', '★ Phénomène', 'Remplaçant'];
+const ORDRE_NIVEAUX = TARIFS.map(([n]) => n);
 const ROLES = ['haut', 'jungle', 'milieu', 'bas', 'soutien'];
 /* Le club d'une partie sans club (une sauvegarde d'avant le méta). */
 const CLUB_DEPART = { nom: 'Ton cinq', code: 'TOI', couleur: null };
@@ -35,15 +51,22 @@ const CLUB_DEPART = { nom: 'Ton cinq', code: 'TOI', couleur: null };
 const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [k, 0]));
 
 /**
- * Une partie neuve. `deb` : les déblocages du méta (js/meta.js), posés au
- * départ et gardés dans la sauvegarde ; `club` : { nom, code, couleur } ;
- * `exig` : le cran des exigences (0 : aucune) ; `coach` : le coach-personnage
- * qui fait la run (un id de COACHS, js/rogue.js).
+ * Une partie neuve. `mode` : 'rogue' ou 'dixhuit' (js/meta.js MODES) ; au
+ * 18-0, rien du méta ne se pose (ni déblocage, ni exigence, ni coach).
+ * `deb` : les déblocages du méta (js/meta.js), posés au départ et gardés dans
+ * la sauvegarde ; `club` : { nom, code, couleur } ; `exig` : le cran des
+ * exigences (0 : aucune) ; `coach` : le coach-personnage qui fait la run (un
+ * id de COACHS, js/rogue.js) ; `col` : ta collection au départ, [{ cle,
+ * niveau }], d'où le classeur tire ses lotos ; `vedette` : la clé de ton
+ * joueur de concession, qui ouvre la première case de la run.
  */
-export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null } = {}) {
-  const fx = effetDe(deb, exig);
+export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null, mode = 'rogue', col = [], vedette = null } = {}) {
+  const rogue = mode !== 'dixhuit';
+  const fx = effetDe(rogue ? deb : [], rogue ? exig : 0);
   const P = {
-    v: VERSION, graine, log: [], etape: 'bati', deb: [...deb], club: club || CLUB_DEPART, exig, fx, coach, talents: [], staff: [], enTrop: null,
+    v: VERSION, graine, mode: MODES[mode] ? mode : 'rogue', log: [], etape: 'bati', deb: rogue ? [...deb] : [], club: club || CLUB_DEPART, exig: rogue ? exig : 0, fx,
+    coach: rogue ? coach : null, talents: [], staff: [], enTrop: null,
+    col: rogue ? col.map(({ cle, niveau }) => ({ cle, niveau })) : [], vedette: rogue ? vedette : null, cases: [], bouches: false, restes: [],
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
@@ -52,16 +75,70 @@ export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach 
     cartes: [], cadeau: null, offrePack: null,
   };
   if (fx.jetons) P.R.primes.push({ cle: 'depart', jetons: fx.jetons });
-  if (coach) P.R.coach = { id: coach, depuis: 0 };
+  if (P.coach) P.R.coach = { id: P.coach, depuis: 0 };
   return P;
 }
 
-/** Les relances d'une sorte qu'un repêchage permet, déblocages compris. */
-export const relancesMax = (P, k) => RELANCES[k][1] + P.fx.relances;
-/** Combien de joueurs restent d'un split à l'autre. */
+/** Le Rogue qui part de ses cases (version 5) ; faux au 18-0 et dans une partie d'avant, qui garde sa roulette. */
+export const parCases = P => P.mode !== 'dixhuit' && P.v >= 5;
+/** La ref d'une clé de carte (js/gestion.js cleDe). */
+export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id, e, n, r }; };
+
+/*
+ * LES CASES d'un départ, dans l'ordre : au premier split de la run, ton joueur
+ * de concession (s'il y en a un), puis le classeur — une case ★ Étoile et une
+ * case Pilier par déblocage, une case Régulier toujours ; l'exigence « Le
+ * classeur mince » retire la meilleure. Entre deux splits, ceux qui restent :
+ * GARDES cases (le noyau en ajoute une, le vestiaire mince en retire une),
+ * Pilier puis Régulier puis ★ Étoile, tirées de ton effectif du split fini.
+ * Chaque case : { id, niveau, source } — source : 'vedette', 'col', 'restes'.
+ */
+export function casesDe(P) {
+  if (!parCases(P)) return [];
+  if (P.run.n === 1) {
+    const classeur = [...Array(Math.max(0, P.fx.etoile)).fill('★ Étoile'), ...Array(Math.max(0, P.fx.pilier)).fill('Pilier'), 'Régulier'].slice(Math.max(0, -P.fx.cases));
+    return [...(P.vedette ? [{ id: 'vedette', niveau: null, source: 'vedette' }] : []), ...classeur.map((niveau, k) => ({ id: `classeur-${k}`, niveau, source: 'col' }))];
+  }
+  return NIVEAUX_RESTES.slice(0, Math.max(0, GARDES + P.fx.gardes)).map((niveau, k) => ({ id: `restes-${k}`, niveau, source: 'restes' }));
+}
+
+/**
+ * LE LOTO d'une case (pur) : jusqu'à LOTO cartes de son niveau — sinon du
+ * niveau d'en dessous, et ainsi de suite — parmi sa source, hors des rôles
+ * comblés et des cartes déjà prises ou offertes dans ce départ ; tirées du
+ * dé de la run et de la case : recharger redonne les mêmes. Rend [{ cle, niveau }].
+ */
+export function lotoDe(P, k) {
+  const c = casesDe(P)[k];
+  if (!c) return [];
+  if (c.source === 'vedette') return [{ cle: P.vedette, niveau: null }];
+  const pris = new Set([...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).map(x => cleDe(x.ref)).concat(P.cases.filter(Boolean)));
+  const libres = libresDe(P.eff);
+  const pool = (c.source === 'restes' ? P.restes : P.col).filter(x => !pris.has(x.cle) && libres.includes(x.cle.split('|')[3]));
+  const de = hasard(graineDe(P.graine, `loto-${P.run.n}-${k}`));
+  for (let i = ORDRE_NIVEAUX.indexOf(c.niveau); i < ORDRE_NIVEAUX.length; i++) {
+    const du = pool.filter(x => x.niveau === ORDRE_NIVEAUX[i]);
+    if (!du.length) continue;
+    for (let j = du.length - 1; j > 0; j--) { const m = Math.floor(de() * (j + 1)); [du[j], du[m]] = [du[m], du[j]]; }
+    return du.slice(0, LOTO);
+  }
+  return [];
+}
+/** La case qui attend ton geste, ou null : { k, ...case, loto } ; après la dernière, le pack de départ. */
+export function caseEnCours(P) {
+  const cases = casesDe(P);
+  const k = P.cases.length;
+  return P.etape === 'bati' && k < cases.length ? { k, ...cases[k], loto: lotoDe(P, k) } : null;
+}
+/** Le pack de départ attend : toutes les cases passées, des rôles encore vides, pas encore ouvert. */
+export const attendPack = P => parCases(P) && P.etape === 'bati' && !caseEnCours(P) && !P.bouches && libresDe(P.eff).length > 0;
+
+/** Les relances d'une sorte qu'un repêchage permet. */
+export const relancesMax = (P, k) => RELANCES[k][1];
+/** Combien de joueurs restent d'un split à l'autre (avant la version 5 : les gardés ; depuis : les cases de ceux qui restent). */
 export const gardesDe = P => GARDES + P.fx.gardes;
-/** Le mandat du split n de la run, monté par les exigences : [clé, en mots]. */
-export const mandatDuSplit = (P, n = P.run.n) => mandatDe(n, P.fx.mandat);
+/** Le mandat du split n de la run, monté par les exigences : [clé, en mots]. Au 18-0, le titre. */
+export const mandatDuSplit = (P, n = P.run.n) => (P.mode === 'dixhuit' ? mandatDe(4) : mandatDe(n, P.fx.mandat));
 /** Combien d'agents libres le dépisteur trouve par journée. */
 export const offreDe = P => MARCHE.offre + P.fx.offre;
 
@@ -146,8 +223,8 @@ function adjointEnAttente(P) {
   return { cle, id: 'adjoint', choix: [...adjointsOfferts(P, cle), 'aucun'] };
 }
 
-/** L'événement que la partie attend (un événement de la gestion, un talent du coach, un adjoint pour le staff), ou null. */
-export const enAttente = P => (P.etape === 'split' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) || adjointEnAttente(P) : null);
+/** L'événement que la partie attend (un événement de la gestion, un talent du coach, un adjoint pour le staff), ou null. Rien au 18-0. */
+export const enAttente = P => (P.etape === 'split' && P.mode !== 'dixhuit' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) || adjointEnAttente(P) : null);
 
 /*
  * Joue ce qui vient avec ton plan de jeu, ta partie repêchée d'abord (`rp` :
@@ -199,10 +276,22 @@ function finirEntrainement(P) {
 
 const refuser = pourquoi => { throw new Error(pourquoi); };
 const exiger = (ok, pourquoi) => ok || refuser(pourquoi);
+const pasAuDixHuit = P => exiger(P.mode !== 'dixhuit', 'pas au 18-0 : aucune carte, aucune décision');
+
+/* Un joueur entre à un rôle vide de ton cinq, s'il se paie (le reste du plafond paie encore les cases vides). */
+function entrer(P, c) {
+  exiger(!P.eff.cinq[c.r], `${ROLES_MOTS[c.r]} comblé`);
+  exiger(![...Object.values(P.eff.cinq), P.eff.banc].some(x => x && cleDe(x.ref) === cleDe(c.ref)), 'déjà chez toi');
+  exiger(signable(c.cout, plafondDe(P.eff) - masseDe(P.eff), libresDe(P.eff).length), 'trop cher : le cinq ne se compléterait pas');
+  P.eff.cinq[c.r] = c;
+  collectionner(P, c.ref);
+}
+const ROLES_MOTS = { haut: 'Haut', jungle: 'Jungle', milieu: 'Milieu', bas: 'Bas', soutien: 'Soutien' };
 
 /* Ce que chaque action fait. Chacune vérifie qu'elle est permise, puis joue. */
 const ACTIONS = {
   tirage(P, a, ctx) {
+    exiger(!parCases(P), 'le Rogue part de tes cases et de ton pack de départ');
     exiger(P.etape === 'bati' && libresDe(P.eff).length, 'aucune case à combler');
     if (a.mode === 'tour') exiger(!P.tirage, 'un vestiaire est déjà ouvert');
     else exiger(P.tirage && RELANCES[a.mode] && P.relances[a.mode] < relancesMax(P, a.mode), 'plus de relance');
@@ -213,12 +302,42 @@ const ACTIONS = {
     P.tirage = { id: a.id, e: a.e };
   },
   signer(P, a, ctx) {
+    exiger(!parCases(P), 'le Rogue part de tes cases et de ton pack de départ');
     const v = exiger(P.etape === 'bati' && vestiaireDe(P, ctx), 'aucun vestiaire ouvert');
     const j = signables(P.eff, v.equipe, v.profils.joueurs).find(x => x.n === a.n && x.r === a.r);
     exiger(j, `${a.n} ne se signe pas`);
     P.eff.cinq[j.r] = contratDe(ctx, { id: v.id, e: v.equipe.nom, n: j.n, r: j.r });
     collectionner(P, P.eff.cinq[j.r].ref);
     P.tirage = null;
+  },
+  /*
+   * UNE CASE du départ (Rogue, version 5) : `cle`, une carte de son loto, ou
+   * null pour passer ; `vieux` : pour une carte de ceux qui restent, la ref de
+   * sa version d'un split plus récent (le joueur qui vieillit).
+   */
+  case(P, a, ctx) {
+    const c = exiger(caseEnCours(P), 'aucune case à ouvrir');
+    if (a.cle === null) { P.cases.push(null); return; }
+    exiger(c.loto.some(x => x.cle === a.cle), 'cette carte n\'est pas au loto');
+    let v = contratDe(ctx, refDe(a.cle));
+    if (a.vieux) {
+      exiger(c.source === 'restes' && a.vieux.n === v.n && a.vieux.r === v.r && ctx.splits.get(a.vieux.id).split.annee > ctx.splits.get(v.ref.id).split.annee, `${v.n} ne vieillit pas ainsi`);
+      v = contratDe(ctx, a.vieux);
+    }
+    entrer(P, v);
+    P.cases.push(a.cle);
+  },
+  /* LE PACK DE DÉPART : un bouche-trou par rôle vide (js/gestion.js tirerBoucheTrous), chacun à ton effectif et à ta collection. */
+  boucheTrous(P, a, ctx) {
+    exiger(attendPack(P), 'le pack de départ s\'ouvre après tes cases');
+    const libres = libresDe(P.eff);
+    exiger(a.refs.length === libres.length && libres.every(r => a.refs.filter(x => x.r === r).length === 1), 'un bouche-trou par rôle vide');
+    for (const ref of a.refs) {
+      const c = contratDe(ctx, ref);
+      exiger(NIVEAUX_BOUCHE_TROUS.has(c.niveau), `${c.n} n'est pas un bouche-trou`);
+      entrer(P, c);
+    }
+    P.bouches = true;
   },
   lancer(P, a, ctx) {
     exiger(P.etape === 'bati' && !libresDe(P.eff).length, 'ton cinq n\'est pas complet');
@@ -252,16 +371,18 @@ const ACTIONS = {
     jouerAvecToi(P, ctx, L => jouerRonde(L, P.v >= 3 ? 0 : null), a.rp);
   },
   pack(P, a) {
+    pasAuDixHuit(P);
     exiger(P.etape === 'split', 'la boutique ouvre avec le split');
     return exiger(ouvrirPack(P.L, P.R, a.id), 'pas assez de jetons');
   },
-  plan(P, a) { exiger(basculer(P.R, a.carte), 'le plan est plein'); },
+  plan(P, a) { pasAuDixHuit(P); exiger(basculer(P.R, a.carte), 'le plan est plein'); },
   // Avant la version 4, un coach s'achetait ; depuis, ton coach fait la run.
   coach(P, a) {
     exiger(P.v < 4, 'ton coach fait la run');
     exiger(P.etape === 'split' && engager(P.L, P.R, a.id, prixDuCoach(P)), 'pas assez de jetons');
   },
   marche(P, a, ctx) {
+    pasAuDixHuit(P);
     exiger(P.etape === 'split' && marcheOuvert(P.L), 'le marché est fermé');
     const c = contratDe(ctx, a.ref);
     exiger(c.cout <= MARCHE.coutMax, 'trop cher pour un agent libre');
@@ -273,6 +394,7 @@ const ACTIONS = {
   },
   /* Un pack de joueurs : trois vrais joueurs (tirés par js/gestion.js tirerPackJoueurs), qui entrent tous à ta collection. */
   packJoueurs(P, a) {
+    pasAuDixHuit(P);
     exiger(P.etape === 'split' && marcheOuvert(P.L), 'les packs de joueurs se vendent jusqu\'à la date limite');
     exiger(PACKS_JOUEURS[a.id] && a.refs.length <= PACKS_JOUEURS[a.id].n, 'pack inconnu');
     const prix = prixPackJoueurs(P.R, a.id);
@@ -295,6 +417,7 @@ const ACTIONS = {
     majToi(P);
   },
   entrainer(P, a, ctx) {
+    pasAuDixHuit(P);
     exiger(P.etape === 'split' && P.L.jour < P.L.journees.length, 'on s\'entraîne pendant la saison');
     exiger(!P.entrainement, 'un entraînement est déjà en cours');
     const c = exiger(P.eff.cinq[a.r], 'personne à ce rôle');
@@ -302,6 +425,7 @@ const ACTIONS = {
     P.entrainement = { cle: cleDe(c.ref), n: c.n, champion: a.champion, debut: P.L.jour };
   },
   strategie(P, a) {
+    pasAuDixHuit(P);
     exiger(a.id === null || STRATEGIES[a.id], 'stratégie inconnue');
     P.strategie = a.id;
   },
@@ -353,10 +477,27 @@ const ACTIONS = {
     P.dernier = L;
     P.L = null;
     P.entrainement = null;
-    P.run.fin = champion ? 'gagnee' : rempli || sursis ? null : 'perdue';
+    // Le 18-0 : un seul split, gagné par le titre ou fini.
+    P.run.fin = champion ? 'gagnee' : P.mode === 'dixhuit' || !(rempli || sursis) ? 'perdue' : null;
     P.etape = P.run.fin ? 'fin' : 'gardes';
+    // Ceux qui restent (version 5) : ton effectif du split fini, d'où les cases du prochain départ tirent leurs lotos.
+    if (parCases(P)) P.restes = [...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean).map(x => ({ cle: cleDe(x.ref), niveau: x.niveau }));
+  },
+  /* LE SPLIT SUIVANT (Rogue, version 5) : le bilan est lu ; ton effectif se vide, et le prochain départ ouvre ses cases parmi ceux qui restent. */
+  suivant(P) {
+    exiger(parCases(P) && P.etape === 'gardes', 'pas le moment');
+    P.eff = { cinq: {}, banc: null, plafond: P.eff.plafond };
+    P.cases = [];
+    P.bouches = false;
+    P.run.n++;
+    P.relances = relancesNeuves();
+    P.tirage = null;
+    P.adversaires = [];
+    P.dernier = null;
+    P.etape = 'bati';
   },
   garder(P, a, ctx) {
+    exiger(!parCases(P), 'ceux qui restent se tirent au loto');
     exiger(P.etape === 'gardes', 'pas le moment');
     const tous = [...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean);
     const gardes = tous.filter(c => a.cles.includes(cleDe(c.ref))).map(c => {
@@ -397,17 +538,19 @@ export function appliquer(P, a, ctx) {
 
 /** Les splits qu'un journal nomme : à charger avant de le rejouer. */
 export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t === 'tirage' ? a.id : null, ...(a.adversaires || []).map(x => x.id), a.ref ? a.ref.id : null,
-  ...(a.refs || []).map(x => x.id), ...Object.values(a.vieux || {}).map(x => x.id)]).filter(Boolean))];
+  ...(a.refs || []).map(x => x.id), a.t === 'case' && a.cle ? a.cle.split('|')[0] : null, a.t === 'case' && a.vieux ? a.vieux.id : null,
+  ...(a.t === 'garder' ? Object.values(a.vieux || {}).map(x => x.id) : [])]).filter(Boolean))];
 
-/** La sauvegarde : la graine, les déblocages et le club du départ, et le journal ; rien de compté. */
-export const sauvegarde = P => ({ v: P.v, graine: P.graine, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, log: P.log });
+/** La sauvegarde : la graine, le mode, les déblocages et le club du départ, ta collection et ta vedette d'alors, et le journal ; rien de compté. */
+export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, col: P.col, vedette: P.vedette, log: P.log });
 
 /**
  * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
- * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance.
+ * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance ; avant la 5, la
+ * roulette bâtissait le cinq du Rogue et les gardés se choisissaient.
  */
 export function rejouer(sv, ctx) {
-  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null });
+  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null });
   P.v = sv.v || 1;
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;

@@ -18,6 +18,7 @@
     <symbol id="i-saut" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7V5z" fill="currentColor" stroke="none"/><path d="M18 5v14"/></symbol>
     <symbol id="i-boite" viewBox="0 0 24 24"><path d="M4 13l2.2-7h11.6L20 13v6H4z"/><path d="M4 13h4.5l1.5 2.5h4L15.5 13H20"/></symbol>
     <symbol id="i-maillot" viewBox="0 0 24 24"><path d="M9 3h6l5 3-2 4-2-1v12H8V9L6 10 4 6z"/><path d="M9 3a3 3 0 0 0 6 0"/></symbol>
+    <symbol id="i-joueurs" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.3c2.8.2 5 2.4 5 5.7"/></symbol>
     <symbol id="i-ligue" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   </svg>
@@ -39,16 +40,19 @@
     <section id="titre" class="ecran"></section>
 
     <section id="bati" class="ecran" hidden>
-      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p><p id="bati-mandat" class="mandat"></p></div>
+      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous" id="bati-sous"></p><p id="bati-mandat" class="mandat"></p></div>
       <ol id="alignement" class="alignement"></ol>
       <p id="etat" class="etat"></p>
+      <!-- Au Rogue : la case en cours (son loto), puis le pack de départ (js/depart.js). -->
+      <div id="depart-cases"></div>
       <div class="actionbar">
         <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg><span>Tourner la roulette</span></button>
+        <button id="pack" class="go" hidden>🧰 Ouvrir le pack de départ</button>
         <button id="jouer" class="go" hidden>Jouer le split</button>
       </div>
     </section>
 
-    <!-- LE SPLIT, en quatre sections (la barre du bas) : le Bureau, l'Effectif, le Marché, la Ligue. L'action principale reste en bas, au-dessus de la barre. -->
+    <!-- LE SPLIT, en sections (la barre du bas), les mêmes que Cap 82-0 : le Bureau, les Joueurs, le Cinq, le Marché (au Rogue), la Ligue. L'action principale reste en bas, au-dessus de la barre. -->
     <section id="split" class="ecran" hidden>
       <div id="bande"></div>
       <nav class="sousnav" id="sousnav" hidden></nav>
@@ -73,6 +77,7 @@
     <section id="collection" class="couche" hidden></section>
     <section id="deblocages" class="couche" hidden></section>
     <section id="depart" class="couche" hidden></section>
+    <section id="exhibition" class="couche" hidden></section>
     <section id="vestiaire" class="couche" hidden>
       <header class="bandeau" id="vestiaire-bandeau"></header>
       <div class="combler"><span>À combler <b id="vestiaire-libres"></b></span><span>Ce choix <b id="vestiaire-max"></b></span></div>
@@ -91,7 +96,8 @@
 
   <nav class="navbar" id="nav" hidden>
     <button class="navtab" data-section="bureau"><svg class="ico" aria-hidden="true"><use href="#i-boite"/></svg><span class="navtab-lbl">Bureau</span></button>
-    <button class="navtab" data-section="effectif"><svg class="ico" aria-hidden="true"><use href="#i-maillot"/></svg><span class="navtab-lbl">Effectif</span></button>
+    <button class="navtab" data-section="joueurs"><svg class="ico" aria-hidden="true"><use href="#i-joueurs"/></svg><span class="navtab-lbl">Joueurs</span></button>
+    <button class="navtab" data-section="cinq"><svg class="ico" aria-hidden="true"><use href="#i-maillot"/></svg><span class="navtab-lbl">Cinq</span></button>
     <button class="navtab" data-section="marche"><svg class="ico" aria-hidden="true"><use href="#i-marche"/></svg><span class="navtab-lbl">Marché</span></button>
     <button class="navtab" data-section="ligue"><svg class="ico" aria-hidden="true"><use href="#i-ligue"/></svg><span class="navtab-lbl">Ligue</span></button>
   </nav>
