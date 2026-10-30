@@ -3,12 +3,12 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.13.0';  // 0.13.0 : les gestes du doigt (balayer, tirer pour fermer, glisser-déposer au Cinq)
+const VERSION = 'faille-0.14.0';  // 0.14.0 : le moteur v2, une partie comme une vraie (sorts, niveaux, combats, monstres et tours de leur époque)
 
 const FICHIERS = [
   './', 'index.html', 'style.css',
   // Le graphe de modules au complet — scripts/check_coquille.mjs le vérifie.
-  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js', 'js/fiche.js', 'js/images.js', 'js/sim.js', 'js/split.js',
+  'js/main.js', 'js/data.js', 'js/hasard.js', 'js/util.js', 'js/pile.js', 'js/cotes.js', 'js/fiche.js', 'js/images.js', 'js/sim.js', 'js/canaux.js', 'js/moteur.js', 'js/moteur-v1.js', 'js/split.js',
   'js/repechage.js', 'js/tableau-repechage.js', 'js/rogue.js', 'js/boutique.js', 'js/gestion.js', 'js/partie.js', 'js/bureau.js', 'js/strategie.js',
   'js/palmares.js', 'js/meta.js', 'js/sauvegardes.js', 'js/menu.js', 'js/depart.js', 'js/vitrine.js', 'js/regles.js', 'js/direct.js', 'js/commentaire.js', 'js/terrain.js', 'js/sons.js', 'js/soir.js', 'js/ouverture.js', 'js/glisser.js', 'js/deposer.js',
   'data/index.json', 'data/champions.json',

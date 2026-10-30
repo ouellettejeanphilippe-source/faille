@@ -4,7 +4,7 @@
  * ligue (js/sim.js) et de ses feuilles (js/palmares.js) ; aucune cote ici,
  * seulement ce qui s'est joué.
  */
-import { esc, virgule } from './util.js';
+import { esc, virgule, nomCourt } from './util.js';
 import { classement } from './sim.js';
 import { statsDuSplit, meneurs, MENEURS } from './palmares.js';
 import { repechageDe } from './repechage.js';
@@ -64,7 +64,7 @@ export function hierSoir(L) {
     const rp = repechageDe(s, k);
     const champ = rp ? rp.choix[f.gagnant === x ? nous : 1 - nous][v.r] : null;
     return `<li class="hier-partie"><span class="hier-res ${f.gagnant === x ? 'bon' : 'mauvais'}">${f.gagnant === x ? 'V' : 'D'}</span>
-      <span class="hier-id"><b>${horloge(f.duree)} · ${f.equipes[x].k}-${f.equipes[1 - x].k}</b><small>⭐ ${esc(v.n)} ${v.k}/${v.m}/${v.a}${champ ? ` · ${esc(champ)}` : ''}</small></span>
+      <span class="hier-id"><b>${horloge(f.duree)} · ${f.equipes[x].k}-${f.equipes[1 - x].k}</b><small>⭐ ${esc(nomCourt(v.n))} ${v.k}/${v.m}/${v.a}${champ ? ` · ${esc(champ)}` : ''}</small></span>
       <button class="mini" data-sommaire="${s.cle}|${k}">Sommaire</button><button class="mini" data-direct="${s.cle}|${k}">▶</button></li>`;
   }).join('');
   const mot = enCours ? (s.v[nous] === s.v[1 - nous] ? 'Égalité' : gagne ? 'Tu mènes' : 'Tu tires de l\'arrière') : gagne ? 'Victoire' : 'Défaite';
@@ -109,7 +109,7 @@ export function tableauMeneurs(L) {
   if (!st.length) return '<p class="sous">Les meneurs viennent avec la première journée.</p>';
   return Object.entries(MENEURS).map(([cle, [ico, nom, , moyenne]]) => {
     const lignes = meneurs(L, cle, 5, st).map(({ ligne: l, val }, k) => `<li class="${l.i === 0 ? 'toi' : ''}"><span class="rang">${k + 1}</span>
-      <span class="equipe"><b>${esc(l.n)}</b><small>${ROLES[l.r]} · ${esc(L.equipes[l.i].nom)}</small></span><span class="fiche">${moyenne ? virgule(val, cle === 'or' ? 0 : 1) : val}</span></li>`).join('');
+      <span class="equipe"><b>${esc(nomCourt(l.n))}</b><small>${ROLES[l.r]} · ${esc(L.equipes[l.i].nom)}</small></span><span class="fiche">${moyenne ? virgule(val, cle === 'or' ? 0 : 1) : val}</span></li>`).join('');
     return `<h3>${ico} ${nom}${moyenne ? ' · deux tiers des parties' : ''}</h3><ol class="classement">${lignes}</ol>`;
   }).join('');
 }
@@ -123,7 +123,7 @@ function moments(L, p) {
   const premier = f.fil.find(x => x.quoi === 'elim');
   const liste = f.fil.filter(x => MOTS[x.quoi] || x === premier);
   return liste.map(x => `<li><span class="temps">${horloge(x.t)}</span> ${qui(x)} ${x === premier
-    ? `: premier sang, ${esc(f.equipes[x.camp].joueurs[x.tueur].n)} sur ${esc(f.equipes[1 - x.camp].joueurs[x.victime].n)}` : MOTS[x.quoi]}</li>`).join('');
+    ? `: premier sang, ${esc(nomCourt(f.equipes[x.camp].joueurs[x.tueur].n))} sur ${esc(nomCourt(f.equipes[1 - x.camp].joueurs[x.victime].n))}` : MOTS[x.quoi]}</li>`).join('');
 }
 
 /** La feuille d'une série : chaque partie, son repêchage, ses deux équipes, leurs joueurs, ses moments. */
@@ -138,7 +138,7 @@ export function feuilleSerie(L, s) {
     const equipe = (e, x) => `<div class="feuille-equipe${f.gagnant === x ? ' gagne' : ''}">
       <h4>${x ? 'Rouge' : 'Bleu'} · ${esc(L.equipes[camps[x]].nom)}${f.gagnant === x ? ' · victoire' : ''}</h4>
       <p class="sous">${e.k} élim. · ${virgule(e.or / 1000)} k d'or · ${e.tours} tours · ${e.dragons} dragons · ${e.barons} Nashor</p>
-      <table><tbody>${e.joueurs.map(j => `<tr><td>${ROLES[j.r]}</td><td>${esc(j.n)}${champ(camps[x], j.r)}</td><td>${j.k}/${j.m}/${j.a}</td><td>${virgule(j.or / 1000)} k</td></tr>`).join('')}</tbody></table></div>`;
+      <table><tbody>${e.joueurs.map(j => `<tr><td>${ROLES[j.r]}</td><td>${esc(nomCourt(j.n))}${champ(camps[x], j.r)}</td><td>${j.k}/${j.m}/${j.a}</td><td>${virgule(j.or / 1000)} k</td></tr>`).join('')}</tbody></table></div>`;
     return `<section class="partie"><h3>Partie ${k + 1} · ${horloge(f.duree)} <button class="mini" data-direct="${s.cle}|${k}">▶ Regarder</button></h3>${bans}${f.equipes.map(equipe).join('')}<ul class="moments">${moments(L, p)}</ul></section>`;
   }).join('')}`;
 }

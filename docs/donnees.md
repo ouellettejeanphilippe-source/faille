@@ -11,7 +11,7 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 
 ### Leaguepedia (toutes les années)
 
-- L'API Cargo de lol.fandom.com. `ScoreboardGames` (une ligne par partie : vainqueur, durée, tours, dragons, Nashor, hérauts, larves, inhibiteurs) et `ScoreboardPlayers` (une ligne par joueur par partie : K/M/A, or, CS, dégâts, score de vision, objets).
+- L'API Cargo de lol.fandom.com. `ScoreboardGames` (une ligne par partie : vainqueur, durée, tours, dragons, Nashor, hérauts, larves, inhibiteurs) et `ScoreboardPlayers` (une ligne par joueur par partie : K/M/A, or, CS, dégâts, score de vision, objets, sorts d'invocateur).
 - Le script demande d'abord à l'API quels champs la table a (`cargofields`) et ne demande que ceux-là.
 - **Licence** : CC BY-SA 3.0, attribution dans chaque shard (`source`) et au pied de la page. Les shards dérivés sont sous la même licence.
 - **Par la page d'export, pas par l'API.** Mesuré le 10 octobre 2026 : l'API (`api.php?action=cargoquery`) refuse l'anonyme après la première requête, depuis un conteneur comme depuis GitHub. `Special:CargoExport` rend les mêmes tables sans compte et sans cette limite, en JSON typé (une valeur absente en `null`, les objets en tableau, le texte échappé pour le HTML, qu'on décode). Les quinze Mondiaux se bâtissent en quelques minutes.
@@ -20,7 +20,7 @@ Un split = un shard (`data/splits/<id>.json`). Tout se juge **dans le split** : 
 
 La **classe** de chaque champion (Tank, Combattant, Mage, Assassin, Tireur, Soutien), lue sur la dernière version. Un champion à deux classes compte pour moitié dans chacune. Les champions que Data Dragon ne reconnaît pas sont listés à la fin du build.
 
-`data/champions.json` garde, pour chaque champion joué dans les shards, son id de Data Dragon (les images) et ses classes (le repêchage, js/repechage.js). `node scripts/build_splits.mjs --champions` le refait sans rebâtir de split.
+`data/champions.json` garde, pour chaque champion joué dans les shards, son id de Data Dragon (les images), ses classes (le repêchage, js/repechage.js) et le nom français de son ultime (Data Dragon fr_FR, le commentateur du direct) ; et les objets complétés que les joueurs des shards achetaient, par leur nom anglais : leur id, leur nom français, leur prix et la version de Data Dragon du Mondial de leur année (le sommaire, ses icônes). `node scripts/build_splits.mjs --champions` le refait sans rebâtir de split.
 
 ### Les images
 
@@ -77,7 +77,8 @@ Un joueur de peu de parties tire vers la moyenne (z × pj / (pj + 3)), une parti
     obj: { tours, dragons, barons, herauts, larves, inhib : [somme, parties mesurées] },
     joueurs: [{ n, r, pj, v, min, k, m, a, eqK, eqOr, eqDeg,
       or, cs, deg, vision : [somme, parties mesurées, minutes de ces parties],
-      champs: [[champion, pj, v]], classes: { tank: 0,4, … }, objets: [les 8 plus achetés] }] }] }
+      champs: [[champion, pj, v]], sorts: ['FT', …] (la paire de sorts la plus jouée sur chaque champion, dans l'ordre de champs),
+      classes: { tank: 0,4, … }, objets: [les 8 plus achetés] }] }] }
 ```
 
 `matchs` : une ligne par partie, chaque nombre du côté bleu puis du rouge, null quand Leaguepedia ne le mesure pas (de 2011 à 2013 : ni éliminations d'équipe, ni or, ni tours). Le côté bleu est `Team1` chez Leaguepedia. Le moteur s'y mesure (MOTEUR.md).

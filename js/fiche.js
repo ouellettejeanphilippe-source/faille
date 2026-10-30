@@ -25,7 +25,7 @@
  *
  * Aucune cote ici : le niveau, les badges, les vraies stats.
  */
-import { esc, virgule, pts } from './util.js';
+import { esc, virgule, pts, nomCourt } from './util.js';
 import { imageLP, iconeChampion, illustration } from './images.js';
 import { GALONS } from './palmares.js';
 import { editionDe, EDITIONS } from './meta.js';
@@ -84,7 +84,6 @@ const initiales = n => esc(String(n).replace(/\s*\(.*\)$/, '').slice(0, 2).toUpp
 const parMin = (t, dec = 1) => (t && t[1] ? virgule(t[0] / t[2], dec) : null);
 export const badge = b => `<span class="badge pal-${b.palier.toLowerCase()}">${b.ico} ${esc(b.nom)} ${b.palier}</span>`;
 /* Le nom affiché : sans la parenthèse du vrai nom ; la longueur règle la taille de la plaque (style.css `--n`). */
-const nomCourt = n => String(n).replace(/\s*\(.*\)$/, '');
 
 /** La petite photo d'une ligne du vestiaire. */
 export const vignette = j => `<span class="vignette">${initiales(j.n)}${j.photo ? `<img src="${imageLP(j.photo)}" alt="" loading="lazy">` : ''}</span>`;

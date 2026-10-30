@@ -14,7 +14,7 @@
  * prenaient de plus que leur split) se lit sur leurs vraies parties, et le
  * dépisteur la dit.
  */
-import { sommerEffets } from './sim.js';
+import { sommerEffets } from './canaux.js';
 
 const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
 

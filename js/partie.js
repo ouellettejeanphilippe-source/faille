@@ -26,8 +26,15 @@
  * splits, ceux qui restent se tirent au loto par niveau, jamais au choix
  * (Cap 82-0 : *garder des joueurs de run en run devrait être fait dans une
  * loto*). Une partie d'avant la version 5 garde sa roulette et ses gardés.
+ *
+ * LE MOTEUR (version 6) : une partie se joue comme une vraie (js/moteur.js) —
+ * les sorts d'invocateur, les niveaux, les combats, les monstres et les tours
+ * de son époque. Une partie d'avant la version 6 garde le moteur d'alors
+ * (js/moteur-v1.js, gelé) : rejouée sous sa graine, elle redonne les mêmes
+ * parties (check_gestion le prouve sur une run de la version 5).
  */
-import { joueurDuMoteur, equipeReelle, melangerTempos, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
+import { melangerTempos } from './canaux.js';
+import { joueurDuMoteur, equipeReelle, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
 import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, TARIFS, signable } from './cotes.js';
@@ -38,7 +45,7 @@ import { effetDe, MODES } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 5;
+export const VERSION = 6;
 /** Un loto : trois cartes, tu en gardes une ou aucune. */
 export const LOTO = 3;
 /* Les niveaux des cases de ceux qui restent, dans l'ordre où elles s'ouvrent (GARDES, plus le noyau). */
@@ -345,7 +352,8 @@ const ACTIONS = {
       const { split, profils, tempo } = ctx.splits.get(id);
       return equipeReelle(split, split.equipes.find(x => x.nom === e), profils, tempo);
     });
-    P.L = creerSplit([majToi(P), ...adv], { graine: a.graine, rondes: 2, bo: 1 });
+    // Le moteur (version 6) : une partie comme une vraie ; une partie d'avant garde le moteur gelé, pour se rejouer pareil.
+    P.L = creerSplit([majToi(P), ...adv], { graine: a.graine, rondes: 2, bo: 1, moteur: P.v >= 6 ? 2 : 1 });
     P.adversaires = a.adversaires;
     P.etape = 'split';
     // Le cadeau du proprio (un déblocage) : un pack argent au premier split de la run.
@@ -547,7 +555,7 @@ export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P
 /**
  * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
  * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance ; avant la 5, la
- * roulette bâtissait le cinq du Rogue et les gardés se choisissaient.
+ * roulette bâtissait le cinq du Rogue et les gardés se choisissaient ; avant la 6, le moteur d'alors jouait les parties.
  */
 export function rejouer(sv, ctx) {
   const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null });
