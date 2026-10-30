@@ -1271,7 +1271,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cj-bouton.au-plan .cj::before { content: "Au plan"; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 1.4cqw; background: var(--or); color: #241800; font: 800 5cqw/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
 /* Ton cinq en cartons : trois de front, puis deux et le banc ; le rôle au-dessus, ses stats chez toi dessous. */
 .cinq-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2) var(--esp-2); --carte-l: min(30vw, calc((100dvh - 430px) * 5 / 14), 150px); justify-content: center; grid-template-columns: repeat(3, var(--carte-l)); }
-.cinq-case { display: grid; gap: 2px; min-width: 0; cursor: pointer; }
+.cinq-case { display: grid; gap: 2px; min-width: 0; cursor: pointer; -webkit-touch-callout: none; }
 .cinq-case .fiche { margin: 0; max-width: none; }
 .cinq-case .fiche-plaque, .cinq-case .carton-verso { display: none; }
 .cinq-case > small { font: 700 var(--t-1)/1.2 var(--display); letter-spacing: 0.04em; color: var(--encre-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
@@ -1280,7 +1280,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 .cinq-gestes button { flex: 1 1 0; min-height: 40px; font-size: var(--t-1); }
 /* Le glisser-déposer (js/deposer.js) : la case d'où part la carte s'efface ; celle dessous s'allume, en or si elle la prend
    (le titulaire de son rôle, ou le banc), en rouge sinon. Le fantôme, une copie de la case, suit le doigt par-dessus tout. */
-.cinq-case { -webkit-touch-callout: none; }
+/* À la souris, la main dit qu'une carte se prend, quand il y a un banc (un clic l'ouvre toujours). */
+.cinq-cartes:has([data-banc]) .cinq-case[data-contrat] { cursor: grab; }
 .cinq-case.glisse { opacity: 0.35; }
 .cinq-case:is(.survol, .refus) .fiche { outline: 2px solid var(--or); outline-offset: 2px; }
 .cinq-case.survol .fiche { translate: 0 -4px; }
