@@ -2,8 +2,9 @@
  * LE TEST DE FUMÉE (repris de Cap 82-0), avec Playwright, à 390 px de large.
  * Il joue comme un joueur, par les boutons de l'écran :
  *
- *   1. l'écran titre, « Nouvelle run », le départ (ton club), « Commencer » ;
- *   2. le repêchage de ton cinq, à la roulette (relances au besoin) ;
+ *   1. l'écran titre, « Nouvelle partie », le départ (ton coach, ton joueur
+ *      de concession), « Commencer la run » ;
+ *   2. le départ du Rogue : les cases (prendre, ou personne), le pack de départ ;
  *   3. le split : la décision du Bureau, une journée et son repêchage des
  *      champions (un bannissement, un champion choisi), hier soir ;
  *   4. le direct : la Faille dessinée, un moment nommé, « La fin », fermer ;
@@ -12,7 +13,9 @@
  *   6. jusqu'aux séries, les séries, le bilan, ceux qui restent ;
  *   7. le menu : déblocages, collection (un album, une carte), palmarès,
  *      parties (exporter, puis importer ce fichier), règles, le titre ;
- *   8. la page rechargée : « Continuer » reprend la même partie.
+ *   8. la page rechargée : « Continuer » reprend la même partie ;
+ *   9. le 18-0 : la roulette et le vestiaire (la carte d'un joueur), le split
+ *      d'un coup, les séries, le bilan ; l'exhibition, en direct.
  *
  * Il échoue sur une erreur de la console (hors images absentes : img/lp
  * n'est copié qu'au déploiement), un débordement horizontal, un bouton qui
@@ -52,38 +55,40 @@ await page.waitForSelector('#t-nouvelle', { timeout: 15000 });
 etape('l\'écran titre', await visible('#titre'));
 await page.click('#t-nouvelle');
 await pause(200);
-etape('le départ d\'une run', await visible('#depart') && !!(await page.$('#d-commencer')));
+etape('le départ d\'une partie', await visible('#depart') && !!(await page.$('#d-commencer')) && !!(await page.$('#depart [data-mode="rogue"].on')));
 await page.click('#depart [data-coach-choisi="stratege"]');
 await pause(150);
 etape('un coach se choisit au départ', !!(await page.$('#depart [data-coach-choisi="stratege"].on')));
-await page.click('#d-commencer');
+await page.waitForSelector('#depart [data-vedette]', { timeout: 15000 });
+etape('trois étoiles de concession à la première run', (await page.$$('#depart [data-vedette]')).length === 3 && await page.$eval('#d-commencer', e => e.disabled));
+await page.click('#depart [data-vedette]');
 await pause(300);
+etape('ta vedette choisie ouvre « Commencer »', !(await page.$('#depart [data-vedette]')) && !(await page.$eval('#d-commencer', e => e.disabled)));
+await sansDebordement('le départ');
+await page.click('#d-commencer');
+await pause(800);
 
-/* 2. Le repêchage de ton cinq. */
-for (let k = 0; k < 30 && !(await visible('#jouer')); k++) {
-  await page.click('#roulette');
-  await pause(350);
-  let b = await page.$('#vestiaire-liste button.signer:not([disabled])');
-  while (!b) {
-    const r = await page.$('#relances button:not([disabled])');
-    if (!r) break;
-    await r.click();
-    await pause(350);
-    b = await page.$('#vestiaire-liste button.signer:not([disabled])');
+/* 2. Le départ du Rogue : les cases, puis le pack de départ. */
+const departParCases = async () => {
+  let cases = 0, prises = 0;
+  for (let k = 0; k < 12; k++) {
+    await page.waitForSelector('#depart-cases [data-case-passer], #pack:not([hidden]), #jouer:not([hidden])', { timeout: 15000 });
+    const prendre = await page.$('#depart-cases [data-case-prendre]:not([disabled])');
+    const passer = await page.$('#depart-cases [data-case-passer]');
+    if (!prendre && !passer) break;
+    cases++;
+    if (prendre) { prises++; await prendre.click(); } else await passer.click();
+    await pause(400);
   }
-  if (!b) { await page.keyboard.press('Escape'); continue; }
-  if (k === 0) {
-    // La carte d'un joueur du vestiaire, puis on signe depuis la rangée.
-    await page.click('#vestiaire-liste .joueur');
-    await pause(200);
-    etape('la carte d\'un joueur du vestiaire', await visible('#carte .carte'));
-    await page.keyboard.press('Escape');
-    await pause(150);
-  }
-  await b.click();
-  await pause(150);
-}
-await sansDebordement('le repêchage');
+  return { cases, prises };
+};
+const d1 = await departParCases();
+etape('les cases du départ : ta vedette prise', d1.cases >= 1 && d1.prises >= 1, `${d1.cases} cases, ${d1.prises} prises`);
+etape('le pack de départ attend', await visible('#pack') && !!(await page.$('#depart-cases h3')));
+await page.click('#pack');
+await pause(1200);
+etape('le pack comble les rôles vides de bouche-trous', (await page.$$('#depart-cases .joueur')).length === 5 - d1.prises && (await page.$$('#alignement .case.pleine')).length === 5);
+await sansDebordement('le départ du Rogue');
 etape('ton cinq est complet', await visible('#jouer'));
 await page.click('#jouer');
 await pause(1500);
@@ -214,11 +219,11 @@ etape('le bilan du split', await visible('#bilan'));
 await pause(1500);
 await sansDebordement('le bilan');
 if (await page.$('#bilan-suivant')) {
-  const garder = await page.$('#bilan [data-garder]:not([disabled])');
-  if (garder) { await garder.click(); await pause(150); }
+  etape('le bilan dit que ceux qui restent se tirent au loto', !(await page.$('#bilan [data-garder]')) && (await page.$$('#bilan .alignement .case')).length >= 5);
   await page.click('#bilan-suivant');
-  await pause(400);
-  etape('le split suivant commence au repêchage', await visible('#bati'));
+  await pause(600);
+  await page.waitForSelector('#depart-cases [data-case-prendre], #depart-cases [data-case-passer]', { timeout: 15000 });
+  etape('le split suivant commence au départ : ceux qui restent au loto', await visible('#bati') && (await page.$$('#depart-cases .joueur')).length >= 1 && (await page.$$('#depart-cases .joueur')).length <= 3);
 } else etape('la run finit au bilan', !!(await page.$('#bilan-nouvelle')));
 
 /* 7. Le menu. */
@@ -268,6 +273,72 @@ await page.click('#t-continuer');
 await pause(1500);
 const apres = await page.$eval('#teteEtat', e => e.textContent);
 etape('« Continuer » reprend la partie', /split/i.test(apres), `${avant} → ${apres}`);
+
+/* 9. LE 18-0 : la roulette, le vestiaire, le split d'un coup, les séries partie par partie, le bilan. Puis l'exhibition. */
+await page.click('#menuBtn');
+await pause(200);
+await page.click('#m-titre');
+await pause(300);
+await page.click('#t-nouvelle');
+await pause(200);
+await page.click('#depart [data-mode="dixhuit"]');
+await pause(200);
+etape('le 18-0 se choisit au départ : ni coach, ni déblocage', !!(await page.$('#depart [data-mode="dixhuit"].on')) && !(await page.$('#depart [data-coach-choisi]')) && /18-0/.test(await page.$eval('#d-commencer', e => e.textContent)));
+await page.click('#d-commencer');
+await pause(400);
+etape('le 18-0 part à la roulette', await visible('#bati') && await visible('#roulette') && !(await visible('#pack')));
+for (let k = 0; k < 30 && !(await visible('#jouer')); k++) {
+  await page.click('#roulette');
+  await pause(350);
+  let b = await page.$('#vestiaire-liste button.signer:not([disabled])');
+  while (!b) {
+    const r = await page.$('#relances button:not([disabled])');
+    if (!r) break;
+    await r.click();
+    await pause(350);
+    b = await page.$('#vestiaire-liste button.signer:not([disabled])');
+  }
+  if (!b) { await page.keyboard.press('Escape'); continue; }
+  if (k === 0) {
+    // La carte d'un joueur du vestiaire, puis on signe depuis la rangée.
+    await page.click('#vestiaire-liste .joueur');
+    await pause(200);
+    etape('la carte d\'un joueur du vestiaire', await visible('#carte .carte'));
+    await page.keyboard.press('Escape');
+    await pause(150);
+  }
+  await b.click();
+  await pause(150);
+}
+await sansDebordement('le repêchage du 18-0');
+etape('le cinq du 18-0 est complet', await visible('#jouer'));
+await page.click('#jouer');
+await pause(2500);
+etape('le 18-0 joue le split d\'un coup, droit au classement', await visible('#split') && await visible('#series') && !(await visible('#journee')) && !!(await page.$('#vue .classement li')) && (await page.$$('.navtab:not([hidden])')).length === 3);
+await page.click('.navtab[data-section="bureau"]');
+await pause(200);
+etape('au 18-0, le Bureau sans décision ni plan', !(await page.$('#vue [data-choix]')) && !(await page.$('#ouvrir-strategie')) && (await page.$$('.soustab')).length === 2);
+await sansDebordement('le Bureau du 18-0');
+for (let k = 0; k < 40 && !(await visible('#bilan')); k++) {
+  if (await visible('#repechage')) { etape('au 18-0, le jeu repêche', false); break; }
+  for (const id of ['#series', '#ronde', '#bilan-ouvrir']) {
+    if (await visible(id)) { await page.click(id); await pause(350); break; }
+  }
+}
+etape('le bilan du 18-0 finit la partie', await visible('#bilan') && !!(await page.$('#bilan-nouvelle')) && /18-0/.test(await page.$eval('#bilan h1', e => e.textContent)));
+await sansDebordement('le bilan du 18-0');
+await page.click('#bilan-titre');
+await pause(300);
+await page.click('#t-exhibition');
+await page.waitForSelector('#exhib-jouer:not([disabled])', { timeout: 15000 });
+etape('l\'exhibition : deux vrais vestiaires', await visible('#exhibition') && (await page.$$('#exhibition .case')).length === 2);
+await page.click('#exhib-jouer');
+await pause(2000);
+etape('l\'exhibition se joue en direct', await visible('#direct') && (await page.$$('#direct .tf-joueur .tf-nom')).length === 10);
+await page.click('#dt-fin');
+await pause(200);
+await page.click('#direct [data-retour]');
+await pause(150);
 
 exiger('rien ne déborde à 390 px', !debordements.length, debordements.join(', ') || `${etapes.length} étapes`);
 exiger('zéro erreur dans la console', !erreurs.length, erreurs.slice(0, 3).join(' · '));

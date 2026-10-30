@@ -4,11 +4,11 @@
  */
 import { esc } from './util.js';
 import { PLAFOND, TARIFS } from './cotes.js';
-import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT, PACKS_JOUEURS, chancesJoueurs } from './gestion.js';
-import { GARDES, JOURNEES_ADJOINTS } from './partie.js';
+import { RELANCES, MARCHE, MANDATS, OBJECTIF, ELAN, COMMANDITAIRES, ENTRAINEMENT, PACKS_JOUEURS, BOUCHE_TROUS, ETOILES_OFFERTES, chancesJoueurs } from './gestion.js';
+import { GARDES, JOURNEES_ADJOINTS, LOTO } from './partie.js';
 import { JETONS, PLAN, PACKS, RARETES, PRIX_COACH, COACHS, XP, SEUILS_NIVEAU, NIVEAU_DES_POUVOIRS, NIVEAU_DES_TALENTS, TALENT, ADJOINTS, ADJOINTS_MAX, chances } from './rogue.js';
 import { BANS } from './repechage.js';
-import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE } from './meta.js';
+import { MEDAILLES, RANGS, DEBLOCAGES, FINITIONS, EXIGENCES, PRIME_EXIGENCE, MODES } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
 import { STRATEGIES } from './strategie.js';
 
@@ -17,18 +17,22 @@ const liste = items => `<ul class="regles-liste">${items.map(x => `<li>${x}</li>
 /** La page des règles. */
 export function ecranRegles() {
   const niveau = TARIFS.find(([, c]) => c === MARCHE.coutMax);
+  const bt = c => Object.entries(c).map(([n, p]) => `${esc(n)} ${p} %`).join(', ');
   return `<h2>Les règles</h2>
-    <h3>La run</h3>
+    <h3>Les deux modes</h3>
+    ${liste(Object.values(MODES).map(x => `<b>${esc(x.nom)}</b> : ${esc(x.mot)}`))}
+    <h3>La run (le Rogue)</h3>
     ${liste([
     `Le proprio fixe un mandat à chaque split, plus haut à chaque fois : ${MANDATS.map(([, m], k) => `${k + 1}. ${esc(m)}`).join(' ; ')}. Rempli, tu passes au split suivant ; manqué, la run finit.`,
     'Un titre gagne la run.',
-    `Entre deux splits, tu gardes jusqu'à ${GARDES} joueurs ; un joueur qui a joué un split réel plus récent y vieillit. La roulette comble le reste.`,
+    `Le départ : ton joueur de concession (une ★ Étoile parmi ${ETOILES_OFFERTES} à ta première run, qui revient à chaque départ), puis le classeur — des lotos de ${LOTO} cartes de ta collection, par niveau (une case Régulier, et celles de tes déblocages), tu en gardes une ou aucune —, puis le pack de départ : un bouche-trou par rôle vide (${bt(BOUCHE_TROUS[0])} ; avec « Des bouche-trous moins pires », ${bt(BOUCHE_TROUS[1])}).`,
+    `Entre deux splits, ceux qui restent : ${GARDES} cases au loto parmi ton effectif du split fini, Pilier puis Régulier, un par case ou personne ; un joueur qui a joué un split réel plus récent y vieillit. Le pack de départ comble le reste.`,
   ])}
     <h3>Ton cinq</h3>
     ${liste([
     `Un joueur par rôle, sous un plafond de ${PLAFOND} points. Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${esc(n)} ${c}`).join(' · ')}.`,
     'Un joueur ne se signe que si ce qui reste du plafond paie encore la case vide la moins chère pour chaque rôle à combler.',
-    `La roulette sort un split et une équipe ; à chaque repêchage, ${Object.values(RELANCES).map(([m, n]) => `${n} « ${esc(m)} »`).join(', ')}.`,
+    `Au 18-0, la roulette sort un split et une équipe ; à chaque repêchage, ${Object.values(RELANCES).map(([m, n]) => `${n} « ${esc(m)} »`).join(', ')}. Puis le split se joue d'un coup, les séries partie par partie, et le jeu repêche les champions.`,
   ])}
     <h3>Le split</h3>
     ${liste([

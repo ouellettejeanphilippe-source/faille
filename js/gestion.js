@@ -3,8 +3,10 @@
  * Rien que des règles, sans DOM ; js/partie.js les applique, js/bureau.js
  * les montre, check_gestion les rejoue.
  *
- *   la roulette     un tour gratuit par case ; puis deux relances de chaque
- *                   sorte par repêchage — Autre split, Autre équipe, Passer ;
+ *   la roulette     au 18-0, un tour gratuit par case ; puis deux relances de
+ *                   chaque sorte par repêchage — Autre split, Autre équipe, Passer ;
+ *   le départ       au Rogue, les bouche-trous du pack de départ et les étoiles
+ *                   de concession, tirés du dé de la run ;
  *   le marché       entre deux journées, jusqu'à la date limite (la mi-split) :
  *                   trois agents libres par journée, Pilier au plus, tirés du
  *                   dé du split ; « qui sort ? » : titulaire ou banc ;
@@ -77,6 +79,74 @@ export async function tirerAdversaires(de, ids, lire, equipeReelle, n = 9) {
     if (vus.has(`${id}|${e.nom}`) || !equipeReelle(split, e, profils, tempo)) continue;
     vus.add(`${id}|${e.nom}`);
     out.push({ id, e: e.nom });
+  }
+  return out;
+}
+
+/*
+ * ---- LE DÉPART D'UNE RUN DE ROGUE (Cap 82-0 : les bouche-trous du départ,
+ * le joueur de concession). Le Rogue ne pige plus un cinq complet au
+ * vestiaire : tes cases du classeur (js/partie.js) d'abord, puis un PACK DE
+ * DÉPART de bouche-trous comble les rôles vides — des Remplaçants et de bas
+ * Réguliers de splits tirés au hasard, par le dé de la run. Le déblocage
+ * « Des bouche-trous moins pires » les prend un cran plus haut. La première
+ * run est dure : c'est le départ d'un roguelike, et le marché, les packs et
+ * les lotos d'une run à l'autre la relèvent.
+ */
+/* Sur 100, le niveau d'un bouche-trou, par cran (0 : la base ; 1 : « Des bouche-trous moins pires »). */
+export const BOUCHE_TROUS = [{ Remplaçant: 70, Régulier: 30 }, { Remplaçant: 30, Régulier: 70 }];
+export const NIVEAUX_BOUCHE_TROUS = new Set(Object.keys(BOUCHE_TROUS[0]));
+/** Combien d'étoiles la première run offre comme joueur de concession ; l'une revient à chaque départ. */
+export const ETOILES_OFFERTES = 3;
+const NIVEAU_ETOILE = TARIFS[1][0];
+
+/**
+ * Un bouche-trou par rôle vide : `cran` lit BOUCHE_TROUS ; un rôle dont le
+ * plafond ne paie plus le niveau tiré prend un Remplaçant. `lire` comme pour
+ * tirer. Rend les refs, dans l'ordre des rôles vides.
+ */
+export async function tirerBoucheTrous(de, ids, lire, eff, cran = 0) {
+  const cotes = BOUCHE_TROUS[Math.min(cran, BOUCHE_TROUS.length - 1)];
+  const pris = new Set([...Object.values(eff.cinq), eff.banc].filter(Boolean).map(c => cleDe(c.ref)));
+  const libres = libresDe(eff);
+  let masse = masseDe(eff);
+  const out = [];
+  for (const [k, r] of libres.entries()) {
+    let x = de() * 100;
+    let niveau = Object.keys(cotes).find(n => (x -= cotes[n]) < 0) || 'Remplaçant';
+    const cout = TARIFS.find(([n]) => n === niveau)[1];
+    if (!signable(cout, plafondDe(eff) - masse, libres.length - k)) niveau = 'Remplaçant';
+    for (let essai = 0; essai < 60; essai++) {
+      const id = piger(ids, de);
+      const { split, profils } = await lire(id);
+      const e = piger(split.equipes, de);
+      // Le niveau tiré d'abord ; au bout de trente essais, n'importe quel bouche-trou.
+      const voulu = essai < 30 ? n => n === niveau : n => NIVEAUX_BOUCHE_TROUS.has(n);
+      const cands = e.joueurs.filter(j => j.r === r && voulu(profils.joueurs.get(j).niveau) && !pris.has(cleDe({ id, e: e.nom, n: j.n, r: j.r })));
+      if (!cands.length) continue;
+      const j = piger(cands, de);
+      const ref = { id, e: e.nom, n: j.n, r: j.r };
+      pris.add(cleDe(ref));
+      masse += profils.joueurs.get(j).cout;
+      out.push(ref);
+      break;
+    }
+  }
+  return out;
+}
+
+/** `n` ★ Étoiles de splits tirés au hasard, chacune d'une personne différente : les joueurs de concession offerts. */
+export async function tirerEtoiles(de, ids, lire, n = ETOILES_OFFERTES) {
+  const out = [];
+  const vus = new Set();
+  for (let essai = 0; out.length < n && essai < 40 * n; essai++) {
+    const id = piger(ids, de);
+    const { split, profils } = await lire(id);
+    const tous = split.equipes.flatMap(e => e.joueurs.filter(j => profils.joueurs.get(j).niveau === NIVEAU_ETOILE && !vus.has(j.n)).map(j => ({ id, e: e.nom, n: j.n, r: j.r })));
+    if (!tous.length) continue;
+    const ref = piger(tous, de);
+    vus.add(ref.n);
+    out.push(ref);
   }
   return out;
 }

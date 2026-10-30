@@ -14,7 +14,7 @@
 import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
-import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie } from './partie.js';
+import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, parCases } from './partie.js';
 import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
 import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX, pouvoirsDuPersonnage } from './rogue.js';
 import { carteDuCoach } from './boutique.js';
@@ -31,6 +31,7 @@ const rangMot = k => (k === 1 ? '1er' : `${k}e`);
 
 /** Le mandat du split en cours, en une phrase. */
 export function phraseMandat(P) {
+  if (P.mode === 'dixhuit') return 'Le 18-0 : un split, ses séries, le titre ou rien. Aucune carte, aucune décision.';
   const n = P.run.n;
   const [cle, mot] = mandatDuSplit(P);
   const suite = cle !== MANDATS[MANDATS.length - 1][0] ? ` Au split suivant : ${mandatDuSplit(P, n + 1)[1]}.` : '';
@@ -125,7 +126,7 @@ export function bandeChiffres(P) {
   const ecart = c[k].pv - c[k].pd;
   return `<div class="bande"><div><small>Fiche</small><b>${c[k].v}-${c[k].d}</b><small>${ecart >= 0 ? '+' : ''}${ecart} en parties</small></div>
     <div><small>Rang</small><b>${rangMot(k + 1)}</b><small>sur ${L.equipes.length}</small></div>
-    <div><small>Jetons</small><b>🪙 ${jetonsDe(L, P.R)}</b><small>à dépenser</small></div></div>`;
+    ${P.mode === 'dixhuit' ? `<div><small>Séries</small><b>${L.series ? (L.series.champion === null ? 'en cours' : L.series.champion === 0 ? 'titre' : 'finies') : 'à venir'}</b><small>six équipes</small></div>` : `<div><small>Jetons</small><b>🪙 ${jetonsDe(L, P.R)}</b><small>à dépenser</small></div>`}</div>`;
 }
 
 /** LA BOÎTE : la partie de ce soir, ton plan, à faire, hier soir, la une, les nouvelles, autour de la ligue. */
@@ -138,10 +139,11 @@ export function vueBoite(P, ctx) {
   const autour = autourDeLaLigue(L);
   const cadeau = P.cadeau && L.jour === 0 ? message('🎁', 'Le proprio', 'Un cadeau pour ta run', esc(`Un pack argent offert : ${P.cadeau.map(c => `${CARTES[c][0]} ${CARTES[c][1]}`).join(', ')}. Ils sont au Marché, au plan de jeu.`)) : '';
   const [ico, nom] = P.strategie ? STRATEGIES[P.strategie] : ['🧭', 'Aucune stratégie'];
+  const dix = P.mode === 'dixhuit';
   return `${carteCeSoir(L, s)}
-    ${s ? `<button id="ouvrir-strategie" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}</b><span>›</span></button>` : ''}
-    <h3 class="a-faire">À faire${faire ? ' · 1 à régler' : ''}</h3>
-    ${faire || cadeau ? `<ul class="boite">${faire}${cadeau}</ul>` : '<p class="sous">Rien à régler : la journée t\'attend.</p>'}
+    ${s && !dix ? `<button id="ouvrir-strategie" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}</b><span>›</span></button>` : ''}
+    ${dix ? '' : `<h3 class="a-faire">À faire${faire ? ' · 1 à régler' : ''}</h3>
+    ${faire || cadeau ? `<ul class="boite">${faire}${cadeau}</ul>` : '<p class="sous">Rien à régler : la journée t\'attend.</p>'}`}
     <h3>Hier soir</h3>${hierSoir(L)}
     ${une ? `<div class="une"><small>La une</small><b>${esc(une.titre)}</b><p>${esc(une.voix)} : « ${esc(une.mot)} »</p><small>${esc(une.fait)}</small></div>` : ''}
     ${nouv.length ? `<h3>Nouvelles</h3><ul class="nouvelles">${nouv.map(x => `<li class="${x.feu ? 'feu' : 'panne'}"><b>${x.feu ? '🔥' : '🧊'} ${esc(x.n)}</b><small>${x.feu ? 'En feu' : 'La panne sèche'} — ${esc(x.mot)}</small></li>`).join('')}</ul>` : ''}
@@ -193,7 +195,7 @@ export function vueVestiaire(P, ctx, qui) {
   const histoire = P.run.passes.map(p => `<li><b>Split ${p.n} · ${p.champion ? 'champion' : p.rempli ? 'mandat rempli' : p.sursis ? 'pardonné' : 'mandat manqué'}</b><small>${p.fiche[0]}-${p.fiche[1]}, ${rangMot(p.rang)}${p.galons.length ? ` · ${p.galons.map(g => `${GALONS[g.id][0]} ${esc(g.n)}`).join(', ')}` : ''}</small></li>`).join('');
   return `<h3>Ce qui court</h3>${nouv.length ? `<ul class="nouvelles">${nouv.map(x => `<li class="${x.feu ? 'feu' : 'panne'}"><b>${x.feu ? '🔥' : '🧊'} ${esc(x.n)}</b><small>${esc(x.mot)}</small></li>`).join('')}</ul>` : '<p class="sous">Personne en feu, personne en panne : ça se lit sur les trois dernières parties.</p>'}
     ${lesLiens(P)}
-    ${lEntrainement(P, ctx, qui)}
+    ${P.mode === 'dixhuit' ? '' : lEntrainement(P, ctx, qui)}
     <h3>Ton histoire · split ${P.run.n}</h3>${histoire ? `<ul class="liens">${histoire}</ul>` : '<p class="sous">Ton premier split de la run.</p>'}`;
 }
 
@@ -267,10 +269,11 @@ export function vueCinq(P) {
   const b = P.eff.banc;
   const cinq = Object.entries(ROLES).map(([r, mot]) => caseEffectif(mot, P.eff.cinq[r], st)).join('');
   const banc = caseEffectif('Banc', b, st, b ? `<span class="case-gestes"><button data-geste="permuter">Faire jouer</button><button data-geste="relacher">Relâcher</button></span>` : '');
-  return `${panneauStrategie(P)}
+  const dix = P.mode === 'dixhuit';
+  return `${dix ? '' : panneauStrategie(P)}
     <h3>Ton effectif · ${masseDe(P.eff)} / ${plafondDe(P.eff)} pts</h3>
-    <p class="sous">Touche un joueur pour sa carte. Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.</p>
-    <ol class="alignement">${cinq}${banc}</ol>`;
+    <p class="sous">${dix ? 'Touche un joueur pour sa carte. Au 18-0, ton cinq est fixé : ce qu\'il vaut, c\'est ce qu\'il était.' : 'Touche un joueur pour sa carte. Ton banc, compté sous le plafond, prend la place du titulaire de son rôle quand tu le fais jouer.'}</p>
+    <ol class="alignement">${cinq}${dix ? '' : banc}</ol>`;
 }
 
 /*
@@ -336,21 +339,30 @@ function palmaresDuBilan(pass) {
 export function ecranBilan(P, gardes, vieux = new Map()) {
   const pass = P.run.passes[P.run.passes.length - 1];
   const mot = MANDATS.find(([k]) => k === pass.mandat)[1];
-  const titre = pass.champion ? 'Champion du split !' : pass.rempli ? 'Mandat rempli' : pass.sursis ? 'Le proprio pardonne' : 'Mandat manqué';
+  const dix = P.mode === 'dixhuit';
+  const titre = pass.champion ? (dix ? 'Le 18-0 : champion !' : 'Champion du split !') : dix ? 'Le 18-0 est joué' : pass.rempli ? 'Mandat rempli' : pass.sursis ? 'Le proprio pardonne' : 'Mandat manqué';
   const gagne = valeurDesGains(P.R.reports[P.R.reports.length - 1]);
-  const tete = `<div class="ecran-tete"><h1>${titre}</h1><p class="sous">Split ${pass.n} · le proprio voulait ${mot}. Ta saison : ${pass.fiche[0]}-${pass.fiche[1]}, ${rangMot(pass.rang)} au classement.${pass.sursis ? ' Le proprio patient te garde une fois.' : ''}</p></div>
-    <p class="etat">Ce split t'a rapporté ${gagne} 🪙 ; tu en as ${jetonsDe(null, P.R)}. Tes cartes et ton coach te suivent.</p>
+  const tete = `<div class="ecran-tete"><h1>${titre}</h1><p class="sous">${dix ? 'Le 18-0' : `Split ${pass.n} · le proprio voulait ${mot}`}. Ta saison : ${pass.fiche[0]}-${pass.fiche[1]}, ${rangMot(pass.rang)} au classement.${pass.sursis ? ' Le proprio patient te garde une fois.' : ''}</p></div>
+    ${dix ? '<p class="etat">Tes cinq joueurs sont à ta collection. Le 18-0 ne compte pas aux médailles.</p>' : `<p class="etat">Ce split t'a rapporté ${gagne} 🪙 ; tu en as ${jetonsDe(null, P.R)}. Tes cartes et ton coach te suivent.</p>`}
     ${palmaresDuBilan(pass)}`;
   if (P.etape === 'fin') {
-    const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${MANDATS.find(([k]) => k === p.mandat)[1]}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
-    const med = medaillesDeLaPartie({ passes: P.run.passes, fin: P.run.fin, exig: P.exig });
-    return `${tete}<h3>${P.run.fin === 'gagnee' ? `La run est gagnée en ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}` : 'La run est finie'}</h3>
+    const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : dix ? 'Sans titre' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${MANDATS.find(([k]) => k === p.mandat)[1]}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
+    const med = medaillesDeLaPartie({ passes: P.run.passes, fin: P.run.fin, exig: P.exig, mode: P.mode });
+    return `${tete}<h3>${dix ? (P.run.fin === 'gagnee' ? 'Ton cinq a tout gagné' : 'Ton cinq a joué son split') : P.run.fin === 'gagnee' ? `La run est gagnée en ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}` : 'La run est finie'}</h3>
       <ol class="classement">${lignes}</ol>
-      <p class="medailles-run">🏅 ${med} médaille${med > 1 ? 's' : ''} pour ta run : elles achètent des déblocages et ton club, au menu.</p>
-      <div class="actionbar"><button id="bilan-nouvelle" class="go">Une nouvelle run</button><button id="bilan-titre">L'écran titre</button></div>`;
+      ${dix ? '' : `<p class="medailles-run">🏅 ${med} médaille${med > 1 ? 's' : ''} pour ta run : elles achètent des déblocages et ton club, au menu.</p>`}
+      <div class="actionbar"><button id="bilan-nouvelle" class="go">Une nouvelle partie</button><button id="bilan-titre">L'écran titre</button></div>`;
   }
   const max = gardesDe(P);
   const tous = [...Object.entries(ROLES).map(([r, m]) => [m, P.eff.cinq[r]]), ['Banc', P.eff.banc]].filter(([, c]) => c);
+  if (parCases(P)) {
+    // Ceux qui restent (version 5) se tirent au loto au prochain départ, jamais au choix.
+    const lignes = tous.map(([m, c]) => `<li class="case pleine"><span class="case-role">${m}</span>${vignette(c)}<span class="qui"><b>${esc(c.n)}</b><small>${esc(c.niveau)} · ${esc(c.split)}</small></span>${coutHtml(c.cout)}</li>`).join('');
+    return `${tete}<h3>Ceux qui restent</h3>
+      <p class="sous">Au prochain départ, ${max} case${max > 1 ? 's' : ''} te les offre${max > 1 ? 'nt' : ''} au loto, par niveau : tu en gardes un par case, ou personne. Un joueur qui a joué un split réel plus récent y vieillit. Le pack de départ comble le reste.</p>
+      <ol class="alignement">${lignes}</ol>
+      <div class="actionbar"><button id="bilan-suivant" class="go">Split ${pass.n + 1} : ${mandatDuSplit(P, pass.n + 1)[1]}</button></div>`;
+  }
   const cases = tous.map(([m, c]) => {
     const cle = cleDe(c.ref);
     const pris = gardes.has(cle);

@@ -489,6 +489,8 @@ button:disabled { opacity: 0.45; cursor: default; }
   padding: 0 max(0px, calc((100% - var(--large)) / 2)) var(--safe-bas);
   background: var(--fond-1); border-top: 1px solid var(--filet);
 }
+.navbar.trois { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.navtab[hidden] { display: none; }
 .navtab {
   position: relative; flex-direction: column; gap: 4px; min-width: 0; min-height: var(--nav-h); padding: var(--esp-1) 2px;
   border: 0; border-radius: 0; background: none; color: var(--encre-3); font-size: var(--t-1);

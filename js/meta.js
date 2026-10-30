@@ -14,9 +14,9 @@
  *
  * LE MOTEUR N'EN SAIT RIEN. Les déblocages se posent au départ d'une run
  * (js/partie.js les garde dans sa sauvegarde, avec ton club) et passent par
- * les règles qui existent : des jetons de départ, une relance, un gardé, un
- * agent libre, un pack offert, un coach payé, un mandat pardonné. Aucune
- * cote, aucun canal.
+ * les règles qui existent : des jetons de départ, une case du classeur, un
+ * agent libre, un pack offert, un mandat pardonné, de meilleurs bouche-trous.
+ * Aucune cote, aucun canal.
  *
  * Pur, sans DOM ni stockage : js/sauvegardes.js lit et écrit, l'écran montre.
  */
@@ -33,12 +33,14 @@ export const RANGS = [[0, 'Club de quartier'], [8, 'Académie'], [25, 'Équipe d
  */
 export const DEBLOCAGES = {
   bourse: { ico: '🪙', nom: 'La bourse de départ', mot: '10 jetons de plus au départ de chaque run', prix: 6, rang: 0, effet: { jetons: 10 } },
+  bouchetrous: { ico: '🧰', nom: 'Des bouche-trous moins pires', mot: 'les bouche-trous de ton pack de départ sortent un cran plus haut', prix: 8, rang: 0, effet: { bouchetrous: 1 } },
   coach: { ico: '🧑‍🏫', nom: 'Le coach d\'expérience', mot: 'ton coach commence la run au niveau 2', prix: 8, rang: 0, effet: { xp: 8, coachGratuit: 1 } },
   cadeau: { ico: '🎁', nom: 'Le cadeau du proprio', mot: 'un pack argent de cartes offert au premier split', prix: 8, rang: 1, effet: { cadeau: 1 } },
-  roulette: { ico: '🎲', nom: 'La roulette généreuse', mot: 'une relance de plus de chaque sorte, à chaque repêchage', prix: 10, rang: 1, effet: { relances: 1 } },
+  classeur: { ico: '📒', nom: 'Une page de plus au classeur', mot: 'une case Pilier au départ de chaque run, tirée de ta collection', prix: 10, rang: 1, effet: { pilier: 1 } },
   depisteur: { ico: '🔎', nom: 'Le dépisteur chevronné', mot: 'un agent libre de plus à chaque journée', prix: 12, rang: 2, effet: { offre: 1 } },
-  noyau: { ico: '🤝', nom: 'Le noyau', mot: 'un joueur de plus gardé entre deux splits', prix: 14, rang: 2, effet: { gardes: 1 } },
+  noyau: { ico: '🤝', nom: 'Le noyau', mot: 'une case de plus parmi ceux qui restent, entre deux splits', prix: 14, rang: 2, effet: { gardes: 1 } },
   mecene: { ico: '💰', nom: 'Le mécène', mot: '15 jetons de plus au départ de chaque run', prix: 16, rang: 3, apres: 'bourse', effet: { jetons: 15 } },
+  etoile: { ico: '⭐', nom: 'La page des étoiles', mot: 'une case ★ Étoile au départ de chaque run, tirée de ta collection', prix: 18, rang: 3, apres: 'classeur', effet: { etoile: 1 } },
   sursis: { ico: '🕊️', nom: 'Le proprio patient', mot: 'le premier mandat manqué d\'une run ne la finit pas', prix: 20, rang: 3, effet: { sursis: 1 } },
 };
 
@@ -52,7 +54,7 @@ export const EXIGENCES = [
   { nom: 'Le proprio pressé', mot: 'chaque mandat monte d\'un cran : la demi-finale dès le premier split', effet: { mandat: 1 } },
   { nom: 'La bourse serrée', mot: '10 jetons de moins au départ', effet: { jetons: -10 } },
   { nom: 'Le plafond serré', mot: 'un point de moins sous le plafond', effet: { plafond: -1 } },
-  { nom: 'La roulette avare', mot: 'une relance de moins de chaque sorte', effet: { relances: -1 } },
+  { nom: 'Le classeur mince', mot: 'une case de moins au classeur, la meilleure', effet: { cases: -1 } },
   { nom: 'Le vestiaire mince', mot: 'un joueur de moins gardé entre deux splits', effet: { gardes: -1 } },
   { nom: 'Les packs chers', mot: 'les packs coûtent un quart de plus', effet: { cherte: 0.25 } },
 ];
@@ -60,11 +62,13 @@ export const PRIME_EXIGENCE = 0.25;
 
 /*
  * Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, xp, coachGratuit, cadeau,
- * relances, offre, gardes, sursis, mandat, plafond, cherte }. `coachGratuit` ne sert qu'aux parties d'avant
- * la version 4, où le coach s'achetait ; `xp`, l'expérience de départ du coach-personnage.
+ * offre, gardes, sursis, mandat, plafond, cherte, bouchetrous, pilier, etoile, cases }. `coachGratuit` ne
+ * sert qu'aux parties d'avant la version 4, où le coach s'achetait ; `xp`, l'expérience de départ du
+ * coach-personnage ; `bouchetrous`, le cran du pack de départ ; `pilier`, `etoile`, `cases`, les cases du
+ * classeur (js/partie.js casesDe) ; `gardes`, celles de ceux qui restent.
  */
 export function effetDe(deb, exig = 0) {
-  const e = { jetons: 0, xp: 0, coachGratuit: 0, cadeau: 0, relances: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0 };
+  const e = { jetons: 0, xp: 0, coachGratuit: 0, cadeau: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0, bouchetrous: 0, pilier: 0, etoile: 0, cases: 0 };
   const sources = [...deb.filter(id => DEBLOCAGES[id]).map(id => DEBLOCAGES[id].effet), ...EXIGENCES.slice(0, exig).map(x => x.effet)];
   for (const src of sources) for (const [k, v] of Object.entries(src)) e[k] += v;
   return e;
@@ -102,7 +106,24 @@ export const COULEURS = {
 const ARTICLES = { deb: DEBLOCAGES, club: CLUBS, couleur: COULEURS };
 const article = cle => { const [genre, id] = cle.split(':'); return ARTICLES[genre] && ARTICLES[genre][id] ? { genre, id, ...ARTICLES[genre][id] } : null; };
 
-export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille', exig: 0, coach: 'agresseur' });
+/*
+ * LES DEUX MODES (Cap 82-0 : le 82-0 et le Rogue). Le 18-0 : juste le repêchage à la roulette, le split d'un
+ * coup, les séries partie par partie, aucune carte ni décision ; il compte à la collection, pas aux médailles.
+ * Le Rogue : la run, qui part faible (le classeur, le pack de départ) et se bâtit.
+ */
+export const MODES = { rogue: { nom: 'Le Rogue', mot: 'La run : un départ faible, le jour à jour, ton coach, le marché, les cartes ; le proprio fixe ton mandat, split après split.' },
+  dixhuit: { nom: 'Le 18-0', mot: 'Juste le repêchage : la roulette, ton cinq sous le plafond, puis le split d\'un coup et les séries partie par partie. Aucune carte, aucune décision.' } };
+export const modeDe = m => (MODES[m.mode] ? m.mode : 'rogue');
+
+export const nouveauMeta = () => ({ v: 1, parties: {}, achats: [], club: 'faille', couleur: 'faille', exig: 0, coach: 'agresseur', mode: 'rogue', vedette: null });
+
+/** Ton joueur de concession (la clé de sa carte) : choisi à la première run, il revient à chaque départ. */
+export const vedetteDe = m => m.vedette || null;
+export function choisirVedette(m, cle) {
+  if (m.vedette || typeof cle !== 'string' || cle.split('|').length !== 4) return false;
+  m.vedette = cle;
+  return true;
+}
 
 /** Le club que portera la prochaine run : { nom, code, couleur }. */
 export function clubDe(m) {
@@ -119,6 +140,7 @@ export const possede = (m, genre, id) => (genre !== 'deb' && ARTICLES[genre][id]
 
 /* Les médailles d'une partie résumée, la prime de ses exigences comprise. */
 export function medaillesDeLaPartie(r) {
+  if (r.mode === 'dixhuit') return 0;
   const base = r.passes.reduce((s, p) => s + MEDAILLES.split + (p.rempli ? MEDAILLES.mandat : 0) + (p.rondes || 0) * MEDAILLES.ronde + (p.champion ? MEDAILLES.titre : 0), 0)
     + (r.fin === 'gagnee' ? MEDAILLES.run : 0);
   return Math.round(base * (1 + PRIME_EXIGENCE * (r.exig || 0)));
@@ -186,7 +208,7 @@ export function porter(m, genre, id) {
  * bilan), sa fin, et les cartes passées chez toi.
  */
 export const resumeDe = (P, debut) => ({
-  graine: P.graine, debut, club: P.club, deb: P.deb, exig: P.exig, fin: P.run.fin, n: P.run.n,
+  graine: P.graine, debut, club: P.club, deb: P.deb, exig: P.exig, mode: P.mode, fin: P.run.fin, n: P.run.n,
   passes: P.run.passes, cartes: P.cartes,
 });
 

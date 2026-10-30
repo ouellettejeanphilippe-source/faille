@@ -17,10 +17,12 @@
  *   node scripts/check_meta.mjs
  */
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
-import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, finitionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence } from '../js/meta.js';
+import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, finitionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence, choisirVedette, vedetteDe, MODES, modeDe } from '../js/meta.js';
+import { tirerEtoiles, cleDe } from '../js/gestion.js';
+import { hasard } from '../js/hasard.js';
 import { statsDuSplit, tropheesDuSplit, galonsDuSplit, recordsDuSplit, meneurs, MENEURS, GALONS } from '../js/palmares.js';
 import { lireSplits, ligueDEssai } from './lib/vestiaires.mjs';
-import { contexte, jouerUneRun } from './lib/robot.mjs';
+import { contexte, jouerUneRun, collectionPour } from './lib/robot.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
 const C = contexte();
@@ -28,13 +30,24 @@ exiger('des splits à lire', C.ids.length > 0, `${C.ids.length} splits`);
 
 /* LE MÉTA SUR DES RUNS JOUÉES */
 const m = nouveauMeta();
+exiger('le méta part au Rogue, sans vedette', modeDe(m) === 'rogue' && vedetteDe(m) === null && Object.keys(MODES).length === 2);
+// Ton joueur de concession : choisi une fois, à la première run.
+const etoile = cleDe((await tirerEtoiles(hasard(7), C.ids, C.lire, 1))[0]);
+exiger('la vedette se choisit une fois', !choisirVedette(m, 'pas une clé') && choisirVedette(m, etoile) && !choisirVedette(m, etoile) && vedetteDe(m) === etoile);
 const parties = [];
 for (let g = 1; g <= 6; g++) {
-  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m), coach: 'stratege' });
+  // Le classeur de chaque run tire de la collection d'alors ; la vedette revient à chaque départ.
+  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m), coach: 'stratege', col: collectionPour(C.ctx, [...collectionDe(m).keys()]), vedette: vedetteDe(m) });
   parties.push(P);
   noter(m, `p${g}`, P, g);
   if (g === 3) for (const id of Object.keys(DEBLOCAGES)) acheter(m, `deb:${id}`);
 }
+exiger('la vedette ouvre chaque run', parties.every(P => P.cartes[0] === etoile), etoile);
+// Le 18-0 compte à la collection, pas aux médailles.
+const D = await jouerUneRun(150, C, { mode: 'dixhuit', club: clubDe(m) });
+noter(m, 'd1', D, 7);
+exiger('le 18-0 ne paie aucune médaille et compte à la collection', medaillesDeLaPartie(m.parties.d1) === 0 && m.parties.d1.mode === 'dixhuit' && D.cartes.length >= 5 && D.cartes.every(c => collectionDe(m).has(c)), `${D.cartes.length} cartes`);
+delete m.parties.d1;
 const avant = JSON.stringify(m);
 const rechange = parties.map((P, k) => noter(m, `p${k + 1}`, P, 999));
 exiger('noter deux fois ne change rien', !rechange.some(Boolean) && JSON.stringify(m) === avant, 'les résumés, les dates et les médailles');
@@ -67,7 +80,8 @@ exiger('un titre ouvre le premier cran, pas le deuxième', exigenceMax(ex) === 1
 ex.parties.b = { debut: 1, fin: 'gagnee', exig: 1, passes: [{ n: 1, rempli: true, champion: true, rondes: 3 }], cartes: [] };
 exiger('gagner au plus haut ouvre le suivant', exigenceMax(ex) === 2);
 const tout = effetDe([], EXIGENCES.length);
-exiger('les crans s\'additionnent', tout.mandat === 1 && tout.plafond === -1 && tout.relances === -1 && tout.gardes === -1 && tout.jetons === -10 && tout.cherte > 0 && effetDe([], 1).plafond === 0);
+exiger('les crans s\'additionnent', tout.mandat === 1 && tout.plafond === -1 && tout.cases === -1 && tout.gardes === -1 && tout.jetons === -10 && tout.cherte > 0 && effetDe([], 1).plafond === 0);
+exiger('le classeur des déblocages', effetDe(['classeur', 'etoile']).pilier === 1 && effetDe(['classeur', 'etoile']).etoile === 1 && effetDe(['bouchetrous']).bouchetrous === 1 && refusAchat(riche, 'deb:etoile') !== null);
 exiger('un cran paie sa prime en médailles', medaillesDeLaPartie(ex.parties.b) === Math.round(medaillesDeLaPartie(ex.parties.a) * (1 + PRIME_EXIGENCE)),
   `${medaillesDeLaPartie(ex.parties.a)} → ${medaillesDeLaPartie(ex.parties.b)} 🏅`);
 

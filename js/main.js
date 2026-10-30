@@ -5,9 +5,12 @@
  * parties, chacune sa graine et son journal), note la partie au méta
  * (js/meta.js : médailles, collection, palmarès) et redessine.
  *
- *   le titre       Continuer, Nouvelle run (ton club, tes déblocages), tes
- *                  déblocages, ta collection, le palmarès, les parties, les règles ;
- *   le repêchage   la roulette sort un split et une équipe ; tu signes un
+ *   le titre       Continuer, Nouvelle partie (le mode, ton club, tes
+ *                  déblocages), l'exhibition, ta collection, le palmarès, les
+ *                  parties, les règles ;
+ *   le départ      au Rogue, tes cases (ta vedette, ton classeur, ceux qui
+ *                  restent) puis le pack de départ (js/depart.js) ; au 18-0,
+ *                  la roulette sort un split et une équipe, tu signes un
  *                  joueur pour un rôle libre sous le plafond ;
  *   le split       en quatre sections, comme Cap 82-0 : le Bureau (la boîte,
  *                  hier soir), l'Effectif, le Marché (agents libres, packs de
@@ -27,21 +30,22 @@ import { imageLP, iconeChampion } from './images.js';
 import { brancherRetour } from './pile.js';
 import { profilsDuSplit, TARIFS } from './cotes.js';
 import { ROLES, badge, vignette, icones, coutHtml, carte } from './fiche.js';
-import { tempoDuSplit, equipeReelle, classement } from './sim.js';
+import { tempoDuSplit, equipeReelle, classement, jouerPartie } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { attendRepechage, repechageDe } from './repechage.js';
 import { liensDe, LIENS, COACHS } from './rogue.js';
 import { vuePacksJoueurs, vuePlanDeJeu } from './boutique.js';
-import { RELANCES, tirer, tirerAdversaires, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION } from './partie.js';
+import { RELANCES, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion } from './gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION, parCases, caseEnCours, attendPack, refDe } from './partie.js';
 import { phraseMandat, aTraiter, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
 import { ecranCeSoir, ecranSommaire } from './soir.js';
 import { terrainDe } from './terrain.js';
 import { ecussonHtml } from './fiche.js';
-import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe } from './meta.js';
+import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe, MODES, modeDe, vedetteDe, choisirVedette } from './meta.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
+import { ecranCase, avantLePack, ecranPack, ecranExhibition } from './depart.js';
 import { ecranDeblocages, ecranPalmares, ecranCollection, ecranAlbum } from './vitrine.js';
 import { ecranRegles } from './regles.js';
 import { ouvrirDirect, fermerDirect, faillePlate } from './direct.js';
@@ -54,9 +58,10 @@ const G = {
   index: null, champions: null, splits: new Map(), P: null, pid: null, de: null, meta: null, options: null, vue: 'titre',
   section: 'bureau', sous: { bureau: 'boite', effectif: 'cinq', marche: 'agents', ligue: 'classement' }, joueurs: { vue: 'saison', tri: 'kda' }, regarderApres: false,
   carte: null, repechage: null, ouvertes: null, offre: null, gardes: new Set(), vieux: new Map(), entr: null,
+  contrats: new Map(), etoiles: null, vedette: null, exhib: null,
 };
 /* Les couches, de celle du dessus à celle du dessous : le retour ferme la première ouverte. */
-const COUCHES = ['#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
+const COUCHES = ['#carte', '#direct', '#feuille', '#sommaire', '#soir', '#album', '#strategie', '#repechage', '#vestiaire', '#depart', '#exhibition', '#deblocages', '#collection', '#palmares', '#regles', '#parties', '#menu'];
 const ctx = () => ({ splits: G.splits, classes: G.champions.classes, champions: G.champions });
 const SOUS = {
   bureau: [['boite', 'Boîte'], ['proprio', 'Proprio'], ['coach', 'Coach'], ['vestiaire', 'Vestiaire']],
@@ -64,6 +69,9 @@ const SOUS = {
   marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu']],
   ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries']],
 };
+/* Au 18-0, ni proprio, ni coach, ni marché : la Boîte et le Vestiaire, l'Effectif, la Ligue. */
+const SOUS_DIXHUIT = { bureau: [['boite', 'Boîte'], ['vestiaire', 'Vestiaire']], effectif: SOUS.effectif, ligue: SOUS.ligue };
+const sousDe = P => (P.mode === 'dixhuit' ? SOUS_DIXHUIT : SOUS);
 
 /* Un split chargé, avec ses profils et son tempo, gardé pour la suite. */
 async function lireSplit(id) {
@@ -81,7 +89,7 @@ const idNeuf = () => `${Date.now().toString(36)}${Math.floor(G.de() * 1296).toSt
 /* Où en est la partie, en une ligne : pour l'index des parties et « Continuer ». */
 function resumeDe(P) {
   if (P.etape === 'fin') return `Run ${P.run.fin === 'gagnee' ? 'gagnée' : 'finie'} · ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}`;
-  if (P.etape === 'bati') return `Split ${P.run.n} · repêchage ${5 - libresDe(P.eff).length}/5`;
+  if (P.etape === 'bati') return `${P.mode === 'dixhuit' ? 'Le 18-0' : `Split ${P.run.n}`} · ${parCases(P) ? 'le départ' : 'repêchage'} ${5 - libresDe(P.eff).length}/5`;
   if (P.etape === 'gardes') return `Split ${P.run.n} · bilan`;
   const c = classement(P.L);
   const k = c.findIndex(l => l.i === 0);
@@ -125,11 +133,40 @@ function faire(a) {
   let r;
   try { r = appliquer(G.P, a, ctx()); } catch (err) { avis(err.message); return undefined; }
   garder();
-  if (a.t === 'signer' || a.t === 'marche' || a.t === 'signerPack') jouerSon('signer');
-  else if (a.t === 'pack' || a.t === 'packJoueurs') jouerSon('pack');
+  if (a.t === 'signer' || a.t === 'marche' || a.t === 'signerPack' || (a.t === 'case' && a.cle)) jouerSon('signer');
+  else if (a.t === 'pack' || a.t === 'packJoueurs' || a.t === 'boucheTrous') jouerSon('pack');
   else if (a.t === 'bilan') jouerSon(G.P.run.fin ? 'medaille' : G.P.run.passes[G.P.run.passes.length - 1].rempli ? 'victoire' : 'defaite');
   rendre();
+  // Une case ouverte ou un split qui commence : les cartes du prochain loto se chargent, et qui vieillit.
+  if (a.t === 'case' || a.t === 'suivant') preparerCases();
   return r ?? null;
+}
+
+/*
+ * LES CASES DU DÉPART (Rogue, version 5) : les contrats du loto en cours (leurs
+ * splits chargés) et, pour ceux qui restent, la version qui vieillit.
+ */
+async function preparerCases() {
+  const P = G.P;
+  if (!P || !parCases(P)) return;
+  const c = caseEnCours(P);
+  if (!c) return;
+  const cle = `${G.pid}-${P.run.n}-${c.k}`;
+  G.contrats = new Map();
+  G.vieux = new Map();
+  for (const { cle: k } of c.loto) {
+    try {
+      await lireSplit(k.split('|')[0]);
+      const x = contratDe(ctx(), refDe(k));
+      G.contrats.set(k, x);
+      if (c.source === 'restes') {
+        const ref = await prochaineVersion(G.index.splits, lireSplit, x);
+        if (ref) G.vieux.set(k, contratDe(ctx(), ref));
+      }
+    } catch { G.contrats.set(k, null); }
+  }
+  const encore = G.P === P && caseEnCours(P);
+  if (encore && `${G.pid}-${P.run.n}-${encore.k}` === cle) rendre();
 }
 
 /* ---- LE TABLEAU INDICATEUR : le retour, où en est la partie, ses chiffres, le menu ---- */
@@ -149,9 +186,9 @@ function majTete() {
   $('#jaugeReste').textContent = `${reste} / ${plafond}`;
   $('#jaugeReste').className = `tete-ch-v${reste <= 3 ? ' serre' : ''}`;
   $('#jaugeRempli').style.width = `${(100 * reste) / plafond}%`;
-  if (P.etape === 'bati') $('#teteEtat').textContent = `Split ${P.run.n} · ${5 - libresDe(P.eff).length} / 5 signés`;
+  if (P.etape === 'bati') $('#teteEtat').textContent = `${P.mode === 'dixhuit' ? 'Le 18-0' : `Split ${P.run.n}`} · ${5 - libresDe(P.eff).length} / 5 signés`;
   else if (!L) $('#teteEtat').textContent = `Bilan du split ${P.run.n}`;
-  else $('#teteEtat').textContent = `Split ${P.run.n} · ${titreSplit(L)}`;
+  else $('#teteEtat').textContent = `${P.mode === 'dixhuit' ? 'Le 18-0' : `Split ${P.run.n}`} · ${titreSplit(L)}`;
 }
 
 function montrer(id) {
@@ -197,7 +234,8 @@ const RENDUS = {
   '#deblocages': () => { $('#deblocages').innerHTML = ecranDeblocages(G.meta); },
   '#palmares': () => { $('#palmares').innerHTML = ecranPalmares(G.meta); },
   '#collection': () => { $('#collection').innerHTML = ecranCollection(G.meta, G.index.splits, new Map([...G.splits].map(([id, s]) => [id, s.split.equipes.reduce((n, e) => n + e.joueurs.length, 0)]))); },
-  '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta); },
+  '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta, { etoiles: G.etoiles, vedette: G.vedette }); },
+  '#exhibition': () => { $('#exhibition').innerHTML = ecranExhibition(G.exhib); },
   '#strategie': () => { if (G.P && G.P.L) $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
 };
 
@@ -206,6 +244,49 @@ function ouvrir(nom) {
   if (!RENDUS[id]) return;
   RENDUS[id]();
   montrer(id);
+  if (nom === 'depart') preparerDepart();
+}
+
+/* LE DÉPART : au Rogue, ton joueur de concession — trois étoiles à la première run (tirées du dé de la visite), sinon sa carte. */
+async function preparerDepart() {
+  const m = G.meta;
+  if (modeDe(m) !== 'rogue') return;
+  const cle = vedetteDe(m);
+  if (cle && !(G.vedette && cleDe(G.vedette.ref) === cle)) {
+    try { await lireSplit(cle.split('|')[0]); G.vedette = contratDe(ctx(), refDe(cle)); } catch { G.vedette = null; }
+  } else if (!cle && !G.etoiles) {
+    const refs = await tirerEtoiles(G.de, ids(), lireSplit);
+    G.etoiles = refs.map(ref => ({ cle: cleDe(ref), c: contratDe(ctx(), ref) }));
+  }
+  if (!$('#depart').hidden) RENDUS['#depart']();
+}
+
+/* L'EXHIBITION : deux vrais vestiaires sortis de la roulette, une partie en direct, rien de compté. */
+async function ouvrirExhibition(neuf = true) {
+  if (neuf) G.exhib = null;
+  RENDUS['#exhibition']();
+  montrer('#exhibition');
+  if (!neuf && G.exhib) return;
+  const adv = await tirerAdversaires(G.de, ids(), lireSplit, equipeReelle, 2);
+  G.exhib = adv.map(a => {
+    const { split, profils, tempo } = G.splits.get(a.id);
+    const e = split.equipes.find(x => x.nom === a.e);
+    return { nom: e.nom, split: split.nom, moteur: equipeReelle(split, e, profils, tempo) };
+  });
+  if (!$('#exhibition').hidden) RENDUS['#exhibition']();
+}
+function jouerExhibition() {
+  const [A, B] = G.exhib || [];
+  if (!A || !B) return;
+  const graine = Math.floor(G.de() * 2 ** 32);
+  const f = jouerPartie(A.moteur, B.moteur, graine);
+  const joueurs = [A, B].map((x, k) => f.equipes[k].joueurs.map(j => {
+    const b = x.moteur.cinq[j.r] && x.moteur.cinq[j.r].bassin;
+    const champion = b && b[0] ? b[0][0] : null;
+    return { n: j.n, r: j.r, champion, icone: champion ? iconeChampion(G.champions, champion) : null };
+  }));
+  montrer('#direct');
+  ouvrirDirect($('#direct'), { feuille: f, noms: [A.nom, B.nom], joueurs, graine: graineDe(graine, 'direct'), toi: null });
 }
 
 async function ouvrirAlbum(id) {
@@ -238,7 +319,17 @@ async function toucherMenu(ev) {
   } else if (b.dataset.coachChoisi) {
     if (COACHS[b.dataset.coachChoisi]) { G.meta.coach = b.dataset.coachChoisi; ecrireMeta(G.meta); }
     rendre();
-  } else if (b.dataset.exigence !== undefined) {
+  } else if (b.dataset.mode) {
+    if (MODES[b.dataset.mode]) { G.meta.mode = b.dataset.mode; ecrireMeta(G.meta); }
+    rendre();
+    preparerDepart();
+  } else if (b.dataset.vedette) {
+    if (choisirVedette(G.meta, b.dataset.vedette)) { ecrireMeta(G.meta); jouerSon('signer'); }
+    rendre();
+    preparerDepart();
+  } else if (b.id === 't-exhibition') ouvrirExhibition();
+  else if (b.id === 'exhib-autres') ouvrirExhibition();
+  else if (b.id === 'exhib-jouer') jouerExhibition(); else if (b.dataset.exigence !== undefined) {
     if (choisirExigence(G.meta, Number(b.dataset.exigence))) ecrireMeta(G.meta);
     rendre();
   } else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
@@ -289,12 +380,29 @@ async function reprendre(id) {
   entrer();
 }
 
-/* LA RUN NEUVE : ton club et tes déblocages, posés au départ et gardés dans sa sauvegarde. */
-function nouvelle() {
-  G.pid = idNeuf();
-  G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { deb: deblocagesDe(G.meta), club: clubDe(G.meta), exig: exigenceDe(G.meta), coach: coachDe(G.meta) });
-  garder();
-  entrer();
+/*
+ * LA PARTIE NEUVE : le mode ; au Rogue, ton club, tes déblocages, ta
+ * collection (d'où le classeur tire) et ta vedette, posés au départ et gardés
+ * dans sa sauvegarde.
+ */
+async function nouvelle() {
+  $('#d-commencer').disabled = true;
+  try {
+    const m = G.meta;
+    const mode = modeDe(m);
+    const col = [];
+    if (mode === 'rogue') {
+      for (const cle of collectionDe(m).keys()) {
+        try { await lireSplit(cle.split('|')[0]); col.push({ cle, niveau: contratDe(ctx(), refDe(cle)).niveau }); } catch { /* un split qui a changé : la carte n'entre pas au classeur */ }
+      }
+    }
+    G.pid = idNeuf();
+    G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { mode, deb: deblocagesDe(m), club: clubDe(m), exig: exigenceDe(m), coach: coachDe(m), col, vedette: G.vedette && vedetteDe(m) === cleDe(G.vedette.ref) ? vedetteDe(m) : null });
+    garder();
+    entrer();
+  } finally {
+    if ($('#d-commencer')) $('#d-commencer').disabled = false;
+  }
 }
 
 /* Entre en partie : les couches se ferment, l'écran de l'étape s'ouvre. */
@@ -309,21 +417,33 @@ function entrer() {
   rendre();
   window.scrollTo(0, 0);
   if (G.P.etape === 'gardes') vieillir();
+  preparerCases();
 }
 
-/* ---- LE REPÊCHAGE DE TON CINQ ---- */
+/* ---- TON CINQ SE BÂTIT : les cases et le pack de départ (le Rogue), la roulette (le 18-0) ---- */
 function rendreBati() {
   const P = G.P;
+  const cases = parCases(P);
   $('#bati-mandat').textContent = phraseMandat(P);
+  $('#bati-sous').textContent = cases ? 'Tes cases d\'abord — ta vedette, ton classeur, ceux qui restent —, puis le pack de départ comble le reste. Ton cinq tient sous le plafond.'
+    : 'La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.';
   $('#alignement').innerHTML = Object.entries(ROLES).map(([r, mot]) => {
     const j = P.eff.cinq[r];
     return `<li class="case${j ? ' pleine' : ''}"><span class="case-role">${mot}</span>${j ? vignette(j) : ''}<span class="qui">${j
       ? `<b>${esc(j.n)}</b><small>${esc(j.niveau)} · ${esc(j.equipe)} · ${esc(j.split)}</small>` : '<small>À combler</small>'}</span>${j ? coutHtml(j.cout) : ''}</li>`;
   }).join('') + (P.eff.banc ? `<li class="case pleine"><span class="case-role">Banc</span>${vignette(P.eff.banc)}<span class="qui"><b>${esc(P.eff.banc.n)}</b><small>${esc(P.eff.banc.niveau)} · ${esc(P.eff.banc.split)}</small></span>${coutHtml(P.eff.banc.cout)}</li>` : '');
   const complet = !libresDe(P.eff).length;
-  $('#roulette').hidden = complet;
+  $('#roulette').hidden = complet || cases;
   $('#roulette').lastChild.textContent = P.tirage ? 'Revoir le vestiaire' : 'Tourner la roulette';
+  $('#pack').hidden = !cases || !attendPack(P);
   $('#jouer').hidden = !complet;
+  $('#jouer').textContent = P.mode === 'dixhuit' ? 'Jouer le 18-0' : 'Jouer le split';
+  if (cases) {
+    const c = caseEnCours(P);
+    const dernier = [...P.log].reverse().find(a => a.t === 'boucheTrous');
+    $('#depart-cases').innerHTML = c ? (c.loto.every(x => G.contrats.has(x.cle)) ? ecranCase(P, c, G.contrats, G.vieux) : '<p class="sous">Le classeur s\'ouvre…</p>')
+      : attendPack(P) ? avantLePack(P) : complet && P.bouches && dernier ? ecranPack(dernier.refs.map(ref => contratDe(ctx(), ref))) : '';
+  } else $('#depart-cases').innerHTML = '';
   const liens = liensDe(P.eff.cinq).map(id => `${LIENS[id][0]} ${LIENS[id][1]}`);
   $('#etat').textContent = complet ? `Alignement complet, ${pts(masseDe(P.eff))} sur ${plafondDe(P.eff)}.${liens.length ? ` Liens d'origine : ${liens.join(', ')}.` : ''}` : `Le coût suit le niveau : ${TARIFS.map(([n, c]) => `${n} ${pts(c)}`).join(' · ')}.`;
   if (!$('#vestiaire').hidden) rendreVestiaire();
@@ -417,13 +537,29 @@ function signer(i) {
   fermer('#vestiaire');
 }
 
-/* Les neuf adversaires sortent de la même roulette. */
+/* Le pack de départ : un bouche-trou par rôle vide, tiré du dé de la visite ; le journal garde qui est sorti. */
+async function ouvrirPackDepart() {
+  $('#pack').disabled = true;
+  try {
+    const refs = await tirerBoucheTrous(G.de, ids(), lireSplit, G.P.eff, G.P.fx.bouchetrous);
+    faire({ t: 'boucheTrous', refs });
+  } finally {
+    $('#pack').disabled = false;
+  }
+}
+
+/* Les neuf adversaires sortent de la même roulette. Au 18-0, le split se joue d'un coup, droit au classement. */
 async function lancer() {
   $('#jouer').disabled = true;
   try {
     const adversaires = await tirerAdversaires(G.de, ids(), lireSplit, equipeReelle);
-    faire({ t: 'lancer', adversaires, graine: Math.floor(G.de() * 2 ** 32) });
+    if (faire({ t: 'lancer', adversaires, graine: Math.floor(G.de() * 2 ** 32) }) === undefined) return;
     G.section = 'bureau';
+    if (G.P.mode === 'dixhuit') {
+      faire({ t: 'jusqua' });
+      G.sous.ligue = 'classement';
+      allerA('ligue');
+    }
   } finally {
     $('#jouer').disabled = false;
   }
@@ -436,15 +572,17 @@ function rendreSplit() {
   const S = L.series;
   const saison = L.jour < L.journees.length;
   const attend = !!enAttente(P);
+  const dix = P.mode === 'dixhuit';
+  if (dix && G.section === 'marche') G.section = 'ligue';
   $('#bande').innerHTML = G.section === 'bureau' ? bandeChiffres(P) : '';
   $('#decision').hidden = !attend || G.section === 'bureau';
   const ta = taSerie(L);
   const adv = ta && L.equipes[ta.a === 0 ? ta.b : ta.a];
-  $('#journee').hidden = !saison || attend;
+  $('#journee').hidden = !saison || attend || dix;
   $('#journee').disabled = false;
   $('#journee').textContent = adv ? `Jouer ce soir · ${adv.nom}` : 'Journée suivante';
   $('#regarder').hidden = attend || !ta || (!saison && !(S && S.champion === null));
-  $('#jusqua').hidden = !saison || attend;
+  $('#jusqua').hidden = !saison || attend || dix;
   $('#series').hidden = saison || !!S;
   $('#ronde').hidden = !S || S.champion !== null;
   const tienne = S && taSerie(L);
@@ -454,10 +592,12 @@ function rendreSplit() {
   } else $('#ronde').textContent = 'Ronde suivante';
   $('#bilan-ouvrir').hidden = !S || S.champion === null;
   for (const b of $$('.navtab')) {
+    b.hidden = dix && b.dataset.section === 'marche';
     b.classList.toggle('on', b.dataset.section === G.section);
     b.classList.toggle('a-traiter', b.dataset.section === 'bureau' && aTraiter(P) > 0);
   }
-  const sous = SOUS[G.section];
+  $('#nav').classList.toggle('trois', dix);
+  const sous = sousDe(P)[G.section];
   $('#sousnav').hidden = !sous;
   if (sous) $('#sousnav').innerHTML = sous.filter(([k]) => k !== 'series' || L.series).map(([k, mot]) => `<button class="soustab${G.sous[G.section] === k ? ' on' : ''}" data-sous="${k}">${mot}</button>`).join('');
   rendreVue();
@@ -503,11 +643,11 @@ function allerA(section) {
   window.scrollTo(0, 0);
 }
 
-/* Joue la journée ou la ronde ; ta série d'abord repêchée, à l'écran du repêchage. */
+/* Joue la journée ou la ronde ; ta série d'abord repêchée, à l'écran du repêchage (au 18-0, le jeu repêche). */
 function avancer(t) {
   const L = G.P.L;
   const s = taSerie(L);
-  if (s && (G.P.v < 3 ? !s.repechage : attendRepechage(s))) {
+  if (s && G.P.mode !== 'dixhuit' && (G.P.v < 3 ? !s.repechage : attendRepechage(s))) {
     G.repechage = { t, d: nouveauRepechage(L, s) };
     rendreRepechage();
     montrer('#repechage');
@@ -675,6 +815,7 @@ function toucherBilan(ev) {
     if (G.gardes.has(k)) G.gardes.delete(k); else G.gardes.add(k);
     rendreBilan();
   } else if (b.id === 'bilan-suivant') {
+    if (parCases(G.P)) { if (faire({ t: 'suivant' }) !== undefined) window.scrollTo(0, 0); return; }
     const vieux = Object.fromEntries([...G.gardes].filter(k => G.vieux.has(k)).map(k => [k, G.vieux.get(k).ref]));
     if (faire({ t: 'garder', cles: [...G.gardes], vieux }) === undefined) return;
     G.gardes = new Set();
@@ -700,7 +841,7 @@ async function demarrer() {
   // Le dé de la roulette reprend une graine neuve à chaque visite, tirée de l'heure.
   G.de = hasard(graineDe(Date.now(), 'visite'));
 
-  for (const id of ['#titre', '#menu', '#parties', '#deblocages', '#palmares', '#collection', '#depart', '#album']) {
+  for (const id of ['#titre', '#menu', '#parties', '#deblocages', '#palmares', '#collection', '#depart', '#album', '#exhibition']) {
     $(id).addEventListener('click', toucherMenu);
     $(id).addEventListener('keydown', toucherMenu);
   }
@@ -709,6 +850,13 @@ async function demarrer() {
   $('#roulette').addEventListener('click', () => tourner('tour'));
   $('#relances').addEventListener('click', ev => { const b = ev.target.closest('[data-relance]'); if (b && !b.disabled) tourner(b.dataset.relance); });
   $('#jouer').addEventListener('click', lancer);
+  $('#pack').addEventListener('click', ouvrirPackDepart);
+  $('#depart-cases').addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b || b.disabled) return;
+    if (b.dataset.casePrendre) { const v = G.vieux.get(b.dataset.casePrendre); faire({ t: 'case', cle: b.dataset.casePrendre, ...(v ? { vieux: v.ref } : {}) }); }
+    else if (b.dataset.casePasser !== undefined) faire({ t: 'case', cle: null });
+  });
   $('#journee').addEventListener('click', () => { $('#journee').disabled = true; avancer('journee'); });
   $('#jusqua').addEventListener('click', () => jouer({ t: 'jusqua' }));
   $('#regarder').addEventListener('click', () => { G.regarderApres = true; avancer(G.P.L.series ? 'ronde' : 'journee'); });

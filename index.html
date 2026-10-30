@@ -39,11 +39,14 @@
     <section id="titre" class="ecran"></section>
 
     <section id="bati" class="ecran" hidden>
-      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous">La roulette sort un split et une équipe ; tu piges un joueur dans ce vestiaire. Ton cinq tient sous le plafond.</p><p id="bati-mandat" class="mandat"></p></div>
+      <div class="ecran-tete"><h1>Ton cinq</h1><p class="sous" id="bati-sous"></p><p id="bati-mandat" class="mandat"></p></div>
       <ol id="alignement" class="alignement"></ol>
       <p id="etat" class="etat"></p>
+      <!-- Au Rogue : la case en cours (son loto), puis le pack de départ (js/depart.js). -->
+      <div id="depart-cases"></div>
       <div class="actionbar">
         <button id="roulette" class="go"><svg class="ico" aria-hidden="true"><use href="#i-des"/></svg><span>Tourner la roulette</span></button>
+        <button id="pack" class="go" hidden>🧰 Ouvrir le pack de départ</button>
         <button id="jouer" class="go" hidden>Jouer le split</button>
       </div>
     </section>
@@ -73,6 +76,7 @@
     <section id="collection" class="couche" hidden></section>
     <section id="deblocages" class="couche" hidden></section>
     <section id="depart" class="couche" hidden></section>
+    <section id="exhibition" class="couche" hidden></section>
     <section id="vestiaire" class="couche" hidden>
       <header class="bandeau" id="vestiaire-bandeau"></header>
       <div class="combler"><span>À combler <b id="vestiaire-libres"></b></span><span>Ce choix <b id="vestiaire-max"></b></span></div>
