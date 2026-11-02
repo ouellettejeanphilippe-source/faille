@@ -12,6 +12,31 @@ Lis `LIVRAISON.md` — le plan de travail : les jalons, chaque item avec son fic
 
 `PLAN.md` garde l'état court et les décisions prises. `docs/donnees.md` dit d'où viennent les données et sous quelles conditions. `MOTEUR.md` est la spécification du moteur et sa calibration.
 
+`docs/parite-cap82.md` est l'index des systèmes de Cap 82-0. Il donne leur état ici (jumeau, périmé, partiel, absent, sans objet), les écarts de règle et les questions à JP. Le jalon 8 de `LIVRAISON.md` en est le plan. Avant de transposer un système de Cap 82-0, lis sa ligne, puis le code de Cap 82-0 d'aujourd'hui : il bouge vite.
+
+## Les agents et les commandes
+
+`.claude/agents/` garde des spécialistes à qui confier une question de leur terrain (l'outil Agent) :
+
+| Agent | Son terrain |
+|---|---|
+| `faille-design` | le fun, les boucles, les vrais choix, la courbe d'une run |
+| `faille-equilibre` | les bornes, mesurées en paires |
+| `faille-economie` | les jetons, les packs, les médailles, les déblocages |
+| `faille-ux` | le parcours, une info une maison, le pouce à 390 px |
+| `faille-recit` | les histoires, les voix, la une |
+
+`.claude/skills/` garde quatre commandes :
+
+| Commande | Ce qu'elle fait |
+|---|---|
+| `/parite [terrain]` | refait l'audit contre Cap 82-0 et met l'index à jour |
+| `/revue-design <devis>` | juge un devis avant le code, sur le gabarit `docs/gabarits/devis.md` |
+| `/equilibrer <sujet>` | mesure un sujet et propose un réglage |
+| `/rapport-essai <notes>` | ramène les reproches d'un essai à leur cause |
+
+Ils sont repris des agents et des commandes de Cap 82-0, eux-mêmes adaptés de Claude-Code-Game-Studios (Donchitos, licence MIT : https://github.com/Donchitos/Claude-Code-Game-Studios).
+
 ## Structure
 
 ```
@@ -23,6 +48,9 @@ data/index.json       la liste des splits bâtis
 data/splits/<id>.json un shard par split : équipes, fiches, joueurs et leurs vraies stats, chemins de leurs images
 data/champions.json   les champions joués : nom → id de Data Dragon (leurs images) et leurs classes
 img/lp/               les photos des joueurs et les logos des équipes, HORS DU DÉPÔT : copiés au déploiement (pages.yml, scripts/images.mjs)
+docs/parite-cap82.md  l'index des systèmes de Cap 82-0 et leur état ici, les écarts de règle, les questions à JP (/parite)
+docs/gabarits/devis.md le gabarit d'un devis, jugé par /revue-design avant le code
+.claude/              les agents (faille-*) et les commandes (/parite, /revue-design, /equilibrer, /rapport-essai)
 
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, le mode, les déblocages, le club, la collection du départ, le journal) ; les deux modes (le 18-0, le Rogue), les cases du départ (la vedette, le classeur, ceux qui restent) et le pack de départ
@@ -79,6 +107,19 @@ scripts/lib/robot.mjs      un DG robot qui joue des runs entières (check_meta)
 ## Règles fermes
 
 Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 82-0.
+
+**Les règles qui vont changer.** Le 2 nov. 2026, les questions de la parité ont été tranchées (`docs/parite-cap82.md` § 6). Plusieurs règles ci-dessous vont changer, chacune avec sa tranche du jalon 8 :
+
+| La règle | Ce qu'elle devient | Tranche |
+|---|---|---|
+| « aucune cote dans le DOM » | les cotes sur 20 | P15 |
+| la stratégie au fit | des plans par partie | P4 |
+| le staff d'adjoints et le plan de jeu | les adjoints de la V22 | P5 |
+| les commanditaires | la règle du coach | P12 |
+| « une édition ou un galon ne change rien au jeu » | ils jouent | P16 |
+| « un événement joue sur la gestion » | un canal par joueur | P9 |
+
+D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tranche qui en change une la réécrit.
 
 **Les données**
 - Pas de scraping de pages web : l'API Cargo de Leaguepedia (CC BY-SA 3.0, attribution au pied de la page et dans chaque shard), plus tard Oracle's Elixir si ses conditions le permettent. Les conditions de chaque source sont dans `docs/donnees.md`.

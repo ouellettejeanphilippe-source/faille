@@ -113,7 +113,7 @@ JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en co
 - [x] Le repêchage des champions à chaque partie d'une série de séries, comme en vrai : ta série se joue partie par partie (`jouerRonde(L, toi)`), un repêchage et ta stratégie avant chacune, le perdant au bleu ; chaque partie garde son dé — `check_graine` (partie par partie comme d'un bloc), `check_gestion`. Une sauvegarde d'avant (version 2) garde l'ancienne règle et se rejoue pareil.
 - [x] Les pouvoirs du coach (Cap 82-0, V21), phase par phase : chaque palier de confiance ouvre un pouvoir qui lit la partie au début d'une phase (lignes, milieu, fin) et la frappe le temps de la phase ; le moteur reste neutre sans pouvoir ; douze pouvoirs mesurés en paires — `check_rogue`, MOTEUR.md § 11.
 - [x] La Faille détaillée (JP : *avec les champions et nom joueur ?*, *plus détaillé la faille avec jungle et cie*) : les bois et leurs murs, six camps par côté, les crabes, les inhibiteurs ; les dix joueurs, l'icône de leur champion et leur nom, qui bougent selon la phase et les combats (un mort à sa fontaine) ; le tableau des dix joueurs et leur K/M/A en direct — `check_terrain`, smoke.
-- [x] Le coach-personnage complet (Cap 82-0, V21) : choisi au départ de la run, il la fait au complet ; son expérience se recompte des résultats (une série, une ronde de séries, un titre, et une de plus par série gagnée à sa couleur) ; ses niveaux 1 à 5 ouvrent ses pouvoirs aux niveaux 1, 3 et 5 ; un talent aux niveaux 2 et 4 fait grandir de moitié le pouvoir choisi, ouvert ou pas encore ; la boutique ne vend plus de coach. Son staff (Cap 82-0) : huit adjoints, chacun un échange sur les canaux (ce qu'il donne, ce qu'il coûte), un parmi trois offert aux journées 6 et 12, trois au plus et « qui part ? » de trop ; ni cadeau ni piège sur une équipe ordinaire (de −0,42 à +0,38 victoire), chacun visible sur sa signature. Sauvegarde v4 ; une partie d'avant garde son coach acheté et sa confiance — `check_rogue` (le pouvoir grandi sous 2,5 victoires, le personnage complet sous 4), `check_gestion` (l'expérience recomptée à la main, le niveau qui ne descend pas, les talents, une run v3), smoke.
+- [x] Le coach-personnage complet (Cap 82-0, V21) : choisi au départ de la run, il la fait au complet ; son expérience se recompte des résultats (une série, une ronde de séries, un titre, et une de plus par série gagnée à sa couleur) ; ses niveaux 1 à 5 ouvrent ses pouvoirs aux niveaux 1, 3 et 5 ; un talent aux niveaux 2 et 4 fait grandir de moitié le pouvoir choisi, ouvert ou pas encore ; la boutique ne vend plus de coach. Son staff (Cap 82-0) : huit adjoints, chacun un échange sur les canaux (ce qu'il donne, ce qu'il coûte), un parmi trois offert aux journées 6 et 12, trois au plus et « qui part ? » de trop ; ni cadeau ni piège sur une équipe ordinaire (de −0,42 à +0,38 victoire), chacun visible sur sa signature. Sauvegarde v4 ; une partie d'avant garde son coach acheté et sa confiance — `check_rogue` (le pouvoir grandi sous 2,5 victoires, le personnage complet sous 4), `check_gestion` (l'expérience recomptée à la main, le niveau qui ne descend pas, les talents, une run v3), smoke. **Relu le 2 nov.** : son staff est celui de la V21, que Cap 82-0 a retiré à la V22 → 8 P5 ; l'expérience à la couleur et le talent sur un pouvoir fermé → 8 P6.
 - [x] Des parties qui font vraies sur la Faille (JP : *les matchs sur la Faille feelent pas tant vrai*) : les joueurs marchent, convergent vers un combat la demi-minute d'avant et y restent ; ils rentrent à la base en phase de lignes ; un mort gît un instant où il est tombé, puis attend à sa fontaine ; en phase de lignes, seuls ceux de la ligne vont au combat ; le haut pousse sa ligne, les autres tournent ensemble vers l'objectif qui vient ; les sbires avancent vague après vague ; un trait va du tueur à sa victime ; le tableau dit l'or de chacun (la feuille le garde à la minute, sans dé) — `check_terrain`, `check_feuilles`.
 - [x] L'interface à la hauteur de Cap 82-0 (JP : *l'interface est pas aussi complète que hockey*), `js/soir.js` : un tableau indicateur sous l'écusson de ton club (ta fiche, ton rang, tes jetons) ; le Bureau en quatre onglets — la Boîte (ce soir, ton plan, à faire, hier soir, la une, les nouvelles du vestiaire, autour de la ligue), le Proprio (ton mandat et sa jauge, les objectifs de six journées, l'élan, le commanditaire), le Coach (son niveau, ses pouvoirs, son staff), le Vestiaire (qui est en feu, qui est en panne, les liens, l'entraînement, ton histoire dans la run) ; « Ce soir » avant chaque partie : l'affiche, la forme des cinq dernières, le face-à-face de vos stats par partie, ce qu'ils priorisent, leur cinq et leur fétiche ; le sommaire d'une partie jouée (la Faille à plat, le pointage, les trois étoiles, les dix joueurs) ; l'Effectif en deux onglets, ton cinq et le tableau de tes joueurs trié par colonne (cette saison chez toi, ou leur vrai split) ; « Jouer ce soir » et « Regarder » dans la barre d'action — smoke.
 
@@ -122,6 +122,15 @@ JP, 29 oct. : *regarde hockey et utilise-le pour compléter le jeu*, puis, en co
 JP, 29 oct. : *je veux qu'on reprenne tout de hockey dans Faille, genre les cartes différentes d'années en années, les background, joueurs en action, etc* ; *même pige initiale de joueurs moins bons, version Cap 82-0 sans décisions et version roguelike, etc, même chose pour TOUT*.
 
 Le principe : chaque règle de Cap 82-0 (`CLAUDE.md`, `docs/decisions.md`) a sa jumelle ici, transposée au vocabulaire de Faille (un split pour une saison, un cinq pour vingt-trois, le plafond en points pour la masse) et prouvée par le script jumeau. Ce qui ne se transpose pas est dit tel quel, en bas. L'ordre : A (les modes et le départ) d'abord, parce que tout le reste s'y accroche ; puis C (les cartes), B, D, E, F, G.
+
+**Relu le 2 nov. 2026** contre Cap 82-0 3.2.14 (`docs/parite-cap82.md`). Ce jalon a été écrit d'après le Cap 82-0 du 29 octobre. Depuis, Cap 82-0 a livré :
+
+- la V22 : les adjoints en main et en séjour, et la banque d'histoires neuve ;
+- la V23 : les niveaux, la règle du coach, le salaire ;
+- les lots de réglages du 2 nov. : la première run qui laisse bâtir, le Pack Époque ;
+- Sur glace.
+
+Ses cases ouvertes restent valables là où elles ne sont pas marquées « → 8 ». Une case marquée « → 8 Pn » est reprise à la tranche n du jalon 8, qui fait foi.
 
 ### 7 A — Les deux modes, et le départ du Rogue
 
@@ -133,24 +142,24 @@ Le principe : chaque règle de Cap 82-0 (`CLAUDE.md`, `docs/decisions.md`) a sa 
 - [x] **Ton joueur de concession** : à la première run, trois ★ Étoiles de splits tirés au hasard, tu en prends une au départ ; sa clé reste au méta et il ouvre chaque run, première case, à sa place sous le plafond — `js/gestion.js` (`tirerEtoiles`), `js/meta.js` (`choisirVedette`), `js/menu.js`, `check_meta`, `check_gestion`.
 - [x] **Le plafond qui mord** : une carte du loto ne se prend que si le reste du plafond paie encore chaque rôle vide ; le pack de départ retombe au Remplaçant quand le niveau tiré ne se paie plus ; le plafond tient après chaque action — `js/partie.js`, `js/gestion.js`, `check_gestion`.
 - [x] **Les mêmes sections que Cap 82-0** (JP, 30 oct. : *même séparation des pages*) : au Rogue, cinq portes — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq (les Lignes de Cap 82-0), Marché (agents libres, packs de joueurs, plan de jeu, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché — `js/main.js` (`SOUS`), `index.html`, smoke (cinq onglets au Rogue, quatre au 18-0).
-- [ ] **Le marché signe comme au 18-0** (Cap 82-0, Jalon R : *la liste, et la case calculée*) : la même rangée de vestiaire partout où l'on signe (fait : le marché, un pack, les lotos et le pack de départ, `js/depart.js` `rangee`) ; reste la sortie proposée touchée d'avance et le face-à-face stat par stat avant « Signer » — `js/bureau.js`, `js/fiche.js`, smoke.
+- [ ] **Le marché signe comme au 18-0** (Cap 82-0, Jalon R : *la liste, et la case calculée*) : la même rangée de vestiaire partout où l'on signe (fait : le marché, un pack, les lotos et le pack de départ, `js/depart.js` `rangee`) ; reste la sortie proposée touchée d'avance et le face-à-face stat par stat avant « Signer » — `js/bureau.js`, `js/fiche.js`, smoke. → 8 P17.
 
 ### 7 B — La vie d'une run (ce que Cap 82-0 raconte)
 
-- [ ] **Les histoires de la semaine** (les dossiers de la V10, V20) : une par deux journées environ, tirée de la graine, qui ne sort que si son fait est vrai dans les feuilles jouées, nomme ses joueurs, dit sa voix et ses options en vraies stats de partie ; son option audacieuse est un dé dont l'issue frappe le joueur nommé ; ses effets par les canaux, mesurés en paires — `js/histoires.js` (neuf), `js/scenes.js` (neuf : la voix, le fait, la réplique sans chiffre), `check_histoires` (neuf : le fait vrai, le mot dit le canal, l'effet se voit sur la feuille), `check_rogue`.
-- [ ] **Les fils et leurs retours** : un fil de split par joueur qui en mérite un (la série de victoires, la panne du vrai carry, le duo d'un lien, la recrue), lu dans les feuilles, à la une ; un fil fort ouvre un choix dans la Boîte, et son retour se relit quelques journées plus tard avec ses vrais chiffres — `js/soir.js`, `js/gestion.js`, `check_fils` (neuf : chaque chiffre se recompte dans les feuilles, rien ne lit l'avenir).
-- [ ] **Les défis d'un joueur** (les arcs, Jalon P) : ce qu'un arc demande dans SA stat sur ses prochaines parties (des éliminations, des aides, du CS, de la vision, des premiers sangs) ; suivi chaque matin au Vestiaire ; relevé, sa retouche se grave au verso de sa carte pour de bon — `js/defis.js` (neuf), `check_defis` (neuf : né d'un fait relu, mesuré en blocs appariés).
-- [ ] **La lancée et le doute** : un joueur qui vient de beaucoup produire finit mieux tant que ça dure ; le vrai carry en panne doute ; jamais au 18-0 — `js/sim.js` (par les canaux), `check_rogue` (neuf cas : absent du 18-0, borné).
-- [ ] **Les suivis** : un choix qui promet pour plus tard (l'objectif du proprio, le fil suivi, le commanditaire) se lit chaque matin à sa maison, en vrais chiffres ; un joueur parti fait tomber sa promesse, et ça se dit — `js/bureau.js`, `check_gestion`.
+- [ ] **Les histoires de la semaine** (les dossiers de la V10, V20) : une par deux journées environ, tirée de la graine, qui ne sort que si son fait est vrai dans les feuilles jouées, nomme ses joueurs, dit sa voix et ses options en vraies stats de partie ; son option audacieuse est un dé dont l'issue frappe le joueur nommé ; ses effets par les canaux, mesurés en paires — `js/histoires.js` (neuf), `js/scenes.js` (neuf : la voix, le fait, la réplique sans chiffre), `check_histoires` (neuf : le fait vrai, le mot dit le canal, l'effet se voit sur la feuille), `check_rogue`. **Périmé** : la V22 de Cap 82-0 (`js/dossiers.js`, deux réponses, une chose concrète ou un dé sur le joueur nommé) → 8 P10.
+- [ ] **Les fils et leurs retours** : un fil de split par joueur qui en mérite un (la série de victoires, la panne du vrai carry, le duo d'un lien, la recrue), lu dans les feuilles, à la une ; un fil fort ouvre un choix dans la Boîte, et son retour se relit quelques journées plus tard avec ses vrais chiffres — `js/soir.js`, `js/gestion.js`, `check_fils` (neuf : chaque chiffre se recompte dans les feuilles, rien ne lit l'avenir). → 8 P14.
+- [ ] **Les défis d'un joueur** (les arcs, Jalon P) : ce qu'un arc demande dans SA stat sur ses prochaines parties (des éliminations, des aides, du CS, de la vision, des premiers sangs) ; suivi chaque matin au Vestiaire ; relevé, sa retouche se grave au verso de sa carte pour de bon — `js/defis.js` (neuf), `check_defis` (neuf : né d'un fait relu, mesuré en blocs appariés). **Périmé** : Cap 82-0 n'a plus d'arcs depuis la V22 (`ARCS = {}`) ; rien à transposer.
+- [ ] **La lancée et le doute** : un joueur qui vient de beaucoup produire finit mieux tant que ça dure ; le vrai carry en panne doute ; jamais au 18-0 — `js/sim.js` (par les canaux), `check_rogue` (neuf cas : absent du 18-0, borné). → 8 P9 (il lui faut un canal par joueur).
+- [ ] **Les suivis** : un choix qui promet pour plus tard (l'objectif du proprio, le fil suivi, le commanditaire) se lit chaque matin à sa maison, en vrais chiffres ; un joueur parti fait tomber sa promesse, et ça se dit — `js/bureau.js`, `check_gestion`. → 8 P14.
 - [ ] **Ce que ton choix a changé** (V3.1, `js/causes.js`) : après une partie, ce qui l'a décidée, cause par cause (une carte, un pouvoir, la stratégie, le repêchage), dite seulement si, retirée seule, elle changeait la partie sur le même dé — `js/causes.js` (neuf), `check_causes` (neuf).
-- [ ] **Les galons, les trophées et le panthéon** : déjà là (jalon 6) ; il manque le galon qui monte un badge d'un métal pour le reste de la run, deux au plus, et « son histoire chez toi » gravée à sa carte — `js/palmares.js`, `js/meta.js`, `check_meta`.
+- [ ] **Les galons, les trophées et le panthéon** : déjà là (jalon 6) ; il manque le galon qui monte un badge d'un métal pour le reste de la run, deux au plus, et « son histoire chez toi » gravée à sa carte — `js/palmares.js`, `js/meta.js`, `check_meta`. **Tranché** (Q8) : le galon jouera, après les badges → 8 P16.
 
 ### 7 C — Les cartes, comme des cartes
 
 - [x] **Le carton 5:7, recto verso** (`cartonHtml`, `carteHtml` de Cap 82-0) : la carte d'un joueur est un carton qu'on retourne (la toucher, ou « ↻ ») ; le recto (la photo dans la fenêtre de sa série, le rôle, le ruban du niveau, l'édition, le nom sur sa plaque, le logo, ses trois champions, le numéro de la carte et l'année) ; le verso sur la même coque (les vraies stats, le bassin, ses stats chez toi, ses galons, son édition et ses copies, le crédit de la photo) ; la plaque dessous (ses badges, son coût, « ↻ »), puis « Signer » ; l'inclinaison sous le doigt et son reflet — `js/fiche.js`, `style.css` § 5, smoke (le carton est au format 5:7, il se retourne, rien ne déborde). Ton cinq en cartons de front (7 I) ; les stratégies et les coachs à choisir en bande qu'on balaie. Reste : les lotos du classeur en cartes à balayer.
 - [x] **Une série par année**, 2011 → 2025 (JP, Cap 82-0 : *chaque année devra être différente*) : quinze séries — Pionnier, Acier, Fleuve, Nuit, Filet d'or, Cristal, Losange, Prisme, Néon, Éclipse, Spectre, Rupture, Mondial, Monochrome, Aurore —, chacune son carton, sa fenêtre, sa plaque du nom, sa police (OFL, `fonts/`, créditée dans `fonts/POLICES.txt`), ses ornements et son verso, inspirée du client et des sites de l'esport de cette année-là, sans police, logo ni élément de Riot ; le split choisit la série, l'équipe la palette, l'édition la parallèle ; une année sans série prend la dernière qui en a une — `js/fiche.js` (`SERIES`, `serieDe`), `style.css` « LES SÉRIES ». Reste : les vraies couleurs des équipes (la palette est pour l'instant une teinte déduite du nom, la même partout pour la même équipe), et `check_css`.
 - [x] **Les cinq éditions** (Base, Cadre, Hors-cadre, Or, Holo, `EDITIONS` de Cap 82-0) : l'édition suit les copies (1, 2, 3, 5, 8) et change la carte entière — le Cadre, son réfracteur et son métal brossé ; le Hors-cadre, la photo qui prend toute la carte ; l'Or, le cadre et le nom en feuille d'or et la lumière qui suit la main ; la Holo, le prisme qui tourne, l'arc-en-ciel et le tirage numéroté sur 25 ; le numéro de la carte sur 300 ; une édition ne change rien au jeu — `js/meta.js` (`EDITIONS`, `editionDe`), `js/fiche.js`, `check_meta`, smoke.
-- [ ] **Les doublons** : une copie de plus monte l'édition (fait, par `editionDe`) ; reste l'échange d'un doublon, qui offre trois joueurs de splits voisins — `js/meta.js`, `check_meta`.
+- [ ] **Les doublons** : une copie de plus monte l'édition (fait, par `editionDe`) ; reste l'échange d'un doublon, qui offre trois joueurs de splits voisins — `js/meta.js`, `check_meta`. **Relu** : Cap 82-0 fusionne trois doublons, jusqu'à l'Or (`monterLesDoublons`) → 8 P16.
 - [x] **Le fond de la carte** : l'illustration de son champion le plus joué (Data Dragon) remplit la fenêtre en Base et en Cadre, la carte entière au Hors-cadre, à l'Or et à la Holo ; la photo passe devant — `js/fiche.js`, `style.css` (`.carton-fond`).
 - [x] **Les portraits recadrés comme au hockey** (JP, 30 oct. : *photos des joueurs officielles comme hockey ?*) : la tête trouvée par la transparence (les photos de Leaguepedia sont les détourées des séances officielles), toujours à la même place d'un portrait 5:7, le fond transparent gardé pour la fenêtre de la série ; une opaque serrée par le haut ; téléchargées à 480 px, recadrées à la copie — `scripts/recadrer.py` (Pillow, outil de fabrication), `scripts/images.mjs`, `pages.yml` (Pillow, la clé du cache v2). Mesuré sur un échantillon par année : 12 détourées, 3 opaques, toutes la tête au même endroit.
 - [ ] **Les portraits officiels de lolesports** pour les joueurs récents (2019 →), Leaguepedia en repli : l'API publique du site de Riot sert les portraits détourés des effectifs ; à écrire dans `scripts/images.mjs` quand la demande pourra être essayée (l'outil de cette session a refusé les appels à cette API).
@@ -160,29 +169,29 @@ Le principe : chaque règle de Cap 82-0 (`CLAUDE.md`, `docs/decisions.md`) a sa 
 
 ### 7 D — La grosse série (le duel de Cap 82-0)
 
-- [ ] **La série clé** : une série par split annoncée la veille (le rival, la bête noire, ton ancienne équipe), qui se joue en trois phases comme le duel se joue en trois périodes ; avant chaque phase, l'adversaire annonce son intention (son plan de la phase, qui vise tes joueurs par leur nom) et ton adjoint propose deux ou trois plans en vraies stats de la phase, ou « Garder » ; les phases vues ne bougent pas — `js/duel.js` (neuf), `js/sim.js` (les phases par les canaux), `check_duel` (neuf : deux copies du même vestiaire, l'attentif contre « Garder », un avantage net mais sous 60 %).
-- [ ] **La mise doublée** avant la dernière phase : le butin ou la perte double — `js/rogue.js`, `check_gestion`.
-- [ ] **Le pronostic d'avant-partie** et **l'entracte en cartons** : ce que le dépisteur lit, ce que l'entracte dit en vraies stats — `js/soir.js`, `check_pronostic` (neuf : le pronostic lit la feuille jusqu'ici, jamais l'avenir).
+- [ ] **La série clé** : une série par split annoncée la veille (le rival, la bête noire, ton ancienne équipe), qui se joue en trois phases comme le duel se joue en trois périodes ; avant chaque phase, l'adversaire annonce son intention (son plan de la phase, qui vise tes joueurs par leur nom) et ton adjoint propose deux ou trois plans en vraies stats de la phase, ou « Garder » ; les phases vues ne bougent pas — `js/duel.js` (neuf), `js/sim.js` (les phases par les canaux), `check_duel` (neuf : deux copies du même vestiaire, l'attentif contre « Garder », un avantage net mais sous 60 %). **Relu** : chez Cap 82-0, le gros match vient d'un rival choisi au départ ou de la bête noire, pas de ton ancienne équipe → 8 P7.
+- [ ] **La mise doublée** avant la dernière phase : le butin ou la perte double — `js/rogue.js`, `check_gestion`. → 8 P7 (son juge : `check_gros`).
+- [ ] **Le pronostic d'avant-partie** et **l'entracte en cartons** : ce que le dépisteur lit, ce que l'entracte dit en vraies stats — `js/soir.js`, `check_pronostic` (neuf : le pronostic lit la feuille jusqu'ici, jamais l'avenir). → 8 P7.
 
 ### 7 E — Ce que l'écran annonce, en chiffres de partie
 
-- [ ] **L'impact en chiffres de partie** (`js/impact.js`, `check_chiffres` de Cap 82-0) : chaque carte, chaque pouvoir, chaque adjoint, chaque stratégie se dit en vraies stats (« ≈ +2 éliminations par partie », « −1 dragon »), jamais en « % » ni en victoires ; ce que l'écran annonce égale ce que le moteur joue, en paires — `js/impact.js` (neuf), `check_chiffres` (neuf), `check_impact` (neuf : la base de la ligue, le témoin à zéro).
-- [ ] **Les mots d'une réponse disent ses lignes** (`check_mots`) : son gain nomme les lignes vertes, son prix les rouges, rien n'est promis sans ligne ; une ligne sous le bruit ne se dit pas — `check_mots` (neuf).
-- [ ] **Le lexique** : un mot par idée et une icône par sens, vérifiés — `js/lexique.js` (neuf), `check_lexique` (neuf), `check_clarte` (neuf : une ligne à l'écran, le détail dans les règles).
+- [ ] **L'impact en chiffres de partie** (`js/impact.js`, `check_chiffres` de Cap 82-0) : chaque carte, chaque pouvoir, chaque adjoint, chaque stratégie se dit en vraies stats (« ≈ +2 éliminations par partie », « −1 dragon »), jamais en « % » ni en victoires ; ce que l'écran annonce égale ce que le moteur joue, en paires — `js/impact.js` (neuf), `check_chiffres` (neuf), `check_impact` (neuf : la base de la ligue, le témoin à zéro). → 8 P2.
+- [ ] **Les mots d'une réponse disent ses lignes** (`check_mots`) : son gain nomme les lignes vertes, son prix les rouges, rien n'est promis sans ligne ; une ligne sous le bruit ne se dit pas — `check_mots` (neuf). → 8 P8, P10.
+- [ ] **Le lexique** : un mot par idée et une icône par sens, vérifiés — `js/lexique.js` (neuf), `check_lexique` (neuf), `check_clarte` (neuf : une ligne à l'écran, le détail dans les règles). → 8 P18.
 
 ### 7 F — Le méta de Cap 82-0 au complet
 
-- [ ] **Le prestige** : le rang à vie monte par les médailles ET un exploit par rang ; il ajoute des ★ Étoiles et des ★ Phénomènes aux packs sans en fermer aucun — `js/meta.js`, `check_meta`.
-- [ ] **Les packs qui montent** : une première run vend le Bronze et l'Époque ; un pack de plus s'ouvre à son jalon, et chaque pack monte de deux crans en médailles — `js/rogue.js`, `js/boutique.js`, `check_meta`.
-- [ ] **Ton club** : un nom et SON écusson vendus ensemble, dessinés, jamais empruntés à une vraie équipe ; tes couleurs ; la run commence dans le club de base — `js/meta.js`, `js/fiche.js` (`ecussonHtml`), `check_meta`.
-- [ ] **Les exigences**, déjà là (jalon 6) ; il manque `check_profondeur` : trois robots sur les mêmes dés (celui d'avant, l'attentif, le distrait) ; rouge tant que le premier titre arrive avant la run 3 ou que l'attentif gagne d'office après — `scripts/lib/robot.mjs`, `check_profondeur` (neuf).
-- [ ] **Le robot « premier Signer »** ne gagne pas le titre — `check_robot` (neuf).
+- [ ] **Le prestige** : le rang à vie monte par les médailles ET un exploit par rang ; il ajoute des ★ Étoiles et des ★ Phénomènes aux packs sans en fermer aucun — `js/meta.js`, `check_meta`. → 8 P13.
+- [ ] **Les packs qui montent** : une première run vend le Bronze et l'Époque ; un pack de plus s'ouvre à son jalon, et chaque pack monte de deux crans en médailles — `js/rogue.js`, `js/boutique.js`, `check_meta`. **Périmé** : la boutique de départ de Cap 82-0 vend le Bronze et le Pack Époque (un joueur Pilier ou mieux, l'ère et le poste au choix) → 8 P11.
+- [ ] **Ton club** : un nom et SON écusson vendus ensemble, dessinés, jamais empruntés à une vraie équipe ; tes couleurs ; la run commence dans le club de base — `js/meta.js`, `js/fiche.js` (`ecussonHtml`), `check_meta`. **Tranché** (Q13) : en jetons, à la boutique, avec son écusson → 8 P16.
+- [ ] **Les exigences**, déjà là (jalon 6) ; il manque `check_profondeur` : trois robots sur les mêmes dés (celui d'avant, l'attentif, le distrait) ; rouge tant que le premier titre arrive avant la run 3 ou que l'attentif gagne d'office après — `scripts/lib/robot.mjs`, `check_profondeur` (neuf). **Relu** : huit crans chez Cap 82-0, et la deuxième run plus dure → 8 P16.
+- [ ] **Le robot « premier Signer »** ne gagne pas le titre — `check_robot` (neuf). → 8 P1.
 
 ### 7 G — La plomberie de Cap 82-0
 
-- [ ] `check_css` (tailles, rayons, couleurs hors des jetons), `check_sauvegardes` (une partie de chaque version se relit), `check_lisibilite`, `check_emojis` (la police au trait) — neufs.
-- [ ] `essai_rogue` : un DG robot joue des runs entières dans le navigateur à 390 px, chaque écran tient en un écran, rien ne colle au bord (8 px) — neuf, sur `scripts/lib/robot.mjs`.
-- [ ] La manette et le clavier (`js/manette.js`) : le focus au voisin, l'anneau lumineux en mode clavier seulement — repris.
+- [ ] `check_css` (tailles, rayons, couleurs hors des jetons), `check_sauvegardes` (une partie de chaque version se relit), `check_lisibilite`, `check_emojis` (la police au trait) — neufs. → 8 P18.
+- [ ] `essai_rogue` : un DG robot joue des runs entières dans le navigateur à 390 px, chaque écran tient en un écran, rien ne colle au bord (8 px) — neuf, sur `scripts/lib/robot.mjs`. → 8 P1.
+- [ ] La manette et le clavier (`js/manette.js`) : le focus au voisin, l'anneau lumineux en mode clavier seulement — repris. → 8 P17.
 - [ ] Le cache IndexedDB des shards avec `COTES_VERSION` (jalon 1), `essai_poids` (le premier écran comme un téléphone le vit) — repris.
 - [ ] L'APK (Capacitor) et l'exe (Electron), `mobile/`, `desktop/`, seul leur code versionné ; l'application télécharge et recadre les photos sur l'appareil — repris, en dernier.
 
@@ -213,9 +222,9 @@ JP, 30 oct. : *le ui de Faille, les pages, etc, sont encore très loin de hockey
 - [x] **L'ouverture d'un pack, avec du juice** (Cap 82-0, `brancherPaquet` ; FUT et HUT) : en plein écran, le paquet flotte et luit de ce qu'il cache, se déchire (il tremble, le rabat s'envole, des éclats partent) ; ses cartes montent une à une sur la pile, face cachée, et se retournent, la meilleure en dernier ; elles se balaient au doigt, se touchent, ou Entrée, Espace, → ; une ★ Étoile (ou une carte légendaire) s'annonce par un walkout — l'année, le rôle, le logo de son équipe sur des rayons d'or — puis éclate ; l'étalage, puis « Continuer ». Les packs de joueurs, de cartes, le pack de départ et le pack offert par un événement ; des sons synthétisés pour chaque temps — `js/ouverture.js`, `js/sons.js`, `style.css` § 15, smoke (chaque ouverture : le paquet, les cartes une à une, l'étalage).
 - [x] **Les packs en paquets** à la boutique (le paquet en tuile, son prix, sa meilleure chance) ; **la carte de plan de jeu en carton 5:7** aux couleurs de sa rareté (sa main en grille de trois, celles du plan levées à l'or) ; **ton cinq en cartons de front** (le haut, la jungle, le milieu, puis le bas, le soutien et le banc ; ses stats chez toi dessous) — `js/boutique.js` (`carteDeJeu`), `js/bureau.js` (`vueCinq`), `style.css` § 17.
 - [x] **Les gestes du doigt** (JP, 30 oct. : *possibilité de drag and drop les cartes et navigation plus fluide sur mobile avec swipe, drag and drop, etc.*), repris de Cap 82-0 : balayer d'un onglet à l'autre (les vues des Joueurs, les sous-onglets, puis les sections), le nom de l'onglet où l'on va sortant du bord sous le doigt, plein au seuil, un coup vif qui compte même court ; tirer une couche vers le bas pour la fermer (le même retour qu'Échap, `retour` de js/pile.js) ; au Cinq, la carte du banc glissée sur le titulaire de son rôle (ou lui sur le banc) permute comme « Faire jouer », une autre case s'allume en rouge — `js/glisser.js`, `js/deposer.js`, `js/main.js`. Essayé au doigt à 390 px (Chromium, touchers CDP) ; smoke vert.
-- [ ] Les vraies couleurs de chaque équipe (le bandeau du vestiaire, l'affiche de ce soir, le pointage), comme Cap 82-0.
+- [ ] Les vraies couleurs de chaque équipe (le bandeau du vestiaire, l'affiche de ce soir, le pointage), comme Cap 82-0. → 8 P17.
 - [ ] Les lotos du classeur dans une feuille, en cartes à balayer ; le tableau des joueurs avec ses filtres par rôle.
-- [ ] `essai_rogue` : un robot joue une run entière à 390 px et mesure chaque écran (un écran au plus, rien à moins de 8 px du bord).
+- [ ] `essai_rogue` : un robot joue une run entière à 390 px et mesure chaque écran (un écran au plus, rien à moins de 8 px du bord). → 8 P1.
 
 ### Ce qui ne se transpose pas, et pourquoi
 
@@ -223,6 +232,126 @@ JP, 30 oct. : *le ui de Faille, les pages, etc, sont encore très loin de hockey
 - **Les blessures, les jambes, le jouer blessé, le ballottage, l'infirmerie** : un pro de LoL ne se blesse pas et ne se fatigue pas d'une partie à l'autre dans les données ; le banc reste le sixième joueur, et une absence (visa, maladie, suspension) serait une histoire de la semaine (7 B), jamais une mécanique du moteur.
 - **Les unités spéciales, la prolongation, les tirs de barrage, le gardien** : rien d'équivalent ; une partie de LoL se finit toujours.
 - **Les salaires réels et la masse** : le coût suit le niveau et rien d'autre (jalon 1) ; le « plafond qui mord » passe par le plafond en points.
+- **Sur glace** (Cap 82-0, né le 31 oct. 2026 : un match 2D à la manette, la physique et les règles complètes, l'IA des neuf autres) : pas encore tranché. Son jumeau serait « Sur la Faille », un match en temps réel sur la carte à nous. Ce qu'il coûterait, et ce que la politique de Riot en dit : `docs/parite-cap82.md`, Q4.
+
+## Jalon 8 — La parité avec Cap 82-0, mesurée
+
+JP, 2 nov. : *utilise Claude-Code-Game-Studios pour analyser le jeu hockey afin que Faille soit « exactement » le même jeu, mais avec LoL* ; puis, pour les questions : *ajuste selon ce qui est logique*.
+
+L'analyse : `docs/parite-cap82.md`. On y trouve l'index des 138 systèmes de Cap 82-0, chacun avec son état ici, les écarts de règle, et les questions tranchées (§ 6 : Cap 82-0 fait foi, sauf là où le LoL l'empêche ou là où le coût ne se justifie pas). On la refait avec `/parite` quand Cap 82-0 livre une refonte.
+
+Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux, rien ne se prouve), puis les fondations, le cœur des boucles, les fonctions, les écrans et la plomberie. Une tranche est une petite PR. Chacune nomme ses lignes de l'index, sa question (Qn, § 6), son jumeau dans Cap 82-0 et le script qui la prouve. Elle réécrit aussi la règle ferme de `CLAUDE.md` qu'elle change.
+
+- [x] **P0 · Le studio** (J8) — cinq agents (`faille-design`, `faille-equilibre`, `faille-economie`, `faille-ux`, `faille-recit`), quatre commandes (`/parite`, `/revue-design`, `/equilibrer`, `/rapport-essai`) et `docs/gabarits/devis.md`, adaptés de ceux de Cap 82-0 et de Claude-Code-Game-Studios — `.claude/`.
+- [ ] **P1 · Les juges d'abord** (E5, H22, H23)
+  - Le robot à trois politiques (défaut, attentif, distrait) joue par les actions de js/partie.js.
+  - `check_profondeur` : la première run reste dure, l'attentif bat le distrait sans gagner d'office.
+  - `check_robot` : le robot « premier Signer » ne gagne pas le titre.
+  - `essai_rogue` : une run à 390 × 844, chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord.
+  - Le smoke vérifie aussi les cibles de 44 px et que tout s'atteint.
+  - Les fichiers : `scripts/lib/robot.mjs`, `check_profondeur`, `check_robot`, `essai_rogue` (neufs) ; smoke `cibles44`, `toutEstAtteignable`.
+- [ ] **P2 · L'impact en chiffres de partie** (B1, E2)
+  - Chaque pouvoir, adjoint ou plan se dit en vraies stats de partie : « ≈ +1,5 élimination par partie », « −0,4 dragon ». Ce qui est dit est lu en paires, contre un témoin à zéro.
+  - `dire` est remplacé.
+  - Les bornes par rareté sont ramenées à un split, et chaque effet doit se voir.
+  - Les fichiers : `js/impact.js` (neuf) ; `check_chiffres`, `check_impact` (neufs) ; `check_rogue`.
+- [ ] **P3 · Le mandat au classement, la première run qui laisse bâtir** (F18, E3, F26 ; Q9)
+  - Les mandats se lisent au classement, comme la V5 de Cap 82-0.
+  - Le premier split de la première run demande les huit premiers, séries ou pas.
+  - La vedette prend la case du haut du classeur.
+  - Les fichiers : js/gestion.js `MANDATS`, js/partie.js `casesDe` ; `check_gestion`, `check_profondeur`.
+- [ ] **P4 · Des plans par partie** (B6 ; Q2)
+  - Les sept stratégies deviennent les plans de la partie (la V17 de Cap 82-0) : ils changent la forme, pas la force, et se disent en vraies stats.
+  - Le gain au fit part.
+  - La règle ferme « Une stratégie : son gain suit le fit » est réécrite.
+  - Les fichiers : js/strategie.js, js/partie.js, js/soir.js ; `check_plan_de_match` (neuf : aucun plan ne domine), `check_rogue`.
+- [ ] **P5 · Les adjoints de la V22, et le plan de jeu qui part** (D7, D8, D11, E1 ; Q1, Q7, Q10)
+  - La main tient quatre cartes ; on poste une carte sur une case libre.
+  - Un séjour dure 3 journées, 4 si le style rejoint le coach ; le repos, 4.
+  - Les cases suivent le niveau du coach.
+  - Un parmi trois est offert aux journées 2, 7, 11 et 15.
+  - Le staff de la V21 part. Le plan de jeu de 15 cartes et ses packs partent aussi ; leurs meilleures idées deviennent des styles.
+  - La sauvegarde passe à la v7 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore.
+  - Les fichiers : `js/adjoints.js` (neuf), js/rogue.js, js/partie.js, js/bureau.js ; `check_gestion` (le séjour rejoué), `check_rogue` (chaque style sous sa borne, visible), `check_sauvegardes` (neuf : une run v6 se recharge).
+- [ ] **P6 · Le coach juste** (D1, D2, D3)
+  - L'expérience vient de la victoire, de la partie clé et des séries, sans la couleur.
+  - Un talent se prend sur un pouvoir ouvert, ou en case d'adjoint de plus (`TALENT_CASE`).
+  - Les pouvoirs passent par-dessus les plafonds du jeu ; l'ultime a sa propre borne.
+  - Les fichiers : js/rogue.js `XP`, js/partie.js `talentEnAttente`, js/moteur.js ; `check_rogue`, `check_gestion`.
+- [ ] **P7 · La partie clé et son duel** (C1 à C5, F5, G16 ; Q6)
+  - Trois rivaux sont offerts au départ du split, et la bête noire s'y ajoute. La route annonce la partie la veille.
+  - Elle se joue en trois phases (lignes, milieu, fin), chacune avec l'intention de l'adversaire. Avant chaque phase, l'adjoint propose deux ou trois plans en vraies stats de la phase, ou « Garder ». Les phases vues ne bougent pas.
+  - La mise doublée vient avant la fin ; le butin suit.
+  - Le repêchage des champions se plie, « Automatique » par défaut, en plein écran aux séries et à la partie clé.
+  - Les fichiers : `js/duel.js` (neuf), js/sim.js, js/moteur.js (les phases par les canaux), js/main.js ; `check_duel` (deux copies du même vestiaire, l'attentif contre « Garder » : un avantage net, sous 60 %), `check_gros` (neufs).
+- [ ] **P8 · Les voix, les scènes, la feuille d'un choix** (G4, G5, H3, H4)
+  - Une seule distribution des voix, avec le préparateur mental à la place du physio et le panel du balado dedans.
+  - Chaque choix a sa scène : la voix, la réplique sans chiffre, le fait.
+  - `optionHtml` : la forme (Cadeau, Échange, Pari), et au plus deux lignes vertes ou rouges.
+  - La Boîte en maisons : plusieurs choix à la fois, et seul ce qui presse bloque.
+  - Les fichiers : `js/voix.js`, `js/scenes.js` (neufs), js/bureau.js ; `check_clarte` § 5, `check_lisibilite`, `check_mots` (neufs).
+- [ ] **P9 · Un canal par joueur, daté** (B4, B3, B5)
+  - Le dé sur le joueur nommé, la lancée et le doute (jamais au 18-0).
+  - Mesuré en paires ; `check_feuilles` reste vert.
+  - La décision « Les événements ne touchent pas au moteur » (PLAN.md) devient : par ce canal, mesuré en paires.
+  - Les fichiers : js/canaux.js, js/moteur.js ; `check_rogue`, `check_effets`, `check_lancee` (neufs).
+- [ ] **P10 · Les histoires de la semaine, comme la V22** (G1 à G3, G6, G9, G15 ; Q7)
+  - La banque transposée : six histoires, plus trois de deuxième moitié, avec 🩸 écrasé en ligne et 🎯 le pris seul (`docs/parite-cap82.md` § 4).
+  - Le tirage une journée sur deux environ, le repos 4 journées, deux sorties au plus ; deux réponses chacune.
+  - Le verdict, quelques journées plus tard, en vrais chiffres.
+  - « Trois défaites de suite » part.
+  - Les fichiers : `js/dossiers.js`, `js/verdicts.js` (neufs) ; `check_dossiers`, `check_mots`, `check_effets`, `check_verdicts`, `check_incidents` (neufs).
+- [ ] **P11 · La boutique de Cap 82-0** (F3, F7 à F16, F34 ; Q1, Q12)
+  - Le Bronze à ses taux.
+  - Le Pack Époque : un joueur Pilier ou mieux, l'ère et le rôle au choix.
+  - Les packs ouverts par les jalons, la hausse de 40 % par split, les packs qui montent, un pack par ronde gagnée, la caisse à chaque split.
+  - La banque de cartes rares, une fois sur quatre dans un pack de joueurs.
+  - Le marché devient un dépanneur : Régulier au plus, à prix fixe.
+  - Les fichiers : js/gestion.js, js/boutique.js, js/rogue.js ; `check_packs`, `check_banque` (neufs), `check_gestion`.
+- [ ] **P12 · La V23** (D6, D9, D10, G14, F35 ; Q5, Q15)
+  - Les niveaux d'adjoint (×0,7 à ×1,3) et leur salaire.
+  - La règle du coach, qui absorbe les commanditaires.
+  - « Ce qui a joué » s'allume au sommaire.
+  - Les fichiers : js/adjoints.js, js/rogue.js, js/gestion.js, js/soir.js ; `check_rogue`, `check_banc` (neuf).
+- [ ] **P13 · L'entraîneur et les philosophies** (D4, D5, F23 ; Q11)
+  - Le loto de trois au départ, et huit philosophies ouvertes par le prestige.
+  - Le prestige se gagne par les médailles et un exploit.
+  - Les coachs de Leaguepedia d'abord, s'ils y sont.
+  - Les fichiers : js/rogue.js, js/meta.js, scripts/build_splits.mjs ; `check_meta`, `check_rogue`.
+- [ ] **P14 · Les fils, leurs choix et leurs retours, les suivis, les moments** (G7, G8, G10, F17, C6)
+  - Les fichiers : js/soir.js, js/gestion.js ; `check_fils`, `check_retours`, `check_suivis`, `check_moments_si` (neufs).
+- [ ] **P15 · Les cotes et les badges de Cap 82-0** (A7 à A11 ; Q2, Q3, Q8)
+  - Les niveaux sont alignés sur 50/20/4/1 %, et le plafond est remesuré.
+  - Les cotes sur 20, six axes par rôle, à la fiche et à la signature.
+  - Les badges jouent par un canal ; l'affinité et ses accords remplacent le fit ; les familles.
+  - La règle ferme « Aucune cote dans le DOM » est réécrite.
+  - Les fichiers : js/cotes.js, js/canaux.js, js/fiche.js ; `check_cotes`, `check_plafond`, `check_rogue`, `check_affinite`, `check_familles` (neufs).
+- [ ] **P16 · La run qui dure : l'édition et le galon qui jouent** (F2, F19 à F22, F24, F25, F27, F29, F32, F33, G12, E4 ; Q8, Q13, Q14)
+  - Le galon monte un badge d'un métal, deux au plus, et une poignée par split (le galon « titre » aux cinq part). L'édition monte les badges, et les doublons fusionnent par trois.
+  - La deuxième run plus dure.
+  - Les jalons, les déblocages et l'échelle des médailles de Cap 82-0, les lotos de saison, ceux de la dernière run, les exigences dans l'ordre de Cap 82-0.
+  - Ton club, en jetons, avec son écusson.
+  - Les règles fermes sur l'édition et le galon sont réécrites.
+  - Les fichiers : js/meta.js, js/palmares.js, js/partie.js, js/boutique.js ; `check_meta`, `check_galons` (neuf), `check_profondeur`.
+- [ ] **P17 · Les écrans de Cap 82-0** (H1, H2, H5 à H9, H12, H13, H15 à H20 ; Q16)
+  - Le Marché en deux : Boutique et Album ; les Séries au Bureau.
+  - Signer, c'est l'échange, et un pack non signé attend dans la Boîte.
+  - L'en-tête partout ; Ce soir en trois chiffres, aux vraies couleurs des équipes ; Hier soir au complet.
+  - La fin de saison en scènes, et le titre en plein écran ; le bilan en onglets.
+  - Les cartes d'adjoint et de coach, le badge en icône seule.
+  - La file des toasts, les onglets accessibles, la manette.
+  - Les fichiers : js/bureau.js, js/soir.js, js/main.js, style.css, `js/manette.js` (repris) ; `essai_rogue`, smoke.
+- [ ] **P18 · La plomberie** (J2 à J10, H18 ; Q10)
+  - `check_css`, `check_lisibilite`, `check_emojis`.
+  - `js/lexique.js` et `check_lexique` ; `check_sauvegardes` étendu ; `js/version.js` et `check_maj`.
+  - `verifier.yml` étape par étape.
+  - `docs/decisions.md`, le journal par mois, les règles par terrain dans `.claude/rules/`.
+- [ ] **P19 · Hors du Rogue** (I1 à I4)
+  - Le 18-0 : le Loto, un seul split, « Rejouer le split », l'historique.
+  - L'exhibition : choisir les deux équipes, en BO1, BO3 ou BO5, ou cent parties.
+  - Le menu par mode ; la rangée au Cinq du 18-0.
+  - Les fichiers : js/menu.js, js/depart.js, js/main.js ; smoke.
+- **Pas maintenant** (Q4) : Sur la Faille (le jumeau de Sur glace) et un plateau (le jumeau de Sur table). À revoir après P19.
 
 ## Journal
 
@@ -250,3 +379,10 @@ JP, 30 oct. : *le ui de Faille, les pages, etc, sont encore très loin de hockey
 - 2026-10-30 — Les gestes du doigt, repris de Cap 82-0 : le balayage entre onglets et sections qui montre où il mène, tirer une couche vers le bas pour la fermer, le banc glissé sur son titulaire au Cinq.
 - 2026-10-30 — Les quinze Mondiaux rebâtis par l'Action, avec les sorts d'invocateur de chaque joueur sur chacun de ses champions ; `tout.mjs` et le smoke verts sur ces shards.
 - 2026-10-30 — Le glisser-déposer à la souris (JP : *drag and drop sur pc aussi*) : la photo d'une carte partait en glisser natif du navigateur et annulait le geste ; js/deposer.js l'empêche, et la main dit au survol qu'une carte du Cinq se prend. Essayé à 1280 px, une vraie photo dans chaque carte.
+- 2026-11-02 — **La parité avec Cap 82-0, mesurée** (JP : *utilise Claude-Code-Game-Studios pour analyser le jeu hockey afin que Faille soit « exactement » le même jeu, mais avec LoL*).
+  - **L'index** : 138 systèmes de Cap 82-0 3.2.14, chacun avec son état ici et la gravité de l'écart (`docs/parite-cap82.md`). Faille suit le Cap 82-0 d'avant le 25 octobre, plus le coach-personnage de la V21 ; manquent le gros match et son duel, les adjoints de la V22, les histoires de la semaine, et quatre fondations (l'impact en chiffres de partie, un canal par joueur, le robot à trois politiques, `essai_rogue`).
+  - **La méthode** : `/reverse-document`, `/map-systems` et `/adopt` de Claude-Code-Game-Studios, par cinq relecteurs qui ont lu les deux dépôts.
+  - **Le plan** : le jalon 8, en vingt tranches dans l'ordre des couches.
+  - **Les seize questions**, tranchées sur la demande de JP (*ajuste selon ce qui est logique*), Cap 82-0 faisant foi (`docs/parite-cap82.md` § 6). Le plan de jeu part. La stratégie devient des plans par partie. Les cotes sur 20 entrent. L'édition et le galon jouent. Pas de « Sur la Faille » pour l'instant.
+  - **Le studio de Faille** : cinq agents, `/parite`, `/revue-design`, `/equilibrer`, `/rapport-essai`, le gabarit de devis.
+  - Aucun code du jeu ne change.
