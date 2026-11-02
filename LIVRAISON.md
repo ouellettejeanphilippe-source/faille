@@ -243,13 +243,27 @@ L'analyse : `docs/parite-cap82.md`. On y trouve l'index des 138 systèmes de Cap
 Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux, rien ne se prouve), puis les fondations, le cœur des boucles, les fonctions, les écrans et la plomberie. Une tranche est une petite PR. Chacune nomme ses lignes de l'index, sa question (Qn, § 6), son jumeau dans Cap 82-0 et le script qui la prouve. Elle réécrit aussi la règle ferme de `CLAUDE.md` qu'elle change.
 
 - [x] **P0 · Le studio** (J8) — cinq agents (`faille-design`, `faille-equilibre`, `faille-economie`, `faille-ux`, `faille-recit`), quatre commandes (`/parite`, `/revue-design`, `/equilibrer`, `/rapport-essai`) et `docs/gabarits/devis.md`, adaptés de ceux de Cap 82-0 et de Claude-Code-Game-Studios — `.claude/`.
-- [ ] **P1 · Les juges d'abord** (E5, H22, H23)
-  - Le robot à trois politiques (défaut, attentif, distrait) joue par les actions de js/partie.js.
-  - `check_profondeur` : la première run reste dure, l'attentif bat le distrait sans gagner d'office.
-  - `check_robot` : le robot « premier Signer » ne gagne pas le titre.
-  - `essai_rogue` : une run à 390 × 844, chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord.
-  - Le smoke vérifie aussi les cibles de 44 px et que tout s'atteint.
-  - Les fichiers : `scripts/lib/robot.mjs`, `check_profondeur`, `check_robot`, `essai_rogue` (neufs) ; smoke `cibles44`, `toutEstAtteignable`.
+- [x] **P1 · Les juges d'abord** (E5, H22, H23)
+  - **Le robot à trois politiques** (`scripts/lib/robot.mjs`, `POLITIQUES`) joue par les actions de js/partie.js :
+    - le défaut, le robot d'avant ;
+    - l'attentif, qui lit ses joueurs : au loto, au marché et dans un pack, le joueur qui monte le plus son cinq ; le pack le plus cher qu'il paie ; la stratégie du meilleur fit ; le banc qui vaut mieux ; un entraînement toujours en cours ;
+    - le distrait, au hasard partout, ses champions au repêchage compris.
+
+    Les dés du monde (les adversaires, la graine du split, les bouche-trous) sont tirés à part de ceux des choix : les trois robots jouent les mêmes parties.
+  - **`check_robot`** (3 s, dans `tout.mjs`), vert. Le « premier Signer » du 18-0 sur 40 splits : 5 % de titres (borne 0 à 10 %), 50 % de séries (borne 30 à 80 %). Le robot d'avant au Rogue : 2,5 % de titres par run (borne 10 %).
+  - **`check_profondeur`** (7 s), hors du CI comme chez Cap 82-0 : c'est le juge de P3, P5 et P11. Il est **rouge** :
+    - l'attentif gagne son premier titre dès la run 1 (médiane 1 ; voulu : 3 à 8) ;
+    - le distrait gagne un titre en 24 runs ;
+    - une meilleure équipe mal menée fait toujours les séries (0 sur 16).
+    - Mener ne vaut que +2,8 V par split de 18, contre environ +4,5 chez Cap 82-0 à la même échelle (20,7 V sur 82).
+    - Ce qui tient : un cinq moyen bien mené finit premier 5 fois sur 16 ; après son premier titre, l'attentif le regagne 64 % du temps.
+  - **`essai_rogue`** (70 s, au CI après le smoke), vert. Un robot joue le premier split à 390 × 844, de l'écran titre au bilan, et visite trois fois chaque section et chaque sous-onglet, Ce soir, le sommaire, un choix. Rien à moins de 8 px du bord, sur 76 écrans.
+    - Les hauteurs se disent sans se juger, c'est le chantier de P17. Huit écrans dépassent 1,3 écran : le calendrier 2,6 ; le sommaire 2,05 ; l'Album 1,94 ; les meneurs 1,92 ; le repêchage 1,91 ; le départ 1,5 ; le Proprio 1,37 ; le Vestiaire 1,3.
+  - **Le smoke** juge aussi les cibles de 44 px et que tout s'atteint, sur chaque écran qu'il regarde (`scripts/lib/cibles.mjs`, `scripts/lib/bords.mjs`, repris de Cap 82-0). Six sortes de boutons sous 44 px y sont passées :
+    - le retour, les sous-onglets et les puces, à 44 px ;
+    - les petits boutons, une zone de 44 px autour de leur dessin et 44 px de large ;
+    - le « ▶ » d'hier soir, qui a maintenant un nom.
+
 - [ ] **P2 · L'impact en chiffres de partie** (B1, E2)
   - Chaque pouvoir, adjoint ou plan se dit en vraies stats de partie : « ≈ +1,5 élimination par partie », « −0,4 dragon ». Ce qui est dit est lu en paires, contre un témoin à zéro.
   - `dire` est remplacé.
@@ -386,3 +400,8 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - **Les seize questions**, tranchées sur la demande de JP (*ajuste selon ce qui est logique*), Cap 82-0 faisant foi (`docs/parite-cap82.md` § 6). Le plan de jeu part. La stratégie devient des plans par partie. Les cotes sur 20 entrent. L'édition et le galon jouent. Pas de « Sur la Faille » pour l'instant.
   - **Le studio de Faille** : cinq agents, `/parite`, `/revue-design`, `/equilibrer`, `/rapport-essai`, le gabarit de devis.
   - Aucun code du jeu ne change.
+- 2026-11-02 — **Les juges d'abord (jalon 8, P1)**. Trois robots, défaut, attentif et distrait, jouent les mêmes dés (`scripts/lib/robot.mjs`).
+  - `check_robot` (vert, dans `tout.mjs`) : le robot « premier Signer » ne gagne pas le titre.
+  - `check_profondeur` (rouge, hors du CI) : l'attentif gagne dès sa première run, et mener ne vaut que +2,8 V par split.
+  - `essai_rogue` (vert, au CI) : un premier split à 390 × 844, rien à moins de 8 px du bord, et la hauteur de chaque écran.
+  - Le smoke juge les cibles de 44 px et que tout s'atteint ; six sortes de boutons sont passées à 44 px.

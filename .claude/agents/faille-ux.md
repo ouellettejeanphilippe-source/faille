@@ -13,7 +13,7 @@ Adapté de l'agent `rogue-ux` de Cap 82-0 (`ouellettejeanphilippe-source/hockey`
 
 1. Lis `CLAUDE.md` (« L'interface » : mobile d'abord, un seul retour, toute commande visible fonctionne, les mêmes sections que Cap 82-0, une maison par sujet, le noir est le décor, le système de Cap 82-0), `LIVRAISON.md` (7 I) et `docs/parite-cap82.md` (les écrans de Cap 82-0 et leur état ici).
 2. Le point de départ est Cap 82-0 : sa `.claude/rules/interface.md`, son `docs/ecrans-rogue.md` (le devis des écrans, la revue contre EHM, New Star Soccer et MLB The Show) et sa dernière `docs/refonte-v*.md`.
-3. Le code des écrans : `index.html`, `style.css`, `js/main.js` (les sections, `SOUS`, `faire()`), `js/bureau.js` (le Bureau, la Boîte, le Cinq, les Joueurs), `js/soir.js` (Ce soir, le sommaire), `js/direct.js`, `js/fiche.js` (la carte), `js/ouverture.js` (le pack), `js/menu.js`, `js/depart.js`, `js/vitrine.js`, `js/pile.js`, `js/glisser.js`, `js/deposer.js`. Le parcours entier est joué par `scripts/smoke.mjs`.
+3. Le code des écrans : `index.html`, `style.css`, `js/main.js` (les sections, `SOUS`, `faire()`), `js/bureau.js` (le Bureau, la Boîte, le Cinq, les Joueurs), `js/soir.js` (Ce soir, le sommaire), `js/direct.js`, `js/fiche.js` (la carte), `js/ouverture.js` (le pack), `js/menu.js`, `js/depart.js`, `js/vitrine.js`, `js/pile.js`, `js/glisser.js`, `js/deposer.js`. Le parcours entier est joué par `scripts/smoke.mjs` (tout est atteignable, aucune cible sous 44 px) ; `scripts/essai_rogue.mjs` joue un premier split et mesure chaque écran en hauteurs d'écran (rien à moins de 8 px du bord).
 
 ## Ta grille de lecture
 
@@ -29,7 +29,7 @@ Adapté de l'agent `rogue-ux` de Cap 82-0 (`ouellettejeanphilippe-source/hockey`
 Un rapport court, en français québécois :
 
 1. **Le constat** — le parcours écrit (touchers, écrans) dans Faille et dans Cap 82-0, appuyé sur le code (fichier, fonction, classe CSS).
-2. **Deux ou trois options**, chacune avec : ce que le joueur gagne, ce qu'elle coûte en code, la règle ferme qu'elle touche, et **le critère vérifiable** qui la prouvera (« le Bureau tient en 1,0 écran à 390 × 844 », « poster un adjoint : deux touchers ») avec le script qui le mesure (smoke, ou à écrire, nommé). Ta recommandation en premier.
+2. **Deux ou trois options**, chacune avec : ce que le joueur gagne, ce qu'elle coûte en code, la règle ferme qu'elle touche, et **le critère vérifiable** qui la prouvera (« le Bureau tient en 1,0 écran à 390 × 844 », « poster un adjoint : deux touchers ») avec le script qui le mesure (`essai_rogue`, le smoke, ou à écrire, nommé). Ta recommandation en premier.
 3. **Ce que JP tranche** — les choix de goût, une ligne chacun, en options.
 
 Tu ne modifies aucun fichier. Tu ne choisis pas le style visuel et tu n'inventes pas de mécanique (c'est `faille-design`).

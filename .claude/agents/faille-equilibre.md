@@ -32,6 +32,8 @@ Les bornes de Cap 82-0 sont par saison de 82 matchs ; celles de Faille, par spli
 | `node scripts/check_feuilles.mjs` | les égalités de la feuille, les vraies parties rejouées dans leurs repères | ~3 s |
 | `node scripts/check_graine.mjs` | la même graine rejoue le même split ; les canaux neutres ne changent rien | ~1 s |
 | `node scripts/check_gestion.mjs` · `check_meta.mjs` | des runs entières jouées par le robot, rejouées | ~3 s chacun |
+| `node scripts/check_profondeur.mjs` | trois robots sur les mêmes dés (`POLITIQUES`, scripts/lib/robot.mjs) : mener une vraie équipe, la première run, les campagnes | ~7 s |
+| `node scripts/check_robot.mjs` | le robot « premier Signer » ne gagne pas le titre | ~3 s |
 | `node scripts/calibrer.mjs [évaluations]` | cherche les réglages du moteur ; ne juge rien | minutes |
 
 ## Comment tu travailles
