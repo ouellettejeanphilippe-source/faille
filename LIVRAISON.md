@@ -301,7 +301,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
 - [ ] **P8 · Les voix, les scènes, la feuille d'un choix** (G4, G5, H3, H4)
   - Une seule distribution des voix, avec le préparateur mental à la place du physio et le panel du balado dedans.
   - Chaque choix a sa scène : la voix, la réplique sans chiffre, le fait.
-  - `optionHtml` : la forme (Cadeau, Échange, Pari), et au plus deux lignes vertes ou rouges.
+  - `optionHtml`, en cartes dès le départ (la V23 B de Cap 82-0) : la forme (Cadeau, Échange, Moindre mal, Pari) au filet du haut, son gros chiffre au cœur, au plus deux lignes vertes ou rouges en tout, le soulèvement sous le doigt et l'envol joué, sans dégradé.
   - La Boîte en maisons : plusieurs choix à la fois, et seul ce qui presse bloque.
   - Les fichiers : `js/voix.js`, `js/scenes.js` (neufs), js/bureau.js ; `check_clarte` § 5, `check_lisibilite`, `check_mots` (neufs).
 - [ ] **P9 · Un canal par joueur, daté** (B4, B3, B5)
@@ -314,6 +314,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - Le tirage une journée sur deux environ, le repos 4 journées, deux sorties au plus ; deux réponses chacune.
   - Le verdict, quelques journées plus tard, en vrais chiffres.
   - « Trois défaites de suite » part.
+  - Les suites et les rares (la V23 E de Cap 82-0) : une réponse plante un épisode 2 (le petit qui pousse, puis le petit arrivé ou le petit qui doute, selon ses feuilles), et une rare ne sort qu'à certaines journées, une fois par split (le pentakill).
   - Les fichiers : `js/dossiers.js`, `js/verdicts.js` (neufs) ; `check_dossiers`, `check_mots`, `check_effets`, `check_verdicts`, `check_incidents` (neufs).
 - [ ] **P11 · La boutique de Cap 82-0** (F3, F7 à F16, F34 ; Q1, Q12)
   - Le Bronze à ses taux.
@@ -405,3 +406,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - `check_profondeur` (rouge, hors du CI) : l'attentif gagne dès sa première run, et mener ne vaut que +2,8 V par split.
   - `essai_rogue` (vert, au CI) : un premier split à 390 × 844, rien à moins de 8 px du bord, et la hauteur de chaque écran.
   - Le smoke juge les cibles de 44 px et que tout s'atteint ; six sortes de boutons sont passées à 44 px.
+- 2026-11-02 — **Les améliorations de Cap 82-0 depuis l'index, relues** (JP : *tu peux voir les améliorations en cours dans hockey pour aussi les adapter ici*). Trois tranches de sa V23 sont livrées : G1, B et E.
+  - **G1 (les finis), deux adaptés ici** : au Proprio, la journée se compte de 1 (« Journée 0 sur 18 » au premier matin, js/bureau.js) ; le toast se pose au-dessus de la barre d'action et ne cache plus « Jouer ce soir » (js/main.js `avis`).
+  - **B (les choix en cartes) et E (les suites et les rares)** sont rangées dans P8 et P10. Les cinq histoires neuves de E ont leur transposition dans `docs/parite-cap82.md` § 4, dont le pentakill pour le tour du chapeau.
+

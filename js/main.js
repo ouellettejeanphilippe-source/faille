@@ -134,6 +134,9 @@ function teindre() {
 let minuterie = null;
 function avis(texte) {
   $('#avis').textContent = texte;
+  // Au-dessus de la barre d'action de l'écran (« Jouer ce soir ») et de la barre du bas : il ne cache jamais ce qu'on touche (Cap 82-0, V23 G1).
+  const bas = [...document.querySelectorAll('.actionbar, #nav')].filter(e => !e.hidden && e.offsetHeight).reduce((h, e) => Math.min(h, e.getBoundingClientRect().top), innerHeight);
+  $('#avis').style.bottom = bas < innerHeight ? `${Math.round(innerHeight - bas + 8)}px` : '';
   $('#avis').hidden = false;
   clearTimeout(minuterie);
   minuterie = setTimeout(() => { $('#avis').hidden = true; }, 3000);
