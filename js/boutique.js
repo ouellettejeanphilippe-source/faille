@@ -1,11 +1,12 @@
 /*
  * LA BOUTIQUE : tes jetons, les packs de joueurs, ton plan de jeu, ton coach,
  * les packs de cartes. Rien que du HTML tiré de l'état du rogue (js/rogue.js)
- * et de la gestion (js/gestion.js) ; ce qu'une carte fait se dit en mots
- * (dire), et les chances d'un pack en « 1 pack sur N ».
+ * et de la gestion (js/gestion.js) ; ce qu'une carte change se dit en vraies
+ * stats de partie mesurées (js/impact.js), et les chances d'un pack en « 1 pack sur N ».
  */
 import { esc } from './util.js';
-import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, NIVEAU_DES_POUVOIRS, couleurDe, chances, prixDuPack, confiance, jetonsDe, dire } from './rogue.js';
+import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, NIVEAU_DES_POUVOIRS, couleurDe, chances, prixDuPack, confiance, jetonsDe } from './rogue.js';
+import { phraseDe } from './impact.js';
 import { prixDuCoach } from './partie.js';
 import { PACKS_JOUEURS, prixPackJoueurs, chancesJoueurs, marcheOuvert, placements, cleDe } from './gestion.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
@@ -17,13 +18,13 @@ const GAINS = `${JETONS.victoire} par victoire, ${JETONS.defaite} par défaite, 
 /**
  * UNE CARTE DE PLAN DE JEU, au format d'une carte (Cap 82-0 : *une carte de jeu a le format d'une carte de
  * hockey*) : un carton 5:7 aux couleurs de sa rareté, son icône en grand, son nom, la couleur de son coach, ce
- * qu'elle fait en mots (`dire`), jamais en cote.
+ * qu'elle change sur la feuille, en vraies stats de partie mesurées (js/impact.js), jamais en cote.
  */
 export function carteDeJeu(id) {
-  const [ico, nom, rarete, eff] = CARTES[id];
+  const [ico, nom, rarete] = CARTES[id];
   const co = couleurDe(id);
   return `<span class="cj cj-${rarete}"><span class="cj-rarete">${RARETES[rarete]}</span>${co ? `<span class="cj-coach" title="${esc(COACHS[co].nom)}">${COACHS[co].ico}</span>` : ''}
-    <span class="cj-ico">${ico}</span><span class="cj-nom">${esc(nom)}</span><span class="cj-texte">${dire(eff).map(esc).join(' · ')}</span><span class="cj-pied">Faille · plan de jeu</span></span>`;
+    <span class="cj-ico">${ico}</span><span class="cj-nom">${esc(nom)}</span><span class="cj-texte">${esc(phraseDe(`carte:${id}`))}</span><span class="cj-pied">Faille · plan de jeu</span></span>`;
 }
 
 
@@ -68,7 +69,7 @@ export function carteDuCoach(id, { niveau = 0, talents = [], xp = null, prochain
   const barre = xp === null ? '' : `<span class="piste coach-piste"><span class="rempli" style="width:${prochain ? Math.round((100 * xp) / prochain) : 100}%"></span></span>
     <small>${xp} point${xp > 1 ? 's' : ''} d'expérience${prochain ? ` · niveau ${niveau + 1} à ${prochain}` : ' · au sommet'}</small>`;
   const pouvoirs = co.pouvoirs.map((x, k) => `<li class="${niveau >= NIVEAU_DES_POUVOIRS[k] ? 'ouvert' : ''}"><b>${esc(x.nom)}${talents.includes(x.id) ? ' ⭐' : ''}</b>
-    <small>Niveau ${NIVEAU_DES_POUVOIRS[k]} · ${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small></li>`).join('');
+    <small>Niveau ${NIVEAU_DES_POUVOIRS[k]} · ${esc(x.condition)} : ${esc(phraseDe(`pouvoir:${x.id}${talents.includes(x.id) ? ':grandi' : ''}`, { quand: true }))}</small></li>`).join('');
   return `<span class="coach-tete"><span class="jeu-ico">${co.ico}</span><b>${esc(co.nom)}</b>${niveau ? `<span class="coach-niveau">Niveau ${niveau}</span>` : ''}</span>
     ${barre}<ul class="coach-pouvoirs">${pouvoirs}</ul>`;
 }
@@ -93,7 +94,7 @@ export function vuePlanDeJeu(P, ouvertes) {
       ? `En poste · confiance ${PALIERS[conf.palier] || 'en rodage'} · ${conf.series} série${conf.series > 1 ? 's' : ''} à sa couleur${conf.prochain ? `, prochain palier à ${conf.prochain}` : ''}`
       : 'Ses pouvoirs s\'ouvrent un par palier de confiance.';
     // Ses trois pouvoirs : le palier qui l'ouvre, sa phase et sa condition, ce qu'il fait.
-    const pouvoirs = co.pouvoirs.map((x, k) => `<small class="pouvoir${enPoste && conf.palier > k ? ' ouvert' : ''}">${PALIERS[k + 1]} · <b>${esc(x.nom)}</b> — ${esc(x.condition)} : ${dire(x.effet, 0.1).map(esc).join(', ')}</small>`).join('');
+    const pouvoirs = co.pouvoirs.map((x, k) => `<small class="pouvoir${enPoste && conf.palier > k ? ' ouvert' : ''}">${PALIERS[k + 1]} · <b>${esc(x.nom)}</b> — ${esc(x.condition)} : ${esc(phraseDe(`pouvoir:${x.id}`, { quand: true }))}</small>`).join('');
     return `<li><button class="coach${enPoste ? ' active' : ''}" data-coach="${id}"${enPoste || jetons < prixCoach ? ' disabled' : ''}>
       <span class="jeu-ico">${co.ico}</span><span class="jeu-id"><b>${esc(co.nom)}</b><small>${etat}</small>${pouvoirs}</span>
       <span class="prix">${enPoste ? '' : prixCoach ? `${prixCoach} 🪙` : 'Gratuit'}</span></button></li>`;

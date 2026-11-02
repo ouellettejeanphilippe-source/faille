@@ -15,8 +15,9 @@ import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, parCases } from './partie.js';
-import { STRATEGIES, lireFit, identiteDe } from './strategie.js';
-import { jetonsDe, valeurDesGains, LIENS, liensDe, dire, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX, pouvoirsDuPersonnage } from './rogue.js';
+import { STRATEGIES, lireFit, fitDe, identiteDe } from './strategie.js';
+import { phraseDe, chiffresDe } from './impact.js';
+import { jetonsDe, valeurDesGains, LIENS, liensDe, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
 import { carteDuCoach } from './boutique.js';
 import { iconeChampion } from './images.js';
 import { classement } from './sim.js';
@@ -75,12 +76,12 @@ export function ecranStrategie(P, ctx) {
   const cinq = L.equipes[0].cinq;
   const s = taSerie(L);
   const enFace = s ? planAdverse(P, ctx, s.a === 0 ? s.b : s.a) : null;
-  const items = Object.entries(STRATEGIES).map(([id, [ico, nom, texte, , gain, prix]]) => {
+  const items = Object.entries(STRATEGIES).map(([id, [ico, nom, texte]]) => {
     const { mot } = lireFit(id, cinq);
     return `<li><button class="strategie${P.strategie === id ? ' active' : ''}" data-strategie="${id}">
       <span class="plan-tete"><span class="${CLASSE_FIT[mot]}">${mot}</span></span><b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>
       ${demandes(id, cinq)}
-      <small class="fait">Gagne selon le fit : ${dire(gain, 0.1).map(esc).join(' · ')}. Coûte toujours : ${dire(prix, 0.1).map(esc).join(' · ') || 'rien'}.</small></button></li>`;
+      <small class="fait">Avec ton cinq : ${esc(phraseDe(`strategie:${id}`, { fit: fitDe(id, cinq) }))}.</small></button></li>`;
   }).join('');
   return `<h2>La stratégie</h2>
     <p class="sous">Ce que ton cinq priorise, à chaque partie. Son gain suit ce que tes joueurs savent faire (le fit) ; son prix se paie toujours. À contre-emploi, elle coûte plus qu'elle ne rapporte.</p>
@@ -101,11 +102,10 @@ function decisionDe(P) {
   const ev = enAttente(P);
   if (!ev) return null;
   if (ev.id === 'talent') {
-    // Un talent : ton coach monte de niveau, un de ses pouvoirs grandit — ce qu'il ferait alors, en mots.
+    // Un talent : ton coach monte de niveau, un de ses pouvoirs grandit — ce qu'il ferait alors, en vraies stats de partie.
     const co = COACHS[P.R.coach.id];
-    const grandis = pouvoirsDuPersonnage(P.R.coach.id, 5, ev.choix);
     return { ico: co.ico, qui: co.nom, titre: 'Un talent', etat: 'À choisir', texte: `Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`,
-      options: ev.choix.map(id => { const x = grandis.find(g => g.id === id); return { choix: id, nom: x.nom, desc: `${x.condition} : ${dire(x.effet, 0.1).join(', ')}` }; }) };
+      options: ev.choix.map(id => { const x = co.pouvoirs.find(g => g.id === id); return { choix: id, nom: x.nom, desc: `${x.condition} : ${phraseDe(`pouvoir:${id}:grandi`, { quand: true })}` }; }) };
   }
   if (ev.id === 'adjoint' || ev.id === 'quiPart') {
     // Le staff : un adjoint parmi trois, ou qui part quand il y en a un de trop.
@@ -234,10 +234,10 @@ function ligneCourte(st, c) {
   return `${l.pj} PJ · ${moy(l.k)}/${moy(l.m)}/${moy(l.a)}`;
 }
 
-/* Les liens d'origine de ton cinq, et ce qu'ils font, en mots. */
+/* Les liens d'origine de ton cinq, et ce qu'ils changent sur la feuille. */
 function lesLiens(P) {
   const actifs = liensDe(P.eff.cinq);
-  const tous = Object.entries(LIENS).map(([id, [ico, nom, , eff]]) => `<li class="${actifs.includes(id) ? 'actif' : ''}"><b>${ico} ${esc(nom)}</b><small>${dire(eff, 0.1).map(esc).join(' · ')}</small></li>`).join('');
+  const tous = Object.entries(LIENS).map(([id, [ico, nom]]) => `<li class="${actifs.includes(id) ? 'actif' : ''}"><b>${ico} ${esc(nom)}</b><small>${esc(phraseDe(`lien:${id}`))}</small></li>`).join('');
   return `<h3>Les liens d'origine · ${actifs.length}</h3>
     <p class="sous">Des joueurs qui ont joué ensemble pour vrai : le duo du bas ou du centre d'un même vestiaire, trois d'un même vestiaire, trois aux couleurs d'un même club.</p>
     <ul class="liens">${tous}</ul>`;
@@ -267,8 +267,12 @@ function lEntrainement(P, ctx, qui) {
     ${corps}${faits.length ? `<p class="sous">Déjà entraînés : ${faits.join(' · ')}.</p>` : ''}`;
 }
 
-/* Un adjoint en mots : ce qu'il donne, ce qu'il coûte. */
-const echange = id => `Donne : ${dire(ADJOINTS[id][2], 0.1).join(', ')}. Coûte : ${dire(ADJOINTS[id][3], 0.1).join(', ')}.`;
+/* Un adjoint, un échange : ce qu'il donne et ce qu'il coûte, par partie, sur la feuille (js/impact.js). */
+function echange(id) {
+  const l = chiffresDe(`adjoint:${id}`, { max: 4 });
+  const dit = x => (x.length ? `≈ ${x.map(y => y.txt).join(', ')}` : 'rien de net');
+  return `Par partie, il donne ${dit(l.filter(x => x.bon !== false))} ; il coûte ${dit(l.filter(x => x.bon === false))}.`;
+}
 
 /* TON COACH, le personnage (version 4) : son niveau, son expérience, ses pouvoirs et ses talents ; son staff. */
 function tonCoach(P) {

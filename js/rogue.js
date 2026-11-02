@@ -279,20 +279,3 @@ export function noterJoue(R, gagne) {
   R.joue.push({ plan: [...R.plan], gagne });
 }
 
-/*
- * CE QU'UN EFFET FAIT, en mots : la direction de chaque canal, jamais un
- * chiffre caché. Les mêmes mots pour une carte, un palier de coach, un repêchage.
- */
-const MOTS = {
-  ligne: ['la phase de lignes'], combat: ['les combats'], objectifs: ['les objectifs neutres'],
-  dragons: ['les dragons'], heraut: ['le héraut'], nashor: ['le Nashor'], split: ['la pression de côté'],
-  tardif: ['plus fort tard, plus faible tôt', 'plus fort tôt, plus faible tard'],
-  rythme: ['plus d\'éliminations', 'moins d\'éliminations'], siege: ['les tours tombent plus vite', 'les tours tiennent plus longtemps'],
-  fin: ['on ferme plus tôt', 'des parties plus longues'],
-};
-export function dire(eff, seuil = 0.15) {
-  return Object.entries(MOTS).filter(([c]) => c in eff && Math.abs(lu(c, eff[c])) >= seuil).map(([c, [plus, moins]]) => {
-    const haut = lu(c, eff[c]) > 0;
-    return moins ? (haut ? plus : moins) : `${haut ? '▲' : '▼'} ${plus}`;
-  });
-}

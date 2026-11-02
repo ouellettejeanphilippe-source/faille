@@ -9,8 +9,8 @@
 import { esc } from './util.js';
 import { iconeChampion } from './images.js';
 import { ROLES } from './fiche.js';
-import { BANS, HORS, permis, bansAuto, choixParDefaut, effetsDuRepechage } from './repechage.js';
-import { dire } from './rogue.js';
+import { BANS, HORS, REFERENCE, permis, bansAuto, choixParDefaut, classesDe } from './repechage.js';
+import { motsDeStats, impactCompose } from './impact.js';
 
 const R5 = Object.keys(ROLES);
 
@@ -82,7 +82,9 @@ export function ecranRepechage(L, d, champions) {
     const sur = j.bassin.find(([x]) => x === c);
     return `${esc(j.n)} sur ${esc(c)} : ${sur[3] ? 'entraîné' : `${sur[1]} parties`}, contre ${top[1]} sur ${esc(top[0])}`;
   }).filter(Boolean);
-  const forme = dire(effetsDuRepechage(moi, d.choix, champions.classes));
+  // Ta composition, en vraies stats de partie : chaque classe de plus ou de moins que la référence, au prix mesuré d'une classe (js/impacts.js).
+  const n = classesDe(d.choix, champions.classes);
+  const forme = motsDeStats(impactCompose(Object.keys(REFERENCE).map(cl => [`classe:${cl}`, n[cl] - REFERENCE[cl]]))).map(x => x.txt);
   const s = L.series && [...L.series.rondes.flat()].find(x => x.cle === d.cle);
   const nous = s && s.a === 0 ? 0 : 1;
   const ou = s ? `<p class="mandat">Partie ${s.parties.length + 1} de ${s.bo} · ${s.v[nous]}-${s.v[1 - nous]}. Un repêchage avant chaque partie ; ta stratégie se change à l'Effectif entre deux.</p>` : '';
@@ -93,6 +95,6 @@ export function ecranRepechage(L, d, champions) {
     <h3>Tes champions</h3>
     <p class="sous">Tu choisis avant eux : prendre leur champion fétiche le leur enlève.</p>
     <ul class="repe-liste">${lignesMoi}</ul>
-    <p class="etat">${forme.length ? `Ta composition : ${forme.map(esc).join(' · ')}.` : 'Une composition ordinaire.'}${malaises.length ? `<br>Moins à l'aise : ${malaises.join(' ; ')}.` : ''}</p>
+    <p class="etat">${forme.length ? `Ta composition : ≈ ${forme.map(esc).join(' · ')} par partie.` : 'Une composition ordinaire : rien de net sur la feuille.'}${malaises.length ? `<br>Moins à l'aise : ${malaises.join(' ; ')}.` : ''}</p>
     <div class="actionbar"><button id="repe-jouer" class="go">${s ? `Jouer la partie ${s.parties.length + 1}` : 'Jouer la série'}</button><button id="repe-auto">Automatique</button></div>`;
 }

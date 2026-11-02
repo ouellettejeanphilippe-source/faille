@@ -82,6 +82,8 @@ js/split.js           la Ligue (classement, calendrier, meneurs, séries), hier 
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
 js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs, les liens d'origine (MOTEUR.md §8, §9)
+js/impact.js          l'impact en chiffres de partie : ce qu'un effet change sur la feuille, au-dessus du bruit (`phraseDe`, `chiffresDe`) ; la composition d'un repêchage, sommée
+js/impacts.js         la table mesurée de chaque effet (écrite par scripts/impact.mjs, ne pas éditer à la main)
 js/boutique.js        le Marché : les packs de joueurs, le plan de jeu (cartes, coach, packs de cartes)
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
@@ -99,7 +101,9 @@ scripts/verdict.mjs        le juge partagé : chaque script pose son code de sor
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
 scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, robot)
+scripts/impact.mjs         mesure chaque effet en paires et écrit js/impacts.js ; ne juge rien
+scripts/lib/paires.mjs     le banc de mesure en paires (check_rogue, impact.mjs, check_chiffres) ; scripts/lib/effets.mjs, le registre des effets chiffrés
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, robot, impact, chiffres)
 scripts/check_profondeur.mjs trois robots sur les mêmes dés : mener compte-t-il ? la première run est-elle dure ? (hors du CI : le juge de la courbe d'une run)
 scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise ; tout est atteignable, aucune cible sous 44 px
 scripts/essai_rogue.mjs    un robot joue le premier split à 390 × 844 : chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord
@@ -146,7 +150,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - Tout ce qui change une partie (repêchage, carte, coach) passe par les canaux (`sommerEffets`, js/canaux.js), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
 - Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
 - Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
-- Ce qu'un effet fait s'écrit en mots (`dire`), jamais en cote.
+- Ce qu'un effet change se dit en vraies stats de partie — éliminations, morts, dragons, Nashor, hérauts, tours, minutes —, jamais en cote, en victoires ni en « % » : mesuré en paires (`scripts/impact.mjs` écrit `js/impacts.js`, `js/impact.js` le dit), une ligne sous le bruit ne se dit pas — `check_impact`, `check_chiffres`. Un effet ou un moteur qui change fait refaire la table (`node scripts/impact.mjs`, une minute et demie) : `check_impact` le demande.
 - Une stratégie : son gain suit le fit des joueurs, son prix se paie toujours ; le tiers le mieux ajusté y gagne, le moins bien ajusté y perd — `check_rogue`. Le fit se dit en mots, comme un badge.
 
 **La gestion (jalon 4)**

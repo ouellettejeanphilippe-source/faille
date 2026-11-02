@@ -37,21 +37,21 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 2. **La saison a les adjoints de la V21.** C'est un « staff » de trois échanges permanents, offerts aux journées 6 et 12 ; Cap 82-0 l'a retiré à la V22. Il n'y a ni la main, ni les séjours, ni les niveaux, ni le salaire.
 3. **La semaine n'a pas d'histoire.** Il n'y a ni histoire de la semaine, ni voix, ni scène, ni verdict d'après. Le seul événement, « Trois défaites de suite », ne nomme personne.
 
-**Quatre fondations portent tout le reste.** Les deux juges sont posés depuis P1 ; les deux autres manquent encore :
+**Quatre fondations portent tout le reste.** Trois sont posées (P1, P2) ; il manque le canal par joueur :
 
-- **l'impact en chiffres de partie** (`js/impact.js`) : sans lui, aucune option ne se dit en vraies stats ;
+- **l'impact en chiffres de partie** (fait, P2) : chaque option se dit en vraies stats de partie, mesurées en paires ;
 - **un canal par joueur, daté** : sans lui, pas de dé sur le joueur nommé, et ni lancée ni doute ;
 - **le robot à trois politiques** (fait, P1) : il juge la courbe d'une run ;
 - **`essai_rogue`** (fait, P1) : il mesure chaque écran.
 
-**Les comptes.** L'index (§ 3) a 138 lignes ; 9 sont bloquantes : B1, B4, C2, C3, D7, F9, F18, G1, H4. Les juges de P1 (le robot à trois politiques, `essai_rogue`, les cibles de 44 px) ont fait passer E5 et H22 à jumeau, H23 à partiel.
+**Les comptes.** L'index (§ 3) a 138 lignes ; 8 sont bloquantes : B4, C2, C3, D7, F9, F18, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel.
 
 | État | Lignes |
 |---|---|
-| = jumeau | 14 |
-| ≈ transposé d'une version périmée | 31 |
-| ◐ partiel | 36 |
-| ✗ absent | 51 |
+| = jumeau | 15 |
+| ≈ transposé d'une version périmée | 30 |
+| ◐ partiel | 37 |
+| ✗ absent | 50 |
 | ∅ sans objet | 4 |
 | — Faille en plus | 2 |
 
@@ -126,7 +126,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
-| B1 | **L'impact en chiffres de match** | `js/impact.js` `statsDe`, `motsDeStats`, `effetEnChiffres` ; `check_chiffres`, `check_impact` | absent ; `js/rogue.js` `dire` (« ▲ les dragons », sans chiffre) | ✗ | « ≈ +1,5 élimination par partie », « −0,4 dragon », lus en paires contre un témoin à zéro | canaux | **Bloquant** |
+| B1 | **L'impact en chiffres de match** | `js/impact.js` `statsDe`, `motsDeStats`, `effetEnChiffres` ; `check_chiffres`, `check_impact` | `js/impact.js` `phraseDe`, `chiffresDe`, `motsDeStats`, `impactCompose` ; la table mesurée `js/impacts.js` (`scripts/impact.mjs`) ; `check_impact`, `check_chiffres` (P2) | = | mesuré en paires (le moteur de Faille n'a pas la formule de Cap 82-0) : éliminations, morts, dragons, Nashor, hérauts, tours, minutes | — | — |
 | B2 | Ce qui a fait le match | `js/causes.js` ; `check_causes` | absent | ✗ | une cause dite seulement si, retirée seule, elle change la partie sur le même dé (le moteur v2 tire un dé par tour) | moteur | Moyen |
 | B3 | La lancée et le doute | `lanceeDe` ; `check_lancee` | absent ; les nouvelles 🔥 et 🧊 (js/soir.js) ne jouent rien | ✗ | les éliminations récentes contre le rythme de son vrai split ; jamais au 18-0 | B4 | Moyen |
 | B4 | **Un effet sur un joueur nommé, daté** | `pariDeDecision`, `lui`, effets datés en matchs | `confort` seul (borné à [−1, 0], js/canaux.js `BORNES`) ; les effets sont refaits à chaque journée (`jouerAvecToi`) | ✗ | un canal par joueur, signé, daté en parties, mesuré en paires | moteur, `check_rogue` | **Bloquant** |
@@ -171,7 +171,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
 | E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | `js/rogue.js` `CARTES` (15 cartes de partie), `PLAN` 3, des packs de cartes | ≈ | le modèle d'avant la V13-2 | Q1, tranché | Haut |
-| E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 ; seules les rares doivent se voir | ≈ | environ 2,7 fois plus larges par partie ; ramener, et exiger que chaque effet se voie | B1 | Moyen |
+| E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 (jugé) ; celles de Cap 82-0 ramenées à 18 (0,22 à 0,88), dites par `check_rogue` (P2) ; ce qui se voit, dit par `check_impact` | ◐ | jugées à P5, avec les styles d'adjoint | B1 | Moyen |
 | E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDATS[0]` : faire les séries (6 sur 10) | ✗ | finir dans les huit premiers sur dix (Q9) | F18 | Haut |
 | E4 | La ligue qui monte, la deuxième run plus dure | `niveauDeLigue`, `habillerLaLigue`, `ETAPE_APRES_LA_PREMIERE` ; `check_profondeur` | absent ; `tirerAdversaires` tire au hasard ; l'édition ne joue pas | ✗ | des vestiaires plus forts, ou l'édition qui joue (Q8) | F35 | Haut |
 | E5 | Le robot à trois politiques et la profondeur | `scripts/lib/rogue_sim.mjs` (défaut, attentif, distrait), `ROBOT_SAUF`, `ROBOT_COACH` ; `check_profondeur`, `check_robot` | `scripts/lib/robot.mjs` `POLITIQUES` (P1) ; `check_profondeur` (rouge : le juge de P3, P5, P11), `check_robot` | = | sans `ROBOT_SAUF` ni `ROBOT_COACH` pour l'instant | — | — |
