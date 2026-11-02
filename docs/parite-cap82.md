@@ -4,7 +4,7 @@
 >
 > **Les versions lues** : Cap 82-0 à `26540d0` (version 3.2.14, la V23 en cours) ; Faille à `4ea335a` (le 30 oct.).
 >
-> **Ce que l'index rapporte** : ce que le code des deux jeux **fait**. Une intention devinée porte « INTENTION INCONNUE », et sa question attend JP au § 6. Quand ce document et le code ne disent pas la même chose, ne suppose pas que le document est l'exigence.
+> **Ce que l'index rapporte** : ce que le code des deux jeux **fait**. Une intention devinée porte « INTENTION INCONNUE » ; ses questions sont tranchées au § 6. Quand ce document et le code ne disent pas la même chose, ne suppose pas que le document est l'exigence.
 >
 > **Comment il a été fait** : cinq relecteurs, un par terrain (`faille-design`, `faille-economie`, `faille-recit`, `faille-ux`, et un général pour le hors-Rogue). Ce sont les agents `rogue-*` de Cap 82-0, eux-mêmes adaptés de Claude-Code-Game-Studios. Chacun a lu les deux dépôts. Les affirmations lourdes ont été revérifiées dans le code avant d'entrer ici.
 
@@ -112,7 +112,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | A5 | Une seule implémentation des cotes | `js/ratings.js` | `js/cotes.js` `profilsDuSplit` | = | — | — | — |
 | A6 | La force d'équipe suit le classement | `check_ratings` (≈ 0,8) | `check_cotes` (r = 0,85) | = | — | — | — |
 | A7 | Les niveaux | `js/niveaux.js` : Soutien → ★ Phénomène, le haut à 50/20/4/1 % ; le meilleur des points ou de la défense (« déf. ») | `js/cotes.js` `NIVEAUX` : Remplaçant → ★ Phénomène, le haut à 60/30/10/3 % | ≈ | aligner les seuils, ou écrire pourquoi (« Remplaçant » est voulu : Soutien est un rôle) | — | Moyen |
-| A8 | Les cotes sur 20 et l'hexagone (27 oct.) | `axes20`, `radarHtml`, `lesCotes` ; docs/cotes-sur-20.md ; `check_cotes` | **interdites** (CLAUDE.md : « Aucune cote dans le DOM, jamais ») | ✗ | six axes par rôle (ligne, pression, dégâts, implication, survie, vision), lus des sous-cotes que js/canaux.js joue ; « Sur la Faille » en mots à la fiche | JP (Q3) | Haut |
+| A8 | Les cotes sur 20 et l'hexagone (27 oct.) | `axes20`, `radarHtml`, `lesCotes` ; docs/cotes-sur-20.md ; `check_cotes` | **interdites** (CLAUDE.md : « Aucune cote dans le DOM, jamais ») | ✗ | six axes par rôle (ligne, pression, dégâts, implication, survie, vision), lus des sous-cotes que js/canaux.js joue ; « Sur la Faille » en mots à la fiche | Q3, tranché | Haut |
 | A9 | Les badges joués par le moteur | Cap `js/sim.js` `badgesDe` (le second rend la moitié) | `js/cotes.js` `BADGES`, lus, jamais joués | ◐ | les jouer par un canal, ou les garder en vitrine | canaux | Moyen |
 | A10 | Les familles | `FAMILLES` (Tir, Jeu, Défense, Robustesse) ; `check_familles` | absent | ✗ | quatre familles (la ligne, le combat, la carte, la tenue) pour ranger les packs | A9 | Bas |
 | A11 | L'affinité et ses accords (V18) | `AFFINITES`, `accordsDeLigne` ; `check_affinite` | absent (les liens d'origine en sont le cousin) | ✗ | des accords de badges par duo (le bas et son soutien, le milieu et la jungle), au plus petit palier | A9 | Moyen |
@@ -129,8 +129,8 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | B3 | La lancée et le doute | `lanceeDe` ; `check_lancee` | absent ; les nouvelles 🔥 et 🧊 (js/soir.js) ne jouent rien | ✗ | les éliminations récentes contre le rythme de son vrai split ; jamais au 18-0 | B4 | Moyen |
 | B4 | **Un effet sur un joueur nommé, daté** | `pariDeDecision`, `lui`, effets datés en matchs | `confort` seul (borné à [−1, 0], js/canaux.js `BORNES`) ; les effets sont refaits à chaque journée (`jouerAvecToi`) | ✗ | un canal par joueur, signé, daté en parties, mesuré en paires | moteur, `check_rogue` | **Bloquant** |
 | B5 | Les situations du vestiaire | `SITUATIONS` ; `check_situations` | absent | ✗ | une paire, l'un porté, l'autre pesé, net nul | B4 | Bas |
-| B6 | Le plan du soir (V17), sans systèmes (V18) | `PLANS` : « un plan change la FORME du match, pas sa force » ; `check_plan_de_match` | `js/strategie.js` `STRATEGIES` (7, pour le split, gain au fit) | ≈ | ce sont les systèmes d'avant la V18 ; Faille dit même « comme les systèmes de Cap 82-0 » | JP (Q2) | Haut |
-| B7 | La version du moteur | `VERSION_MOTEUR` : la saison en cours **se rejoue** ; `check_empreinte` | `js/partie.js` `VERSION` 6, `js/moteur-v1.js` **gelé** | ≈ | une politique contraire | JP (Q10) | Moyen |
+| B6 | Le plan du soir (V17), sans systèmes (V18) | `PLANS` : « un plan change la FORME du match, pas sa force » ; `check_plan_de_match` | `js/strategie.js` `STRATEGIES` (7, pour le split, gain au fit) | ≈ | ce sont les systèmes d'avant la V18 ; Faille dit même « comme les systèmes de Cap 82-0 » | Q2, tranché | Haut |
+| B7 | La version du moteur | `VERSION_MOTEUR` : la saison en cours **se rejoue** ; `check_empreinte` | `js/partie.js` `VERSION` 6, `js/moteur-v1.js` **gelé** | ≈ | une politique contraire | Q10, tranché | Moyen |
 | B8 | Les parts des joueurs | `check_parts` | `check_feuilles` (des repères d'équipe seulement) | ◐ | la part de chacun (éliminations, aides, or) simulée contre la vraie | moteur | Moyen |
 | B9 | Les unités spéciales, la prolongation, le gardien, les blessures, les jambes, le ballottage | `speciales`, `fusillade`, js/ballottage.js… | — | ∅ | LIVRAISON.md, « Ce qui ne se transpose pas » ; une absence passe par une histoire | — | — |
 | B10 | Le commentateur | `js/commentaire.js` ; `check_commentaire` | `js/commentaire.js` `BANQUES` ; `check_commentaire` | = | — | — | — |
@@ -144,7 +144,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | C2 | **Le gros match** | `grosMatchAvant` : `RIVAUX` 3 choisis sur `RIVAUX_OFFERTS` 5 au jour 0, la bête noire, `ESPACEMENT_GROS` 4 ; `check_gros` | absent | ✗ | environ deux par split ; un rival choisi parmi trois au départ du split ; la bête noire, en séries surtout (deux rondes seulement) | — | **Bloquant** |
 | C3 | **Le duel en trois périodes** | `INTENTIONS` (5), `PLANS`, `FORCE_DUEL` 2, `propositionsDuDuel` (deux ou trois plans en vraies stats, « Garder ») ; les périodes vues ne bougent pas ; `check_duel` (sous 60 %) | absent | ✗ | trois phases (lignes, milieu, fin) ; intentions : traquer ton carry (nommé), la plongée, le siège, l'agression, jouer la montre ; plans dits en éliminations, tours, dragons et or de la phase | C2, B1 | **Bloquant** |
 | C4 | La mise doublée, le butin, l'élan, les sonnés | `MISE_DOUBLEE`, `ELAN`, `SONNE` (3 matchs), `XP.gros` ; `check_gros` | absent | ✗ | la mise avant la fin de partie ; le butin, 20 🪙 et un adjoint | C3 | Haut |
-| C5 | *Faille en plus* : le repêchage des champions à chaque partie | — (le plan d'avant-match plié en tient lieu) | `js/main.js` `avancer` → `#repechage`, plein écran à chaque partie | — | le garder, le plier en « Automatique », ou le réserver aux séries | JP (Q6) | Haut |
+| C5 | *Faille en plus* : le repêchage des champions à chaque partie | — (le plan d'avant-match plié en tient lieu) | `js/main.js` `avancer` → `#repechage`, plein écran à chaque partie | — | le garder, le plier en « Automatique », ou le réserver aux séries | Q6, tranché | Haut |
 | C6 | Les moments | `MOMENTS_SI` ; `check_moments_si` | absent (seules les conditions des pouvoirs lisent l'état) | ✗ | le côté, les séries, après une défaite, après trois victoires, le rival, l'intention ; ∅ pour le dos-à-dos, les jambes, l'infirmerie | C2 | Moyen |
 
 ### D. Le Rogue : le coach, l'entraîneur, les adjoints
@@ -155,7 +155,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | D2 | Les talents, `TALENT_CASE` | `talentsDus` (les pouvoirs ouverts seulement) ; `TALENT_CASE` (une case d'adjoint de plus) | `js/partie.js` `talentEnAttente` (« ouvert ou pas encore ») | ◐ | le même | D7 | Moyen |
 | D3 | Les pouvoirs par période | `POUVOIRS` 8 × 3, `pouvoirsDeLaPeriode`, `forceDuPouvoir` (talents × maîtrise) ; ils passent **par-dessus** les plafonds du jeu ; bornes : I et II 2,5 V, l'ultime 4, le personnage 16 | `COACHS[].pouvoirs` 4 × 3 ; écrêtés par `BORNES` (js/moteur.js `sommerEffets`) ; bornes : 1,5 V, grandi 2,5, le personnage 4 sur 18 | ◐ | l'ultime a sa propre borne ; ni maîtrise ni passage par-dessus les plafonds | D4 | Haut |
 | D4 | L'entraîneur, une vraie carte | `js/coachs-reels.js` `carteDuCoach`, `MAITRISE` (×0,9 à ×1,3), `niveauDuCoach`, `lotoDesCoachs` (un loto de trois) ; `data/coachs.json` | absent ; le coach se prend au choix parmi quatre (js/menu.js) | ✗ | les vrais coachs d'un split (la source à Leaguepedia n'est pas vérifiée) ; sa philosophie lue des vraies parties de son équipe (`identiteDe` le fait presque) | données | Moyen |
-| D5 | Les philosophies | `js/coachs.js` `COACHS` (8), `VOIES` (le prestige les ouvre) | `js/rogue.js` `COACHS` (4), toutes ouvertes | ◐ | huit philosophies LoL, ouvertes par le prestige | JP (Q11) | Moyen |
+| D5 | Les philosophies | `js/coachs.js` `COACHS` (8), `VOIES` (le prestige les ouvre) | `js/rogue.js` `COACHS` (4), toutes ouvertes | ◐ | huit philosophies LoL, ouvertes par le prestige | Q11, tranché | Moyen |
 | D6 | La règle du coach (V23) | `REGLES_DU_COACH`, `primesDuCoach` : 2 ou 3 🪙 environ un soir sur quatre, `PRIME_COACH_MAX` 50 ; `check_banc` | absent ; `COMMANDITAIRES` (js/gestion.js) en est presque le jumeau | ✗ | une ligne de feuille par philosophie (l'agresseur et ses éliminations, le stratège et ses dragons…), réglée pour à peu près une partie sur quatre | D5 | Haut |
 | D7 | **Les adjoints : une main, un séjour, un style (V22)** | `js/adjoints.js` `MAIN_MAX` 4, `SEJOUR` 12, `SEJOUR_SYNERGIE` 16, `REPOS` 20, `poster`, `quiPartDeLaMain` | `js/rogue.js` `ADJOINTS` (8 échanges permanents), `ADJOINTS_MAX` 3 ; `js/partie.js` `JOURNEES_ADJOINTS` [6, 12], `quiPart` | ≈ | **le staff de la V21, que Cap 82-0 a retiré** ; transposé au prorata d'un split (Q7) | D5 | **Bloquant** |
 | D8 | Les cases en poste suivent le niveau | `CASES_PAR_NIVEAU` [1, 1, 2, 2, 3], `casesDuPerso` | trois cases fixes | ✗ | le même | D7 | Haut |
@@ -168,7 +168,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
-| E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | `js/rogue.js` `CARTES` (15 cartes de partie), `PLAN` 3, des packs de cartes | ≈ | le modèle d'avant la V13-2 | JP (Q1) | Haut |
+| E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | `js/rogue.js` `CARTES` (15 cartes de partie), `PLAN` 3, des packs de cartes | ≈ | le modèle d'avant la V13-2 | Q1, tranché | Haut |
 | E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 ; seules les rares doivent se voir | ≈ | environ 2,7 fois plus larges par partie ; ramener, et exiger que chaque effet se voie | B1 | Moyen |
 | E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDATS[0]` : faire les séries (6 sur 10) | ✗ | finir dans les huit premiers sur dix (Q9) | F18 | Haut |
 | E4 | La ligue qui monte, la deuxième run plus dure | `niveauDeLigue`, `habillerLaLigue`, `ETAPE_APRES_LA_PREMIERE` ; `check_profondeur` | absent ; `tirerAdversaires` tire au hasard ; l'édition ne joue pas | ✗ | des vestiaires plus forts, ou l'édition qui joue (Q8) | F35 | Haut |
@@ -201,7 +201,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | F21 | Les missions, la découverte | `js/cartable.js` `MISSIONS` (6), `PRIME_DECOUVERTE` | absent | ✗ | cinq cartes d'un même vestiaire, une carte par ère… | collection | Bas |
 | F22 | Les déblocages | 23, plus 16 crans | 10 | ◐ | Cap 82-0 sans jumeau ici : garder1-3, commanditaire1-2, les packs de spécialistes, plafond1-2, classeur3-4, le tri, banc1-2, recrue1-2 ; Faille en plus : le coach, le cadeau, le dépisteur, le noyau, le sursis | — | Haut |
 | F23 | Le prestige : des médailles **et** un exploit | `rangDePrestige` ; il ouvre aussi des coachs (`coachsOuverts`, 3 à 8), le budget du classeur, le niveau de la ligue | `rangDe` : les médailles seules, et il ferme des déblocages | ◐ | les exploits (séries, ronde, finale) | F20 | Haut |
-| F24 | Ton club : un nom et SON écusson | `js/club.js` : 20 clubs, chacun un nom et son écusson dessiné, 49 couleurs, **en jetons** à la boutique | `CLUBS` (10), `COULEURS` (8), **en médailles** ; un blason générique (js/fiche.js `ecussonHtml`) | ≈ | d'avant la 1.0 de Cap 82-0 | JP (Q13) | Moyen |
+| F24 | Ton club : un nom et SON écusson | `js/club.js` : 20 clubs, chacun un nom et son écusson dessiné, 49 couleurs, **en jetons** à la boutique | `CLUBS` (10), `COULEURS` (8), **en médailles** ; un blason générique (js/fiche.js `ecussonHtml`) | ≈ | d'avant la 1.0 de Cap 82-0 | Q13, tranché | Moyen |
 | F25 | Les exigences 🔺 | `EXIGENCES` : 8 crans, `PRIME_EXIGENCE` 0,15 | `EXIGENCES` : 6 crans, 0,25 ; elles commencent par le mandat (le 6e cran de Cap) | ≈ | les huit crans, dans l'ordre de Cap 82-0 | F2 | Moyen |
 | F26 | Le classeur | `departDuClasseur` : une case Régulier et quatre pages, le tri à cinq cartes ; **la vedette prend la case du haut** (sinon l'attentif gagnait sa première Coupe dès la run 2) | `casesDe`, `lotoDe` : Régulier, Pilier, Étoile ; **la vedette en plus** | ◐ | la vedette dans le classeur, le tri | — | Haut |
 | F27 | Les lotos entre deux saisons | `lotosDeSaison` (trois Régulier et un par page) | absent | ✗ | un loto Régulier et un par page | F26 | Moyen |
@@ -210,7 +210,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | F30 | Le joueur de concession | `vedettesDeConcession` (trois Étoiles, trois profils) | `tirerEtoiles` (trois ★ Étoiles) | ≈ | trois rôles différents | — | Bas |
 | F31 | Les bouche-trous | `bouchesTrousDuDepart` | `BOUCHE_TROUS` (70/30) | = | — | — | — |
 | F32 | Les doublons | `monterLesDoublons` (`FUSION` 3, jusqu'à l'Or ; la Holo ne se fabrique pas) ; l'échange d'un doublon | `editionDe` : 1, 2, 3, 5, 8 copies, la Holo à 8 | ≈ | — | F33 | Moyen |
-| F33 | Les éditions qui jouent | `js/rarete.js` `EDITIONS` : tirées au pack, elles **montent les badges** (`VARIANTE_PALIERS`) | par les copies, sans effet au jeu (règle de Faille) | ◐ | INTENTION INCONNUE (Q8) | A9 | Haut |
+| F33 | Les éditions qui jouent | `js/rarete.js` `EDITIONS` : tirées au pack, elles **montent les badges** (`VARIANTE_PALIERS`) | par les copies, sans effet au jeu (règle de Faille) | ◐ | elles joueront, après les badges (Q8) | A9 | Haut |
 | F34 | *Faille en plus* : le marché des agents libres | — ; chez Cap, un dépanneur est un Régulier au plus (`check_ballottage`) | `MARCHE` : trois par journée, **Pilier au plus**, 8 🪙, sans hausse | ≈ | le borner au Régulier, ou lui mettre la hausse (Q12) | F13 | Haut |
 | F35 | *Faille en plus* : les commanditaires | ≈ la règle du coach (D6) | `COMMANDITAIRES` : 19,6 🪙 par split, 23 % des gains | — | les fondre dans la règle du coach ? (Q5) | D6 | Moyen |
 
@@ -239,7 +239,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
-| H1 | Les sections du Rogue | `SECTIONS_ROGUE` : Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Lignes, Marché (Boutique, Album), Ligue (Classement, Calendrier, Meneurs, Palmarès) ; l'Avant-match est parti | `SOUS` (js/main.js) : le Marché a quatre sous-onglets (Agents libres, Packs de joueurs, Plan de jeu, Album), la Ligue a les Séries en plus | ◐ | le Marché en Boutique et Album ; les Séries au Bureau pendant les séries | JP (Q16) | Moyen |
+| H1 | Les sections du Rogue | `SECTIONS_ROGUE` : Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Lignes, Marché (Boutique, Album), Ligue (Classement, Calendrier, Meneurs, Palmarès) ; l'Avant-match est parti | `SOUS` (js/main.js) : le Marché a quatre sous-onglets (Agents libres, Packs de joueurs, Plan de jeu, Album), la Ligue a les Séries en plus | ◐ | le Marché en Boutique et Album ; les Séries au Bureau pendant les séries | Q16, tranché | Moyen |
 | H2 | L'en-tête du club, partout | `majEntete` : fiche, rang, jetons, dans toutes les sections | `majTete` (la jauge au bâti) ; `bandeChiffres` au Bureau seulement ; les jetons redits à quatre endroits | ◐ | — | — | Moyen |
 | H3 | À faire, la Boîte | `rendreActions`, `MAISONS`, « Encore un choix · sujet » ; seul ce qui presse bloque — `essai_rogue` 10c | `aFaire`, `decisionDe` : un choix à la fois, tout bloque | ◐ | les maisons : le proprio, le coach, le vestiaire, la presse | G5 | Haut |
 | H4 | **La feuille d'un choix** | `optionHtml`, `LIGNES_MAX` 2, la forme (Cadeau, Échange, Pari) ; une tuile sobre (V19) — `check_lisibilite` § 6, `check_mots` | `.option` : un nom et une phrase de `dire`, une tuile en dégradé avec ombre | ≈ | d'avant la scène de la V21 et la tuile sobre ; la forme, et au plus deux lignes vertes ou rouges en vraies stats de partie (la V23 B les met en cartes) | B1, G5 | **Bloquant** |
@@ -253,7 +253,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | H12 | La carte d'adjoint, de coach, de jeu (lue à son verso) | `.cs-jeu` : ce qu'elle fait se lit à son verso ; le cadre d'un adjoint suit son niveau (V23) | `carteDeJeu` sans verso, `carteDuCoach` en liste ; une grille de trois | ≈ | la V21 | D7 | Moyen |
 | H13 | Les vraies couleurs des équipes | `js/logos.js` | `paletteDe(nom)` : une teinte déduite du nom | ✗ | les couleurs des équipes (7 C) | données | Moyen |
 | H14 | L'ouverture d'un pack | `brancherPaquet`, le walkout | `js/ouverture.js` `ouvrirPaquet` | = | — | — | — |
-| H15 | Le badge, son icône seule | l'icône à la couleur de son palier, le mot à l'infobulle | l'icône, le nom et le palier | ≈ | — | JP | Bas |
+| H15 | Le badge, son icône seule | l'icône à la couleur de son palier, le mot à l'infobulle | l'icône, le nom et le palier | ≈ | — | — | Bas |
 | H16 | Le menu pause, les sauvegardes | `js/menu.js`, `js/sauvegardes.js` : Dupliquer, confirmer en deux touchers | la Collection et le Palmarès redits au menu ; `window.confirm` | ≈ | — | — | Bas |
 | H17 | Le toast et sa file | `toast`, `fileDesToasts` | `avis` : un seul, 3 s | ◐ | — | — | Bas |
 | H18 | Le lexique, les émojis au trait, la bulle d'un mot | `js/lexique.js` `ICONES`, Noto Emoji, `bulleDef` ; `check_lexique`, `check_emojis` | absent | ✗ | — | — | Moyen |
@@ -271,8 +271,8 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | I2 | Hors du Rogue, aucune carte | interface.md : « la rangée et le visage » | `vueCinq` en cartons dans les deux modes | ≈ | la rangée au 18-0 | — | Bas |
 | I3 | L'exhibition | `js/exhibition.js` : choisir les deux clubs-saisons ; un match, une série 4 de 7, ou cent matchs | deux vestiaires à la roulette, une partie | ◐ | choisir, BO1, BO3 ou BO5, cent parties | — | Bas |
 | I4 | Le menu des modes | une carte par genre, la dernière partie de chacun (`derniereDuGenre`) | une puce de mode au départ | ≈ | — | — | Bas |
-| I5 | Sur table | `js/table.js` (4 472 lignes), `plateau.js`, `tournoi.js` : un tournoi de six clubs sur un plateau de 247 cases, à la Blood Bowl ; `check_table`, `smoke_table` | — | ∅ | LIVRAISON.md : rien à reprendre, sauf si JP veut un plateau de la Faille | JP (Q4) | — |
-| I6 | Sur glace (né le 31 oct.) | `js/physique.js`, `glace-ia.js`, `sur-glace.js`, `sprites.js`, `sons-glace.js` : un match 2D à la manette, la physique et les règles complètes, l'IA des neuf autres, deux vrais clubs ; `check_physique` | absent, et jamais nommé dans LIVRAISON.md | ✗ | « Sur la Faille » : un match 2D en temps réel sur la carte à nous ; voir Q4 | JP (Q4) | à trancher |
+| I5 | Sur table | `js/table.js` (4 472 lignes), `plateau.js`, `tournoi.js` : un tournoi de six clubs sur un plateau de 247 cases, à la Blood Bowl ; `check_table`, `smoke_table` | — | ∅ | rien à reprendre pour l'instant (Q4) | Q4, tranché | — |
+| I6 | Sur glace (né le 31 oct.) | `js/physique.js`, `glace-ia.js`, `sur-glace.js`, `sprites.js`, `sons-glace.js` : un match 2D à la manette, la physique et les règles complètes, l'IA des neuf autres, deux vrais clubs ; `check_physique` | absent, et jamais nommé dans LIVRAISON.md | ✗ | « Sur la Faille » : un match 2D en temps réel sur la carte à nous ; pas maintenant (Q4) | Q4 | — |
 
 ### J. La plomberie et l'outillage
 
@@ -298,7 +298,7 @@ C'est l'inventaire de ce qui se transpose, pour l'écriture. Une ligne par voix,
 - **Les jumelles** : le proprio, l'entraîneur, l'analyste à la télé, les partisans, les finances, ton adjoint, un agent de joueur, les communications, un partisan fidèle, le DG, le dépisteur, la ligue (toujours générique, jamais Riot).
 - **Le capitaine** : c'est le shotcaller. Le 🧢 de js/soir.js passe à 🎖.
 - **Sans objet** : le physio et le médecin (pas de blessures, pas de jambes), le préposé à l'équipement, le maire. Pour remplacer le physio, une option : 🧠 le préparateur mental, qui lirait les morts (`m`) et les défaites de suite.
-- **INTENTION INCONNUE** : le 🎙️ panel du balado de js/soir.js n'existe pas dans `EXPEDITEURS`.
+- **Faille en plus** : le 🎙️ panel du balado de js/soir.js, qui n'existe pas dans `EXPEDITEURS` ; il y entre (§ 6).
 
 **La banque de Cap 82-0, histoire par histoire**
 
@@ -331,7 +331,7 @@ C'est l'inventaire de ce qui se transpose, pour l'écriture. Une ligne par voix,
 
 ## 5. Les écarts de règle : là où Faille fait le contraire
 
-Chaque écart cite la règle actuelle de Cap 82-0 et le code de Faille qui la contredit. Plusieurs sont des règles fermes du `CLAUDE.md` de Faille, écrites d'après le Cap 82-0 d'alors : les défaire revient à JP (§ 6).
+Chaque écart cite la règle actuelle de Cap 82-0 et le code de Faille qui la contredit. Plusieurs sont des règles fermes du `CLAUDE.md` de Faille, écrites d'après le Cap 82-0 d'alors : le § 6 dit lesquelles tombent, et la tranche qui les réécrit.
 
 **Le Rogue**
 
@@ -430,28 +430,41 @@ Chaque écart cite la règle actuelle de Cap 82-0 et le code de Faille qui la co
 
 **Une incohérence chez Cap 82-0, à lui signaler.** Sa rogue.md dit les « quatre choix de fil » partis à la V22. Pourtant `CHOIX_DES_FILS` est encore offert (js/saison.js) et récrit à la V22 (docs/structure.md). Faille suit le code.
 
-## 6. À trancher par JP
+## 6. Les questions, tranchées
 
-Les questions que le code ne tranche pas, de la plus lourde à la plus légère. La première option de chacune est celle que recommande l'analyse ; JP choisit.
+JP, 2 nov. : *pour les questions, ajuste selon ce qui est logique*. Le principe retenu : **Cap 82-0 fait foi**, sauf là où le LoL l'empêche ou là où le coût ne se justifie pas. Chaque décision nomme sa tranche du jalon 8 (`LIVRAISON.md`), qui la code et réécrit la règle ferme qu'elle touche. D'ici là, les règles de `CLAUDE.md` disent le code d'aujourd'hui.
 
-| # | La question | Les options |
-|---|---|---|
-| Q1 | Le plan de jeu (15 cartes de partie, trois au plan, des packs de cartes) | (a) le couper pour la banque de rares de Cap 82-0 (le stage du coach, l'échange d'un doublon), vendue une fois sur quatre dans un pack de joueurs ; (b) en faire des styles d'adjoint ; (c) le garder, en écart assumé |
-| Q2 | La stratégie au fit | (a) des plans par partie (V17), sans fit, qui changent la forme et pas la force, et le fit qui devient l'affinité (V18) ; (b) garder la stratégie du split ; (c) les deux |
-| Q3 | Les cotes sur 20 | (a) six axes sur 20 par rôle à la fiche et à la signature, comme Cap 82-0 depuis le 27 oct. ; (b) à la signature seulement ; (c) garder « aucune cote » |
-| Q4 | Sur glace et Sur table | (a) pas de jumeau pour l'instant, la décision notée ; (b) un « Sur la Faille » réduit (la phase de lignes à un contre un, ou un combat d'équipe, des kits par classe) ; (c) le jumeau complet à cinq contre cinq. Le coût : environ 6 800 lignes pour le hockey, plus des kits de champion à inventer (data/champions.json n'a aucune capacité chiffrée), plus la politique « fan content » de Riot pour un jeu jouable (non vérifié). Sur table : (a) rien ; (b) un plateau de la Faille |
-| Q5 | Les commanditaires et la règle du coach | (a) les fondre : chaque philosophie a sa règle, lue dans la feuille ; (b) garder les deux ; (c) couper les commanditaires |
-| Q6 | Le repêchage des champions à chaque partie | (a) plié sous la ligne du match, « Automatique » par défaut, en plein écran aux séries et au gros match ; (b) en plein écran à chaque partie (aujourd'hui) ; (c) aux séries seulement |
-| Q7 | L'échelle du temps | (a) tout en journées, au prorata d'un split de 18 : un séjour de 3 journées (4 en synergie), un repos de 4, des offres aux journées 2, 7, 11 et 15, une histoire environ toutes les quatre journées ; (b) en parties, séries comprises |
-| Q8 | L'édition et le galon | (a) les faire jouer comme chez Cap 82-0 (un badge monte d'un métal) ; ça rend transposables la marche de la deuxième run, les retouches, la pitié ; (b) les garder en vitrine, et monter la deuxième run par des vestiaires plus forts |
-| Q9 | Le premier mandat | (a) finir dans les huit premiers sur dix, séries ou pas ; (b) un autre seuil, mesuré par `check_profondeur` |
-| Q10 | Les vieilles parties | (a) garder la règle de Faille (le moteur gelé), plus sûre pour un journal d'actions ; (b) les rejouer avec les nouvelles règles, comme Cap 82-0 |
-| Q11 | Les philosophies | (a) huit, comme Cap 82-0, ouvertes par le prestige, et l'entraîneur en vraie carte si Leaguepedia a les coachs ; (b) garder quatre |
-| Q12 | Le marché des agents libres | (a) le borner au Régulier ; (b) lui mettre la hausse ; (c) le garder |
-| Q13 | Ton club | (a) en jetons à la boutique, avec son écusson dessiné ; (b) en médailles |
-| Q14 | L'échelle des médailles | (a) celle de Cap 82-0, ramenée à un split ; (b) les petits nombres de Faille |
-| Q15 | Le nom de la rangée qui s'allume au sommaire | « le banc » est déjà le sixième joueur : (a) « Ce qui a joué » ; (b) « Tes atouts du soir » ; (c) un autre (pas « staff », un mot que Cap 82-0 a retiré) |
-| Q16 | Le Marché | (a) Boutique et Album, comme Cap 82-0 (les agents libres, les packs et le plan de jeu à la Boutique) ; (b) garder quatre sous-onglets |
+| # | La question | Tranché | Pourquoi | Tranche |
+|---|---|---|---|---|
+| Q1 | Le plan de jeu (15 cartes de partie, trois au plan, des packs de cartes) | **Il part.** Ses meilleures idées deviennent des styles d'adjoint. La banque garde une petite famille de cartes rares (le stage du coach, l'échange d'un doublon, puis les retouches quand l'édition jouera), une fois sur quatre dans un pack de joueurs | Chez Cap 82-0, la main de cartes se jouait presque aussi bien sans rien lire, et elle est partie à la V13-2. Ici, le puits des packs de cartes se vide | P5, P11 |
+| Q2 | La stratégie au fit | **Des plans par partie** (la V17) : les sept stratégies deviennent les plans de la partie. Ils changent la forme, pas la force, se disent en vraies stats, et aucun ne domine. Le fit devient l'affinité (la V18) | C'est la règle de Cap 82-0 depuis la V18. Le duel a besoin de plans par phase, et le fit payait en force (+0,7 à +2,1 V sur 18) | P4, P15 |
+| Q3 | Les cotes sur 20 | **Oui** : six axes par rôle, à la fiche et à la signature, lus des sous-cotes que le moteur joue | La raison de la règle de Faille tombe : le coût suit le niveau, pas la cote. Et une cote affichée est celle que le moteur joue (Cap 82-0, 27 oct.) | P15 |
+| Q4 | Sur glace, Sur table | **Pas maintenant**, ni « Sur la Faille » ni plateau. À revoir après le jalon 8 | Le hockey l'a payé environ 6 800 lignes, et Faille devrait inventer 167 kits de champion qui ne sont pas dans ses données. La politique de Riot pour un jeu jouable n'est pas vérifiée. Sur glace ne touche pas le Rogue, et Cap 82-0 travaille le Rogue d'abord | — |
+| Q5 | Les commanditaires et la règle du coach | **Fondus** : chaque philosophie a sa ligne de feuille qui paie, et les objectifs des commanditaires en fournissent la plupart. « Commanditaire » reste le nom des déblocages du barème, comme chez Cap 82-0 | C'est la même mécanique (la feuille jouée paie). Deux sources qui paient la même chose doubleraient ce revenu, déjà 23 % des jetons | P12 |
+| Q6 | Le repêchage des champions à chaque partie | **Plié** sous la ligne de la partie, « Automatique » par défaut ; en plein écran aux séries et à la partie clé | Une journée ordinaire tient en un toucher, comme chez Cap 82-0. Le repêchage reste le deck là où il compte | P7 |
+| Q7 | L'échelle du temps | **Au prorata de la saison : un split vaut une saison.** Un séjour dure 3 journées (4 en synergie), le repos 4. Les offres d'adjoints tombent aux journées 2, 7, 11 et 15. Une histoire sort une journée sur deux environ (≈ 8 par split, contre 8,5 par saison chez Cap 82-0), puis se repose 4 journées. Aux séries, une ronde compte pour une journée | Le découpage par split est celui de Cap 82-0 par saison : le rythme d'une saison (ses décisions, ses histoires, ses paliers) se garde d'une saison à l'autre | P5, P10 |
+| Q8 | L'édition et le galon | **Ils jouent, dans l'ordre.** D'abord, les badges jouent par un canal, mesurés en paires. Puis le galon monte un badge d'un métal, deux au plus, et le galon « titre » aux cinq part (une poignée par split). Enfin, l'édition monte les badges, et la deuxième run donne une étape d'édition de plus à l'adversaire | C'est la règle de Cap 82-0, et c'est le seul canal qui rend la deuxième run plus dure | P15, P16 |
+| Q9 | Le premier mandat | **Les huit premiers sur dix**, séries ou pas | Les 24 premiers sur 32 de Cap 82-0, ramenés à dix équipes ; jugé par `check_profondeur` | P3 |
+| Q10 | Les vieilles parties | **Comme Cap 82-0, dès la v7** : une partie en cours se rejoue avec les nouvelles règles. Une action que le jeu ne connaît plus (un adjoint du staff, une carte au plan) s'ignore, et l'écran le dit une fois. Le méta n'est jamais touché. `js/moteur-v1.js` reste pour les v5 et avant ; aucune nouvelle copie gelée | Geler une version à chaque tranche du jalon 8 ferait une vingtaine de copies de code mort. `check_sauvegardes` le prouve | P5, P18 |
+| Q11 | Les philosophies | **Huit**, ouvertes par le prestige. L'entraîneur est une vraie carte si Leaguepedia donne le coach de chaque équipe d'un split (à vérifier au build) ; sinon, le loto tire des philosophies | C'est Cap 82-0 ; la donnée décide de la carte | P13 |
+| Q12 | Le marché des agents libres | **Des dépanneurs** : Régulier au plus, à prix fixe, comme le ballottage de Cap 82-0. Les Piliers viennent des packs | Un Pilier chaque journée à 8 🪙 contourne les packs, et le choix de pack doit compter | P11 |
+| Q13 | Ton club | **En jetons**, à la boutique : un nom et son écusson dessiné, portés d'une run à l'autre | C'est Cap 82-0 ; la boutique y gagne un puits qui ne se vide pas | P16 |
+| Q14 | L'échelle des médailles | **Celle de Cap 82-0, et ses prix**, ramenés à un split : le premier déblocage tombe après environ un split | La courbe compte, pas les nombres. Aujourd'hui, le premier déblocage de Faille demande trois splits | P16 |
+| Q15 | La rangée qui s'allume au sommaire | **« Ce qui a joué »** | Le mot dit ce qu'on voit ; « le banc » est le sixième joueur, et « staff » est un mot retiré | P12 |
+| Q16 | Le Marché | **Boutique et Album.** Les agents libres et les packs vont à la Boutique ; le plan de jeu part (Q1). Les Séries vont au Bureau pendant les séries | La carte des sections de Cap 82-0 | P17 |
+
+**Aussi tranché**, ce que les relecteurs ont demandé en plus :
+
+- **Les voix.** Le physio devient 🧠 le préparateur mental, qui lit les morts et les défaites de suite. Le 🎙️ panel du balado entre dans la distribution des voix (P8).
+- **« Trois défaites de suite » part**, comme la banque d'avant la V22. Son fait revient en histoire, qui nomme le joueur (P10).
+- **La banque.**
+  - Les pendants LoL entrent dans la banque : 🩸 écrasé en ligne, 🎯 le pris seul.
+  - 📋 « Un adjoint en vue » attend que Cap 82-0 corrige son faux choix.
+  - Les suites et les rares de la V23 E attendent d'être livrées chez Cap 82-0 (P10).
+- **L'ordre.** Les adjoints passent avant les histoires : c'est ce qui casse le cycle du § 7.
+- **Les niveaux** s'alignent sur 50/20/4/1 % (A7), le plafond remesuré par `check_plafond` (P15).
+- **Les choix de fil.** C'est le code de Cap 82-0 qui fait foi, pas sa `rogue.md` (P14).
+- **Le 18-0 et l'exhibition** prennent les réglages de Cap 82-0 : le Loto, un seul split, « Rejouer », choisir les équipes, le format BO, cent parties (P19).
 
 ## 7. La carte des dépendances
 
@@ -510,7 +523,7 @@ Chez `/map-systems`, une couche s'appuie sur celles d'au-dessus. Le plan (§ 8) 
 
 ## 8. Le plan
 
-Le plan est écrit au jalon 8 de `LIVRAISON.md`, qui fait foi et qu'on coche. Il suit les couches : les juges d'abord, puis les fondations, le cœur, les fonctions, les écrans et la plomberie. Chaque tranche est une petite PR, nomme son jumeau dans Cap 82-0 et le script qui la prouve. Les tranches qui attendent une question de JP le disent.
+Le plan est écrit au jalon 8 de `LIVRAISON.md`, qui fait foi et qu'on coche. Il suit les couches : les juges d'abord, puis les fondations, le cœur, les fonctions, les écrans et la plomberie. Chaque tranche est une petite PR, nomme son jumeau dans Cap 82-0 et le script qui la prouve. Les décisions du § 6 y sont prises en compte.
 
 ## Annexe — les scripts, jumeau par jumeau
 
@@ -527,16 +540,18 @@ Ce sont les juges de Cap 82-0 qui n'ont pas encore de jumeau ici, rangés par la
 | `check_profondeur`, `check_robot` | la courbe des runs (trois robots) ; le robot « premier Signer » ne gagne pas | à écrire (8 P1) |
 | `essai_rogue` | une run jouée à 390 × 844 : un écran, 8 px au bord | à écrire (8 P1) |
 | `check_chiffres`, `check_impact` | ce que l'écran annonce égale ce que le moteur joue ; le témoin à zéro | à écrire (8 P2) |
-| `check_pouvoirs` | les pouvoirs et les adjoints, sous leurs bornes | dans `check_rogue` (8 P4, P5) |
-| `check_duel`, `check_gros`, `check_combat`, `check_pronostic`, `check_instantane` | le duel, les gros matchs, l'entracte | à écrire (8 P6) |
-| `check_clarte`, `check_lisibilite`, `check_choix` | la réplique sans chiffre, la tuile sobre, chaque choix en est un | à écrire (8 P7) |
-| `check_effets`, `check_lancee`, `check_situations` | chaque effet se voit ; la lancée absente du 18-0 | à écrire (8 P8) |
-| `check_dossiers`, `check_mots`, `check_verdicts`, `check_incidents`, `check_vie` | les histoires, leurs mots, leur verdict, toujours un joueur | à écrire (8 P9) |
-| `check_packs`, `essai_packs`, `essai_achat` | les packs selon leurs taux, la revente, l'achat | dans `check_gestion` en partie ; à écrire (8 P10) |
-| `check_banc`, `check_banque` | ce qui s'allume au soir est arrivé ; les cartes rares | à écrire (8 P11) |
-| `check_fils`, `check_retours`, `check_suivis`, `check_moments_si` | les fils et leurs retours, les suivis, les moments | à écrire (8 P13) |
+| `check_pouvoirs` | les pouvoirs et les adjoints, sous leurs bornes | dans `check_rogue` (8 P5, P6) |
+| `check_duel`, `check_gros`, `check_combat`, `check_pronostic`, `check_instantane` | le duel, les gros matchs, l'entracte | à écrire (8 P7) |
+| `check_clarte`, `check_lisibilite`, `check_choix` | la réplique sans chiffre, la tuile sobre, chaque choix en est un | à écrire (8 P8) |
+| `check_effets`, `check_lancee`, `check_situations` | chaque effet se voit ; la lancée absente du 18-0 | à écrire (8 P9) |
+| `check_dossiers`, `check_mots`, `check_verdicts`, `check_incidents`, `check_vie` | les histoires, leurs mots, leur verdict, toujours un joueur | à écrire (8 P10) |
+| `check_packs`, `essai_packs`, `essai_achat` | les packs selon leurs taux, la revente, l'achat | dans `check_gestion` en partie ; à écrire (8 P11) |
+| `check_banc`, `check_banque` | ce qui s'allume au soir est arrivé ; les cartes rares | à écrire (8 P12, P11) |
+| `check_fils`, `check_retours`, `check_suivis`, `check_moments_si` | les fils et leurs retours, les suivis, les moments | à écrire (8 P14) |
 | `check_galons` | les galons lus dans les feuilles | dans `check_meta` |
-| `check_css`, `check_emojis`, `check_lexique`, `check_sauvegardes`, `check_maj`, `essai_poids` | la plomberie | à écrire (8 P16) |
-| `check_causes`, `check_parts`, `check_affinite`, `check_familles`, `check_traits` | les causes, les parts, l'affinité, les familles, les traits | à écrire, selon les tranches |
-| `check_physique`, `check_table`, `smoke_table`, `check_regles` | Sur glace, Sur table | selon la Q4 |
+| `check_css`, `check_emojis`, `check_lexique`, `check_sauvegardes`, `check_maj`, `essai_poids` | la plomberie | à écrire (8 P18) |
+| `check_affinite`, `check_familles` | l'affinité, les familles | à écrire (8 P15) |
+| `check_plan_de_match` | chaque plan contre « Ton plan » ; aucun ne domine | à écrire (8 P4) |
+| `check_causes`, `check_parts`, `check_traits` | les causes, les parts, les traits | à écrire, plus tard |
+| `check_physique`, `check_table`, `smoke_table`, `check_regles` | Sur glace, Sur table | pas maintenant (Q4) |
 | `check_ballottage`, `check_blessures`, `check_jambes`, `check_gardiens`, `check_speciales`, `check_prolongation`, `check_calendrier`, `check_gestes`, `check_pm`, `check_positions`, `check_au_mieux`, `check_suppression`, `check_neutre`, `check_fiches` | ce qui ne se transpose pas | ∅ |

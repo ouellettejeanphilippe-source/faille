@@ -108,6 +108,19 @@ scripts/lib/robot.mjs      un DG robot qui joue des runs entières (check_meta)
 
 Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 82-0.
 
+**Les règles qui vont changer.** Le 2 nov. 2026, les questions de la parité ont été tranchées (`docs/parite-cap82.md` § 6). Plusieurs règles ci-dessous vont changer, chacune avec sa tranche du jalon 8 :
+
+| La règle | Ce qu'elle devient | Tranche |
+|---|---|---|
+| « aucune cote dans le DOM » | les cotes sur 20 | P15 |
+| la stratégie au fit | des plans par partie | P4 |
+| le staff d'adjoints et le plan de jeu | les adjoints de la V22 | P5 |
+| les commanditaires | la règle du coach | P12 |
+| « une édition ou un galon ne change rien au jeu » | ils jouent | P16 |
+| « un événement joue sur la gestion » | un canal par joueur | P9 |
+
+D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tranche qui en change une la réécrit.
+
 **Les données**
 - Pas de scraping de pages web : l'API Cargo de Leaguepedia (CC BY-SA 3.0, attribution au pied de la page et dans chaque shard), plus tard Oracle's Elixir si ses conditions le permettent. Les conditions de chaque source sont dans `docs/donnees.md`.
 - Ne commite pas `data/splits/*.json` à la main : c'est le job du script et de l'Action.
