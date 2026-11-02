@@ -24,7 +24,8 @@ Adapté de la commande `/equilibrer` de Cap 82-0 (`ouellettejeanphilippe-source/
 | cartes, coachs, pouvoirs, adjoints, stratégies, liens, classes, repêchage | `node scripts/check_rogue.mjs` | ~45 s |
 | la forme d'une partie (durée, éliminations, objectifs) | `node scripts/check_feuilles.mjs` | ~3 s |
 | les packs, les jetons, la run | `node scripts/check_gestion.mjs` · `check_meta.mjs` | ~3 s chacun |
-| la courbe des runs (la première dure, l'attentif contre le distrait) | `check_profondeur` — à écrire (le jumeau de Cap 82-0, docs/parite-cap82.md) | — |
+| la courbe des runs (la première dure, l'attentif contre le distrait, mener une vraie équipe) | `node scripts/check_profondeur.mjs` (`GRAINES`, `CAMPAGNES`, `RUNS_CAMPAGNE`) | ~7 s |
+| le robot « premier Signer » (le 18-0, le Rogue) | `node scripts/check_robot.mjs` (`SPLITS`, `RUNS`) | ~3 s |
 
 Dis la commande et sa durée avant de la lancer. Un repère décimal se juge sur plusieurs graines, jamais sur une seule.
 

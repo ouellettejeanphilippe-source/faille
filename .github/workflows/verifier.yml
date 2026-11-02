@@ -22,9 +22,15 @@ jobs:
           npx playwright install --with-deps chromium
 
       # Le parcours complet à 390 px, par les boutons : le titre, le repêchage, le split, le direct et la Faille,
-      # les sections, les séries, le bilan, le menu, l'export et l'import, la reprise. Zéro erreur console.
+      # les sections, les séries, le bilan, le menu, l'export et l'import, la reprise. Zéro erreur console, tout est
+      # atteignable, aucune cible sous 44 px.
       - name: Le test de fumée à 390 px
         run: |
           python3 -m http.server 8000 >/dev/null 2>&1 &
           for i in $(seq 1 20); do curl -sf http://localhost:8000/ >/dev/null && break; sleep 0.5; done
           node scripts/smoke.mjs http://localhost:8000
+
+      # Un robot joue le premier split d'une run à 390 × 844 : chaque écran mesuré en hauteurs d'écran (dit), rien à
+      # moins de 8 px du bord (jugé). Le serveur de l'étape d'avant sert encore.
+      - name: L'essai du Rogue à 390 × 844
+        run: node scripts/essai_rogue.mjs http://localhost:8000

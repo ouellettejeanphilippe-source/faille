@@ -99,9 +99,12 @@ scripts/verdict.mjs        le juge partagé : chaque script pose son code de sor
 scripts/tout.mjs           enchaîne les vérifications rapides
 scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du moteur
 scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue)
-scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise
-scripts/lib/robot.mjs      un DG robot qui joue des runs entières (check_meta)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, robot)
+scripts/check_profondeur.mjs trois robots sur les mêmes dés : mener compte-t-il ? la première run est-elle dure ? (hors du CI : le juge de la courbe d'une run)
+scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise ; tout est atteignable, aucune cible sous 44 px
+scripts/essai_rogue.mjs    un robot joue le premier split à 390 × 844 : chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord
+scripts/lib/robot.mjs      un DG robot qui joue des runs entières, à trois politiques (défaut, attentif, distrait) sur les mêmes dés
+scripts/lib/bords.mjs, cibles.mjs  ce qui colle au bord, les cibles sous 44 px (repris de Cap 82-0)
 ```
 
 ## Règles fermes
@@ -173,6 +176,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - Mobile d'abord : rien ne déborde à 390 px ; la page ne défile jamais à l'horizontale.
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
+- Rien sous 44 × 44 de ce qu'un doigt touche, et tout s'atteint (rien sous le pli sans défilement, rien de coupé) — smoke ; rien à moins de 8 px des bords de l'écran — `essai_rogue`.
 - Le split en sections, les mêmes que Cap 82-0 (JP : *même séparation des pages*) : au Rogue, cinq portes dans la barre du bas — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq, Marché (agents, packs, plan de jeu, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché, le Bureau sans proprio ni coach. Une maison par sujet ; une décision se règle dans la boîte.
 - Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
@@ -215,4 +219,4 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 
 ## Tester
 
-`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px (Playwright, installé à part ; `CHROMIUM=<chemin>` pour un Chromium déjà là). L'Action `verifier.yml` fait les deux à chaque PR.
+`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px (Playwright, installé à part ; `CHROMIUM=<chemin>` pour un Chromium déjà là) ; `node scripts/essai_rogue.mjs http://localhost:8000` joue un premier split et mesure chaque écran (une minute). L'Action `verifier.yml` fait les trois à chaque PR. `node scripts/check_profondeur.mjs` (sept secondes) juge la courbe d'une run avec trois robots : il n'est pas au CI, il est rouge tant que la première run n'est pas dure (le jalon 8, P3, P5, P11).

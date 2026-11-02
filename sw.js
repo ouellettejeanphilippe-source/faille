@@ -3,7 +3,7 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.14.0';  // 0.14.0 : le moteur v2, une partie comme une vraie (sorts, niveaux, combats, monstres et tours de leur époque)
+const VERSION = 'faille-0.14.1';  // 0.14.1 : les cibles de 44 px (le retour, les sous-onglets, les puces, les petits boutons). 0.14.0 : le moteur v2, une partie comme une vraie (sorts, niveaux, combats, monstres et tours de leur époque)
 
 const FICHIERS = [
   './', 'index.html', 'style.css',

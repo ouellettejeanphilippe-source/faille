@@ -177,7 +177,7 @@ img.absente { display: none; }
 
 /* ---- Le retour : une flèche et un mot, comme Échap ou le bouton d'Android (js/pile.js) ---- */
 .retour-btn {
-  flex: none; min-height: 40px; padding: 0 var(--esp-3) 0 var(--esp-1); gap: 2px;
+  flex: none; min-height: 44px; padding: 0 var(--esp-3) 0 var(--esp-1); gap: 2px;
   font-size: var(--t-2); background: transparent;
 }
 .retour-btn .ico { width: 20px; height: 20px; transition: transform var(--t-lent) var(--e-ressort); }
@@ -739,7 +739,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 /* Les sous-onglets : l'ouvert est un bloc plein et clair, les autres sont creux. */
 .sousnav { display: flex; gap: var(--esp-1); margin: var(--esp-3) 0 0; overflow-x: auto; scrollbar-width: none; }
 .sousnav::-webkit-scrollbar { display: none; }
-.soustab { flex: none; min-height: 40px; padding: 0 var(--esp-3); border-color: transparent; background: none; color: var(--encre-3); font-size: var(--t-2); }
+.soustab { flex: none; min-height: 44px; padding: 0 var(--esp-3); border-color: transparent; background: none; color: var(--encre-3); font-size: var(--t-2); }
 .soustab.on { color: var(--noir); background: var(--encre); border-color: var(--encre); }
 /* LE BALAYAGE SE VOIT (js/glisser.js) : sous le doigt, le nom de l'onglet où il mène sort du bord ; plein au seuil, comme
    un onglet ouvert, le lâcher y va. */
@@ -748,7 +748,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 .glisse-indice[data-cote="g"] { left: 0; border-left: 0; border-radius: 0 var(--r-2) var(--r-2) 0; }
 .glisse-indice.pret { border-color: var(--encre); background: var(--encre); color: var(--noir); }
 /* Les petits boutons d'une rangée (regarder, la feuille, porter, acheter). */
-.mini { min-height: 36px; padding: 0 var(--esp-2); font-size: var(--t-1); }
+.mini { min-height: 36px; min-width: 44px; padding: 0 var(--esp-2); font-size: var(--t-1); }
+/* Un petit bouton garde son dessin et gagne sa cible de 44 px (Cap 82-0, scripts/lib/cibles.mjs) : la zone grandit, pas la rangée. */
+.mini, .partie-gestes button { position: relative; }
+.mini::before, .partie-gestes button::before { content: ""; position: absolute; inset: -4px 0; }
 .mini.lien { border-color: transparent; background: none; color: var(--club-vif); padding-left: 0; }
 .mini.on { border-color: var(--bon); color: var(--bon); }
 .bon { color: var(--bon); }
@@ -801,7 +804,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .bouton-fichier { display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid var(--filet); border-radius: var(--r-1); background: var(--fond-1); cursor: pointer; font: 800 var(--t-3)/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
 .bouton-fichier input { display: none; }
 .puces { display: flex; flex-wrap: wrap; gap: var(--esp-1); }
-.puce { min-height: 40px; padding: 0 var(--esp-3); font-size: var(--t-2); }
+.puce { min-height: 44px; padding: 0 var(--esp-3); font-size: var(--t-2); }
 .puce.on { border-color: var(--bon); color: var(--bon); background: color-mix(in srgb, var(--bon) 10%, var(--fond-1)); }
 .pastille { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--pastille); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
 .regles-liste { margin: 0; padding-left: var(--esp-4); color: var(--encre-2); font-size: var(--t-2); }

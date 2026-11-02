@@ -33,6 +33,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { exiger, informer, verdict } from './verdict.mjs';
+import { ciblesTropPetites } from './lib/cibles.mjs';
 
 const require = createRequire(import.meta.url);
 let pw;
@@ -52,7 +53,62 @@ const sansDebordement = async ou => {
   const d = await page.evaluate(() => ({ large: document.documentElement.scrollWidth > window.innerWidth + 1, haut: document.documentElement.scrollHeight > window.innerHeight + 1 }));
   if (d.large) debordements.push(ou);
   if (d.haut) debordements.push(`${ou} (la page défile)`);
+  await toutEstAtteignable(ou);
+  await cibles44(ou);
 };
+/*
+ * TOUT EST ATTEIGNABLE (repris de Cap 82-0, scripts/smoke.mjs). Pour chaque feuille de texte visible : est-elle SOUS
+ * LE PLI sans qu'aucun ancêtre puisse défiler jusqu'à elle ? est-elle COUPÉE au-delà de ce que le défilement d'un
+ * ancêtre révélerait (en bas, ou à droite sans « … ») ? La seconde attrape le contenu écrasé dans une boîte qui a
+ * plié pour tenir : il n'est pas sous le pli, il est coupé.
+ */
+const horsDePortee = [];
+async function toutEstAtteignable(ou) {
+  const mauvais = await page.evaluate(() => {
+    const st = el => getComputedStyle(el);
+    const rogne = el => { const s = st(el); return ['hidden', 'auto', 'scroll'].includes(s.overflowY) || ['hidden', 'auto', 'scroll'].includes(s.overflowX); };
+    const defile = el => { const o = st(el).overflowY; return (o === 'auto' || o === 'scroll') && el.scrollHeight - el.clientHeight > 1; };
+    const vu = el => { const s = st(el); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const nom = el => el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + (typeof el.className === 'string' && el.className.trim() ? `.${el.className.trim().split(/\s+/).slice(0, 2).join('.')}` : '');
+    const out = [];
+    for (const el of document.querySelectorAll('body *')) {
+      if (!vu(el) || el.children.length || !(el.textContent || '').trim() || el.closest('svg')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top >= innerHeight - 1 || r.bottom <= 1) {
+        let p = el.parentElement, ok = false;
+        while (p && !ok) { if (defile(p)) ok = true; p = p.parentElement; }
+        if (!ok && defile(document.scrollingElement)) ok = true;
+        if (!ok) { out.push(`« ${(el.textContent || '').trim().slice(0, 36)} » (${nom(el)}) est sous le pli et rien ne défile jusqu'à lui`); continue; }
+      }
+      let c = el.parentElement;
+      while (c && !rogne(c)) c = c.parentElement;
+      if (!c) continue;
+      const rc = c.getBoundingClientRect();
+      const bas = r.bottom - rc.top + c.scrollTop;
+      if (bas > c.scrollHeight + 2) out.push(`« ${(el.textContent || '').trim().slice(0, 36)} » (${nom(el)}) dépasse de ${Math.round(bas - c.scrollHeight)} px ce que ${nom(c)} peut révéler`);
+      let cx = el.parentElement;
+      while (cx && !['hidden', 'auto', 'scroll', 'clip'].includes(st(cx).overflowX)) cx = cx.parentElement;
+      if (cx && st(cx).textOverflow !== 'ellipsis') {
+        const defileX = ['auto', 'scroll'].includes(st(cx).overflowX);
+        const rx = cx.getBoundingClientRect();
+        const droite = r.right - (rx.left + cx.clientLeft) + (defileX ? cx.scrollLeft : 0);
+        const limite = defileX ? cx.scrollWidth : cx.clientWidth;
+        if (droite > limite + 2) out.push(`« ${(el.textContent || '').trim().slice(0, 36)} » (${nom(el)}) est coupé à droite de ${Math.round(droite - limite)} px dans ${nom(cx)}`);
+      }
+    }
+    return [...new Set(out)];
+  });
+  if (mauvais.length) horsDePortee.push(`${ou} : ${mauvais.slice(0, 3).join(' | ')}${mauvais.length > 3 ? ` (+${mauvais.length - 3})` : ''}`);
+}
+/* LES CIBLES DE 44 PX (repris de Cap 82-0) : tout ce qu'un doigt atteint offre 44 × 44 (scripts/lib/cibles.mjs). */
+/* Une faute par sélecteur, avec sa taille et le premier écran où elle se voit. */
+const petites = new Map();
+async function cibles44(ou) {
+  for (const f of await ciblesTropPetites(page)) {
+    const cle = f.replace(/ \(×\d+\)/, '').replace(/ « .*$/, '');
+    if (!petites.has(cle)) petites.set(cle, ou);
+  }
+}
 /*
  * L'OUVERTURE D'UN PACK (js/ouverture.js) : le paquet fermé, la déchirure, la pile (la carte du dessus se
  * retourne), l'étalage de toutes les cartes, « Continuer ». Le paquet flotte : on touche la scène.
@@ -388,6 +444,8 @@ await page.click('#direct [data-retour]');
 await pause(150);
 
 exiger('rien ne déborde à 390 px', !debordements.length, debordements.join(', ') || `${etapes.length} étapes`);
+exiger('tout est atteignable : rien sous le pli sans défilement, rien de coupé', !horsDePortee.length, horsDePortee.slice(0, 4).join(' · ') + (horsDePortee.length > 4 ? ` (+${horsDePortee.length - 4} écrans)` : ''));
+exiger('aucune cible sous 44 px', !petites.size, [...petites].map(([f, ou]) => `${f} (${ou})`).join(' · '));
 exiger('zéro erreur dans la console', !erreurs.length, erreurs.slice(0, 3).join(' · '));
 informer('le parcours', `${etapes.length} étapes`);
 await navigateur.close();

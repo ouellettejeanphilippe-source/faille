@@ -37,29 +37,31 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 2. **La saison a les adjoints de la V21.** C'est un « staff » de trois échanges permanents, offerts aux journées 6 et 12 ; Cap 82-0 l'a retiré à la V22. Il n'y a ni la main, ni les séjours, ni les niveaux, ni le salaire.
 3. **La semaine n'a pas d'histoire.** Il n'y a ni histoire de la semaine, ni voix, ni scène, ni verdict d'après. Le seul événement, « Trois défaites de suite », ne nomme personne.
 
-**Quatre fondations portent tout le reste, et aucune n'existe encore :**
+**Quatre fondations portent tout le reste.** Les deux juges sont posés depuis P1 ; les deux autres manquent encore :
 
 - **l'impact en chiffres de partie** (`js/impact.js`) : sans lui, aucune option ne se dit en vraies stats ;
 - **un canal par joueur, daté** : sans lui, pas de dé sur le joueur nommé, et ni lancée ni doute ;
-- **le robot à trois politiques** : sans lui, aucune courbe de run ne se juge ;
-- **`essai_rogue`** : sans lui, aucun écran ne se mesure.
+- **le robot à trois politiques** (fait, P1) : il juge la courbe d'une run ;
+- **`essai_rogue`** (fait, P1) : il mesure chaque écran.
 
-**Les comptes.** L'index (§ 3) a 138 lignes ; dix sont bloquantes : B1, B4, C2, C3, D7, F9, F18, G1, H4, H23.
+**Les comptes.** L'index (§ 3) a 138 lignes ; 9 sont bloquantes : B1, B4, C2, C3, D7, F9, F18, G1, H4. Les juges de P1 (le robot à trois politiques, `essai_rogue`, les cibles de 44 px) ont fait passer E5 et H22 à jumeau, H23 à partiel.
 
 | État | Lignes |
 |---|---|
-| = jumeau | 12 |
+| = jumeau | 14 |
 | ≈ transposé d'une version périmée | 31 |
 | ◐ partiel | 36 |
-| ✗ absent | 53 |
+| ✗ absent | 51 |
 | ∅ sans objet | 4 |
 | — Faille en plus | 2 |
 
-**Le premier rapport de mesure.** Ce sont des scripts jetables, joués par le robot de `scripts/lib/robot.mjs`, qui décide au hasard ; il faudra les remesurer avec le robot attentif.
+**Le premier rapport de mesure.** Les juges de P1, le 2 nov. (`check_profondeur`, `check_robot`, scripts/lib/robot.mjs). Les trois robots jouent les mêmes dés.
 
-- **Faille.** Une run dure 1,6 split. Le mandat du premier split est raté 8 fois sur 20 sans déblocage (40 fois sur 80 dans une autre mesure, au même robot), et aucun coach ne passe le niveau 3 : l'ultime ne se vit presque jamais. C'est ce constat qui a fait naître `MANDAT_DE_LA_PREMIERE` chez Cap 82-0.
-- **Les jetons.** Le robot gagne 84 🪙 par split (médiane 76, de 27 à 167). Le commanditaire en fait 23 % (19,6).
-- **Les packs.** Le pack légendes est ouvert dès la première run et sort une ★ Étoile ou mieux 48,8 % du temps. Chez Cap 82-0, le Bronze en sort une 2,5 % du temps.
+- **L'attentif gagne trop vite.** Il lit ses joueurs (le marché, les packs, la stratégie au fit) et gagne son premier titre dès la run 1, dans les deux campagnes ; Cap 82-0 le veut entre les runs 3 et 8. Sur douze runs sans déblocage, il en gagne sept.
+- **Mener compte trop peu.** Sur de vraies équipes, l'attentif ne bat le distrait que de +2,8 V par split de 18 ; Cap 82-0 mesure 20,7 V sur 82, soit environ +4,5 à la même échelle. Une meilleure équipe mal menée fait toujours les séries (0 fois sur 16), et le distrait gagne un titre en 24 runs.
+- **Le robot d'avant.** Une run dure 1,4 split, et il gagne un titre en 40 runs (`check_robot`).
+
+Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès la run 1 (F10), la stratégie qui paie au fit (B6) et le mandat aux séries (F18) en sont les suspects, et leurs tranches (P3, P4, P11) se jugent sur `check_profondeur`.
 
 ## 2. La méthode
 
@@ -172,7 +174,7 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 ; seules les rares doivent se voir | ≈ | environ 2,7 fois plus larges par partie ; ramener, et exiger que chaque effet se voie | B1 | Moyen |
 | E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDATS[0]` : faire les séries (6 sur 10) | ✗ | finir dans les huit premiers sur dix (Q9) | F18 | Haut |
 | E4 | La ligue qui monte, la deuxième run plus dure | `niveauDeLigue`, `habillerLaLigue`, `ETAPE_APRES_LA_PREMIERE` ; `check_profondeur` | absent ; `tirerAdversaires` tire au hasard ; l'édition ne joue pas | ✗ | des vestiaires plus forts, ou l'édition qui joue (Q8) | F35 | Haut |
-| E5 | Le robot à trois politiques et la profondeur | `scripts/lib/rogue_sim.mjs` (défaut, attentif, distrait), `ROBOT_SAUF`, `ROBOT_COACH` ; `check_profondeur`, `check_robot` | `scripts/lib/robot.mjs` : un seul robot, au hasard | ◐ | trois politiques sur js/partie.js | — | Haut |
+| E5 | Le robot à trois politiques et la profondeur | `scripts/lib/rogue_sim.mjs` (défaut, attentif, distrait), `ROBOT_SAUF`, `ROBOT_COACH` ; `check_profondeur`, `check_robot` | `scripts/lib/robot.mjs` `POLITIQUES` (P1) ; `check_profondeur` (rouge : le juge de P3, P5, P11), `check_robot` | = | sans `ROBOT_SAUF` ni `ROBOT_COACH` pour l'instant | — | — |
 
 ### F. L'économie et le méta
 
@@ -260,8 +262,8 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | H19 | Les onglets accessibles | `role="tablist"`, `aria-selected` (`majNavbar`) | absent | ✗ | — | — | Moyen |
 | H20 | La manette et le clavier | `js/manette.js`, `body.nav-clavier` | absent ; `:focus-visible` seul | ✗ | repris tel quel | pile.js | Moyen |
 | H21 | Le retour, les gestes, le glisser-déposer | `pile.js`, `glisser.js`, `deposer.js` | les mêmes, repris | = | — | — | — |
-| H22 | Les cibles de 44 px, les 8 px du bord | interface.md ; smoke `cibles44` ; `essai_rogue` 20n | `.places button`, `.garder`, `.mini` à 36 px ; `.soustab`, `.puce` à 40 px | ✗ | — | H23 | Haut |
-| H23 | **Les juges d'écran** | `essai_rogue` (un robot à 390 × 844, chaque écran mesuré en hauteurs d'écran), smoke `toutEstAtteignable`, `cibles44` | smoke `sansDebordement` seul | ✗ | `essai_rogue` sur `scripts/lib/robot.mjs` | E5 | **Bloquant** |
+| H22 | Les cibles de 44 px, les 8 px du bord | interface.md ; smoke `cibles44` ; `essai_rogue` 20n | smoke `cibles44` (`scripts/lib/cibles.mjs`), `essai_rogue` (`scripts/lib/bords.mjs`) ; le retour, les sous-onglets, les puces et les petits boutons à 44 px (P1) | = | — | — | — |
+| H23 | **Les juges d'écran** | `essai_rogue` (un robot à 390 × 844, chaque écran mesuré en hauteurs d'écran), smoke `toutEstAtteignable`, `cibles44` | `essai_rogue` (le premier split, trois visites ; les hauteurs dites, le bord jugé), smoke `toutEstAtteignable`, `cibles44` (P1) | ◐ | la hauteur se juge à P17 ; une run entière plutôt qu'un split | — | Moyen |
 
 ### I. Les modes
 
@@ -279,8 +281,8 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
 | J1 | Le juge, le code mort, la coquille | `verdict.mjs`, `lib/mort.mjs`, `check_mort`, `check_coquille` | identiques (le diff est vide) | = | — | — | — |
-| J2 | `tout.mjs` | 36 scripts rapides | 11 scripts, `check_rogue` compris (45 s) | ≈ | — | — | Bas |
-| J3 | `verifier.yml` | 27 étapes | 2 étapes (`tout.mjs`, le smoke) | ◐ | une étape par juge, à mesure qu'ils arrivent | — | Moyen |
+| J2 | `tout.mjs` | 36 scripts rapides | 12 scripts, `check_rogue` (45 s) et `check_robot` compris | ≈ | — | — | Bas |
+| J3 | `verifier.yml` | 27 étapes | 3 étapes (`tout.mjs`, le smoke, `essai_rogue`) | ◐ | une étape par juge, à mesure qu'ils arrivent | — | Moyen |
 | J4 | Les vieilles parties, jugées en Node | `check_sauvegardes` | le smoke et `check_gestion` | ◐ | `check_sauvegardes` | — | Bas |
 | J5 | La mise à jour, la version | `js/mise-a-jour.js`, `js/version.js` = `VERSION` de sw.js ; `check_maj` | `VERSION` de sw.js seul | ✗ | `version.js` et le rechargement au titre | — | Bas |
 | J6 | L'APK, l'exe | `mobile/` (Capacitor), `desktop/` (Electron), `publier.yml` | absent (7 G, « en dernier ») | ✗ | le recadrage en JS pour que l'appareil recadre lui-même | — | Bas |
