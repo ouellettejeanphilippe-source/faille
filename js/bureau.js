@@ -193,7 +193,7 @@ export function vueProprio(P) {
   const deja = Object.entries(P.decisions).filter(([x]) => x.startsWith(`${P.run.n}-`) && x.split('-')[1] !== 'commanditaire' && EVENEMENTS[x.split('-')[1]])
     .map(([x, choix]) => { const E = EVENEMENTS[x.split('-')[1]]; return `<li><b>${E.ico} ${esc(E.titre)}</b><small>${esc(E.choix[choix][0])}</small></li>`; }).join('');
   return `<div class="mandat-carte"><small>🏢 Le proprio · ton mandat</small><b>${esc(mandatDuSplit(P)[1])}</b><p>${esc(etat)}</p>
-      <span class="piste mandat-piste"><span class="rempli" style="width:${Math.round((100 * L.jour) / L.journees.length)}%"></span></span><small>Journée ${Math.min(L.jour, L.journees.length)} sur ${L.journees.length}</small></div>
+      <span class="piste mandat-piste"><span class="rempli" style="width:${Math.round((100 * L.jour) / L.journees.length)}%"></span></span><small>${L.jour < L.journees.length ? `Journée ${L.jour + 1} sur ${L.journees.length}` : 'La saison est jouée'}</small></div>
     <p class="mandat">${esc(phraseMandat(P))}</p>
     <h3>Ses objectifs · six journées à la fois</h3><ul class="objectifs">${objectifs}</ul>
     ${gainsDe(L).elan ? `<p class="etat">L'élan : ${ELAN.suite} victoires de suite, +${ELAN.jetons} 🪙.</p>` : `<p class="sous">L'élan : ${ELAN.suite} victoires de suite paient ${ELAN.jetons} 🪙.</p>`}

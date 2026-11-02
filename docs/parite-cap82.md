@@ -2,7 +2,7 @@
 
 > **Rétro-documenté à partir du code.** Écrit le 2 novembre 2026 par la commande `/parite`, adaptée de `/reverse-document`, `/map-systems` et `/adopt` de Claude-Code-Game-Studios (Donchitos, licence MIT : https://github.com/Donchitos/Claude-Code-Game-Studios).
 >
-> **Les versions lues** : Cap 82-0 à `26540d0` (version 3.2.14, la V23 en cours) ; Faille à `4ea335a` (le 30 oct.).
+> **Les versions lues** : Cap 82-0 à `26540d0` (version 3.2.14, la V23 en cours) ; Faille à `4ea335a` (le 30 oct.). **Relu le 2 nov. au soir** à `a482ceb` : trois tranches de la V23 livrées depuis — G1 (les finis), B (les choix deviennent des cartes), E (les histoires ont des suites et des rares) ; restent chez Cap 82-0 A2, D et F.
 >
 > **Ce que l'index rapporte** : ce que le code des deux jeux **fait**. Une intention devinée porte « INTENTION INCONNUE » ; ses questions sont tranchées au § 6. Quand ce document et le code ne disent pas la même chose, ne suppose pas que le document est l'exigence.
 >
@@ -220,7 +220,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
-| G1 | **Les histoires de la semaine (V22)** | `js/dossiers.js` `DOSSIERS` (six, et trois de deuxième moitié après le 41e match) ; deux réponses, chacune une chose concrète ou un dé sur le joueur nommé ; `check_dossiers`, `check_mots`, `check_effets`, `check_incidents` | `js/gestion.js` `EVENEMENTS.sequence` (« Trois défaites de suite » : trois options, aucun joueur, aucun chiffre) | ≈ | `js/dossiers.js`, la même forme ; la banque au § 4 | G2, G3, B4 | **Bloquant** |
+| G1 | **Les histoires de la semaine (V22)** | `js/dossiers.js` `DOSSIERS` (six, et trois de deuxième moitié après le 41e match) ; deux réponses, chacune une chose concrète ou un dé sur le joueur nommé ; **V23 E** : des suites (une réponse plante un épisode 2, ouvert seulement si ce que son joueur a fait depuis se lit dans ses feuilles, `faitsDesSuites`, et qui passe avant le tirage) et des rares (certains lundis seulement, `CHANCE_RARE`, une fois par saison), quatorze histoires ; `check_dossiers`, `check_mots`, `check_effets`, `check_incidents` | `js/gestion.js` `EVENEMENTS.sequence` (« Trois défaites de suite » : trois options, aucun joueur, aucun chiffre) | ≈ | `js/dossiers.js`, la même forme ; la banque au § 4 | G2, G3, B4 | **Bloquant** |
 | G2 | Le tirage, le repos, les sorties | `semaineAHistoire` (`CHANCE_HISTOIRE` 0,55), `REPOS_HISTOIRE` 5, `SORTIES_MAX` 2 | absent | ✗ | en journées : 18 par split, aucune « semaine » (Q7) | G1 | Haut |
 | G3 | La porte des réponses | `appliquerGestes` : jetons, expérience, une carte d'adjoint, les absents, les jambes, l'auxiliaire | l'action `evenement` (js/partie.js) : jetons et pack seulement | ◐ | l'expérience (une ligne du journal que `xpDe` recompte), l'absence (le banc à son rôle), une carte d'adjoint | D7 | Haut |
 | G4 | Les voix | `EXPEDITEURS` (`js/vie-gm.js`, 17 voix), une seule distribution | des chaînes éparses (`EVENEMENTS.*.qui`, `VOIX` de js/soir.js, les coachs) | ✗ | une distribution (§ 4) | — | Haut |
@@ -244,7 +244,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | H1 | Les sections du Rogue | `SECTIONS_ROGUE` : Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Lignes, Marché (Boutique, Album), Ligue (Classement, Calendrier, Meneurs, Palmarès) ; l'Avant-match est parti | `SOUS` (js/main.js) : le Marché a quatre sous-onglets (Agents libres, Packs de joueurs, Plan de jeu, Album), la Ligue a les Séries en plus | ◐ | le Marché en Boutique et Album ; les Séries au Bureau pendant les séries | Q16, tranché | Moyen |
 | H2 | L'en-tête du club, partout | `majEntete` : fiche, rang, jetons, dans toutes les sections | `majTete` (la jauge au bâti) ; `bandeChiffres` au Bureau seulement ; les jetons redits à quatre endroits | ◐ | — | — | Moyen |
 | H3 | À faire, la Boîte | `rendreActions`, `MAISONS`, « Encore un choix · sujet » ; seul ce qui presse bloque — `essai_rogue` 10c | `aFaire`, `decisionDe` : un choix à la fois, tout bloque | ◐ | les maisons : le proprio, le coach, le vestiaire, la presse | G5 | Haut |
-| H4 | **La feuille d'un choix** | `optionHtml`, `LIGNES_MAX` 2, la forme (Cadeau, Échange, Pari) ; une tuile sobre (V19) — `check_lisibilite` § 6, `check_mots` | `.option` : un nom et une phrase de `dire`, une tuile en dégradé avec ombre | ≈ | d'avant la scène de la V21 et la tuile sobre ; la forme, et au plus deux lignes vertes ou rouges en vraies stats de partie (la V23 B les met en cartes) | B1, G5 | **Bloquant** |
+| H4 | **La feuille d'un choix** | `optionHtml`, `LIGNES_MAX` 2, la forme (Cadeau, Échange, Pari) ; **V23 B : la tuile devient une carte** (le relief, le filet du haut à la couleur de sa forme, son gros chiffre au cœur pris parmi ses lignes, deux au plus en tout ; elle se soulève sous le doigt et s'envole jouée, 200 ms ; sans dégradé) — `check_lisibilite` § 6, `check_mots` | `.option` : un nom et une phrase de `dire`, une tuile en dégradé avec ombre | ≈ | d'avant la scène de la V21 et la tuile sobre ; la forme, et au plus deux lignes vertes ou rouges en vraies stats de partie (la V23 B les met en cartes) | B1, G5 | **Bloquant** |
 | H5 | Signer, c'est l'échange | `ouvrirListeSignature`, `choisirQuiSort` (la sortie touchée d'avance), `comparatifHtml` (l'un face à l'autre) ; un pack non signé reste dans la Boîte | un bouton par rangée, sans comparatif ; un pack non signé **s'efface en silence** (`jouerAvecToi` : `P.offrePack = null`) | ✗ | le comparatif : KDA, CS par minute, or et dégâts par minute, vision, coût | — | Haut |
 | H6 | Ce soir en trois chiffres | E5 : trois chiffres en barres face à face, aux couleurs des deux clubs — `essai_rogue` 10d | `carteCeSoir` : cinq rangées, sans couleurs d'équipe | ≈ | éliminations, tours, dragons ou Nashor | H13 | Moyen |
 | H7 | Hier soir, au complet | le match, le rang qui bouge, la une, les nouvelles (un séjour fini, la règle du coach) | `hierSoir`, `laUne` : ni les jetons gagnés, ni l'objectif qui avance, ni le pouvoir qui a joué | ◐ | ces trois lignes | G14 | Moyen |
@@ -257,7 +257,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | H14 | L'ouverture d'un pack | `brancherPaquet`, le walkout | `js/ouverture.js` `ouvrirPaquet` | = | — | — | — |
 | H15 | Le badge, son icône seule | l'icône à la couleur de son palier, le mot à l'infobulle | l'icône, le nom et le palier | ≈ | — | — | Bas |
 | H16 | Le menu pause, les sauvegardes | `js/menu.js`, `js/sauvegardes.js` : Dupliquer, confirmer en deux touchers | la Collection et le Palmarès redits au menu ; `window.confirm` | ≈ | — | — | Bas |
-| H17 | Le toast et sa file | `toast`, `fileDesToasts` | `avis` : un seul, 3 s | ◐ | — | — | Bas |
+| H17 | Le toast et sa file | `toast`, `fileDesToasts` ; V23 G1 : au-dessus des onglets du bas et du bouton flottant, il ne cache jamais ce qu'on touche | `avis` : un seul, 3 s ; posé au-dessus de la barre d'action (relu, V23 G1) | ◐ | — | — | Bas |
 | H18 | Le lexique, les émojis au trait, la bulle d'un mot | `js/lexique.js` `ICONES`, Noto Emoji, `bulleDef` ; `check_lexique`, `check_emojis` | absent | ✗ | — | — | Moyen |
 | H19 | Les onglets accessibles | `role="tablist"`, `aria-selected` (`majNavbar`) | absent | ✗ | — | — | Moyen |
 | H20 | La manette et le clavier | `js/manette.js`, `body.nav-clavier` | absent ; `:focus-visible` seul | ✗ | repris tel quel | pile.js | Moyen |
@@ -315,6 +315,10 @@ C'est l'inventaire de ce qui se transpose, pour l'écriture. Une ligne par voix,
 | 📉 La course perdue | = | après la date limite, le retard sur la 6e place (`QUALIFIES`) |
 | 🏔 La première place | = | sa réponse prudente, « ménager les jambes », est à réécrire |
 | 🛫 Le dos-à-dos | ∅ | une partie par journée |
+| 🐣 Le petit qui pousse (V23 E) | = | un Remplaçant ou un Régulier de ton cinq qui produit (`k + a` sur ses dernières parties) ; « lui donner les ressources » est un dé qui plante sa suite deux journées plus tard |
+| 🌟 Le petit est arrivé · 🌧 Le petit doute (V23 E, les suites) | = | ses éliminations et ses aides depuis, recomptées dans ses feuilles |
+| 🎩 Les chapeaux sur la glace (V23 E, rare) | 🏆 **le pentakill** (rare) | un pentakill à la dernière partie (`elim.multi`) ; « aux enchères » ou « il garde la main chaude » |
+| 🧊 Le blanchissage de l'auxiliaire (V23 E) | ∅ ; pendant proposé : 🪑 **le banc qui brille** | ton sixième a joué la dernière partie et n'est pas mort (`m` à 0) |
 
 **Ce que l'attentif joue chez Cap 82-0.** Mesuré par `mesure_rythme` : 8,5 histoires par saison. Après la vedette, ses deux histoires les plus jouées sont la chicane et la route, justement deux de celles qui ne se transposent pas. Les pendants proposés ci-dessus en comblent le trou.
 
