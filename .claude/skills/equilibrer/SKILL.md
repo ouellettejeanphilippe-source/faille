@@ -57,4 +57,4 @@ Mesuré : <commande> — <durée>
 
 ## 5. Appliquer, seulement si JP dit oui
 
-Un réglage à la fois. Un moteur qui ne rejoue plus une partie pareil monte `VERSION` (js/partie.js) et garde l'ancien pour les vieilles sauvegardes ; le juge relancé ; `node scripts/tout.mjs` ; une ligne au journal de `LIVRAISON.md`. Pour un avis de design, passe la main à `faille-design` ; pour l'argent de la run, à `faille-economie`.
+Un réglage à la fois. Un moteur qui ne rejoue plus une partie pareil monte `VERSION` (js/partie.js) et garde l'ancien pour les vieilles sauvegardes ; le juge relancé ; la table d'impact refaite (`node scripts/impact.mjs`) ; `node scripts/tout.mjs` ; une ligne au journal de `LIVRAISON.md`. Pour un avis de design, passe la main à `faille-design` ; pour l'argent de la run, à `faille-economie`.

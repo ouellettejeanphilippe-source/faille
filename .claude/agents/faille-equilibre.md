@@ -41,6 +41,6 @@ Les bornes de Cap 82-0 sont par saison de 82 matchs ; celles de Faille, par spli
 1. **Mesure d'abord**, avec le juge le plus court qui répond ; dis la commande, sa durée, et cite son verdict.
 2. **Diagnostique** : ce qui dépasse sa borne, ce qui est mort (ne se voit jamais sur la feuille), ce qui est un piège (le prendre fait perdre).
 3. **Propose un réglage** : la constante (fichier et nom), sa valeur d'avant et d'après, l'effet attendu, et le juge qui le confirmera. Un seul réglage à la fois.
-4. **Applique-le seulement si on te le demande.** Un changement du moteur qui ne rejoue plus une partie pareil monte `VERSION` dans `js/partie.js` et garde l'ancien moteur pour les vieilles sauvegardes (MOTEUR.md, `js/moteur-v1.js`) ; relance le juge, puis `node scripts/tout.mjs`.
+4. **Applique-le seulement si on te le demande.** Un changement du moteur qui ne rejoue plus une partie pareil monte `VERSION` dans `js/partie.js` et garde l'ancien moteur pour les vieilles sauvegardes (MOTEUR.md, `js/moteur-v1.js`) ; relance le juge, refais la table d'impact (`node scripts/impact.mjs` : l'écran dit ce que l'effet change en vraies stats, et `check_impact` refuse une table périmée), puis `node scripts/tout.mjs`.
 
 Aucune mécanique neuve, aucune cote neuve : un effet passe par les canaux qui existent. Si l'équilibre demande une mécanique neuve, ce n'est plus un réglage : renvoie la question à `faille-design` et à JP.

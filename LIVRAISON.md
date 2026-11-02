@@ -264,11 +264,16 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
     - les petits boutons, une zone de 44 px autour de leur dessin et 44 px de large ;
     - le « ▶ » d'hier soir, qui a maintenant un nom.
 
-- [ ] **P2 · L'impact en chiffres de partie** (B1, E2)
-  - Chaque pouvoir, adjoint ou plan se dit en vraies stats de partie : « ≈ +1,5 élimination par partie », « −0,4 dragon ». Ce qui est dit est lu en paires, contre un témoin à zéro.
-  - `dire` est remplacé.
-  - Les bornes par rareté sont ramenées à un split, et chaque effet doit se voir.
-  - Les fichiers : `js/impact.js` (neuf) ; `check_chiffres`, `check_impact` (neufs) ; `check_rogue`.
+- [x] **P2 · L'impact en chiffres de partie** (B1, E2)
+  - **Ce que l'écran dit.** Chaque carte, adjoint, lien, pouvoir (seul et grandi), stratégie, et la composition d'un repêchage, se disent en vraies stats de partie, jamais en cote ni en victoires : « ≈ +1,1 élimination · +0,9 mort · −0,7 min par partie ». Une stratégie se dit au fit de ton cinq. `dire` est parti.
+  - **Comment c'est mesuré.** Le moteur de Faille joue des événements : aucune formule ne dit d'avance ce qu'un effet rapporte, comme celle de Cap 82-0. Chaque effet est donc mesuré en paires sur 40 ligues (`scripts/impact.mjs`, une minute et demie) et la table vit dans `js/impacts.js`, avec l'erreur type de chaque chiffre, comptée par ligue.
+    - Une ligne sous le bruit ne se dit pas : il lui faut deux erreurs types et un pas qu'on lit sur une feuille (`PAS`).
+    - 59 effets sur 64 montrent au moins une ligne. Un adjoint, trois liens et une classe ne montrent rien de net : c'est dit à l'écran.
+    - Le banc de mesure (`scripts/lib/paires.mjs`) est celui de `check_rogue`, qui le partage maintenant : sa sortie est identique, au caractère près, en 32 s plutôt que 45.
+  - **`check_impact`** (dans `tout.mjs`, une seconde) : la table couvre chaque effet ; chaque signature et le moteur sont ceux qu'on a mesurés, sinon il faut refaire la table ; le témoin reste à zéro ; jamais un « % » ni une victoire ; le bon signe ; rien sous le bruit.
+  - **`check_chiffres`** (dans `tout.mjs`, 28 s) : chaque ligne que l'écran dit se remesure sur d'autres ligues, celles de `check_rogue`. 188 lignes, à quatre erreurs types : c'est la correction de Bonferroni pour environ deux cents questions, à 1 % de fausse alerte pour tout le juge.
+  - **Les bornes de Cap 82-0 ramenées à un split** (±0,22, 0,33, 0,55, 0,88 V) : `check_rogue` dit les cartes au-delà (une sur quinze, la méta du tournoi, +1,1 V). Elles se jugent à P5, comme « chaque effet se voit » : le plan de jeu y devient des styles d'adjoint, qui se mesurent neufs.
+
 - [ ] **P3 · Le mandat au classement, la première run qui laisse bâtir** (F18, E3, F26 ; Q9)
   - Les mandats se lisent au classement, comme la V5 de Cap 82-0.
   - Le premier split de la première run demande les huit premiers, séries ou pas.
@@ -286,6 +291,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - Un parmi trois est offert aux journées 2, 7, 11 et 15.
   - Le staff de la V21 part. Le plan de jeu de 15 cartes et ses packs partent aussi ; leurs meilleures idées deviennent des styles.
   - La sauvegarde passe à la v7 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore.
+  - Les bornes de Cap 82-0 ramenées à un split se jugent (dites depuis P2), et chaque style se voit sur la feuille, au-dessus du bruit de la table d'impact (`check_impact`).
   - Les fichiers : `js/adjoints.js` (neuf), js/rogue.js, js/partie.js, js/bureau.js ; `check_gestion` (le séjour rejoué), `check_rogue` (chaque style sous sa borne, visible), `check_sauvegardes` (neuf : une run v6 se recharge).
 - [ ] **P6 · Le coach juste** (D1, D2, D3)
   - L'expérience vient de la victoire, de la partie clé et des séries, sans la couleur.
@@ -409,4 +415,8 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
 - 2026-11-02 — **Les améliorations de Cap 82-0 depuis l'index, relues** (JP : *tu peux voir les améliorations en cours dans hockey pour aussi les adapter ici*). Trois tranches de sa V23 sont livrées : G1, B et E.
   - **G1 (les finis), deux adaptés ici** : au Proprio, la journée se compte de 1 (« Journée 0 sur 18 » au premier matin, js/bureau.js) ; le toast se pose au-dessus de la barre d'action et ne cache plus « Jouer ce soir » (js/main.js `avis`).
   - **B (les choix en cartes) et E (les suites et les rares)** sont rangées dans P8 et P10. Les cinq histoires neuves de E ont leur transposition dans `docs/parite-cap82.md` § 4, dont le pentakill pour le tour du chapeau.
+- 2026-11-02 — **L'impact en chiffres de partie (jalon 8, P2)**. Ce qu'une carte, un adjoint, un lien, un pouvoir, une stratégie ou un repêchage change se dit en vraies stats de partie : « ≈ +1,1 élimination · −0,7 min par partie ». C'est mesuré en paires, une ligne sous le bruit ne se dit pas, et `dire` est parti.
+  - `scripts/impact.mjs` écrit `js/impacts.js` (64 effets, 102 672 parties) ; `js/impact.js` le dit.
+  - `check_impact` juge que la table est à jour et ses mots ; `check_chiffres` la remesure sur d'autres ligues (188 lignes).
+  - `check_rogue` partage son banc (`scripts/lib/paires.mjs`), avec une sortie identique. sw.js 0.15.0.
 
