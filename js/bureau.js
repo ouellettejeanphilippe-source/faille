@@ -13,7 +13,7 @@
  */
 import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
-import { MARCHE, MANDATS, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
+import { MARCHE, EN_SERIES, motDuMandat, rangTient, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, parCases } from './partie.js';
 import { STRATEGIES, lireFit, fitDe, identiteDe } from './strategie.js';
 import { phraseDe, chiffresDe } from './impact.js';
@@ -34,7 +34,8 @@ function phraseMandat(P) {
   if (P.mode === 'dixhuit') return 'Le 18-0 : un split, ses séries, le titre ou rien. Aucune carte, aucune décision.';
   const n = P.run.n;
   const [cle, mot] = mandatDuSplit(P);
-  const suite = cle !== MANDATS[MANDATS.length - 1][0] ? ` Au split suivant : ${mandatDuSplit(P, n + 1)[1]}.` : '';
+  const [apres, motApres] = mandatDuSplit(P, n + 1);
+  const suite = apres !== cle ? ` Au split suivant : ${motApres}.` : '';
   return `Split ${n} de ta run${P.exig ? ` (🔺 ${P.exig})` : ''} : le proprio veut ${mot}.${suite} Un titre gagne la run.`;
 }
 
@@ -166,14 +167,25 @@ export function vueBoite(P) {
     ${une ? `<div class="une"><small>La une</small><b>${esc(une.titre)}</b><p>${esc(une.voix)} : « ${esc(une.mot)} »</p><small>${esc(une.fait)}</small></div>` : ''}`;
 }
 
+/*
+ * Où tu en es de ton mandat, au classement : ton rang, les séries, le rang qu'il veut. Les mandats d'avant la
+ * version 7 (la demie, la finale) se lisent aux séries.
+ */
+function etatDuMandat(L, rang, [cle, mot]) {
+  const ou = `Tu ${L.series ? 'as fini' : 'es'} ${rangMot(rang)}`;
+  const series = rang <= EN_SERIES ? (rang <= 2 ? 'tu attendrais en demi-finale' : 'dans les séries') : 'hors des séries';
+  if (['demie', 'finale', 'titre'].includes(cle)) return L.series ? 'Les séries sont commencées.' : `${ou} : ${series}.`;
+  const tient = rangTient(rang, cle);
+  if (L.series) return `${ou} : ${tient ? 'le mandat est rempli' : 'le mandat est manqué ; le titre gagnerait encore la run'}.`;
+  return `${ou}, ${series} : ${tient ? 'tu tiens ton mandat' : `il te faut ${mot}`}.`;
+}
+
 /** LE PROPRIO : ton mandat et où tu en es, ses objectifs de six journées, l'élan, ton commanditaire. */
 export function vueProprio(P) {
   const L = P.L;
   const c = classement(L);
   const k = c.findIndex(l => l.i === 0);
-  const [cle] = mandatDuSplit(P);
-  const dedans = !L.series && k < 6;
-  const etat = L.series ? 'Les séries sont commencées.' : cle === 'series' ? (dedans ? `Tu es ${rangMot(k + 1)} : dans les séries.` : `Tu es ${rangMot(k + 1)} : hors des séries.`) : `Tu es ${rangMot(k + 1)}${k < 2 ? ' : tu attendrais en demi-finale' : dedans ? ' : dans les séries' : ' : hors des séries'}.`;
+  const etat = etatDuMandat(L, k + 1, mandatDuSplit(P));
   const objectifs = objectifsDe(L).map(o => {
     const texte = {
       avenir: `Gagne-en ${o.cible} sur ${o.fin - o.debut}`,
@@ -367,7 +379,7 @@ function palmaresDuBilan(pass) {
 /** Le bilan d'un split fini, et ceux qui restent (ou la fin de la run). `gardes` : les clés choisies ; `vieux` : clé → la version qui vieillit. */
 export function ecranBilan(P, gardes, vieux = new Map()) {
   const pass = P.run.passes[P.run.passes.length - 1];
-  const mot = MANDATS.find(([k]) => k === pass.mandat)[1];
+  const mot = motDuMandat(pass.mandat);
   const dix = P.mode === 'dixhuit';
   const titre = pass.champion ? (dix ? 'Le 18-0 : champion !' : 'Champion du split !') : dix ? 'Le 18-0 est joué' : pass.rempli ? 'Mandat rempli' : pass.sursis ? 'Le proprio pardonne' : 'Mandat manqué';
   const gagne = valeurDesGains(P.R.reports[P.R.reports.length - 1]);
@@ -375,7 +387,7 @@ export function ecranBilan(P, gardes, vieux = new Map()) {
   const tete = `${dix ? '<p class="etat">Tes cinq joueurs sont à ta collection. Le 18-0 ne compte pas aux médailles.</p>' : `<p class="etat">Ce split t'a rapporté ${gagne} 🪙 ; tu en as ${jetonsDe(null, P.R)}. Tes cartes et ton coach te suivent.</p>`}
     ${palmaresDuBilan(pass)}`;
   if (P.etape === 'fin') {
-    const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : dix ? 'Sans titre' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${MANDATS.find(([k]) => k === p.mandat)[1]}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
+    const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : dix ? 'Sans titre' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${motDuMandat(p.mandat)}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
     const med = medaillesDeLaPartie({ passes: P.run.passes, fin: P.run.fin, exig: P.exig, mode: P.mode });
     return `${entete}<div class="corps">${tete}<h3>${dix ? (P.run.fin === 'gagnee' ? 'Ton cinq a tout gagné' : 'Ton cinq a joué son split') : P.run.fin === 'gagnee' ? `La run est gagnée en ${P.run.passes.length} split${P.run.passes.length > 1 ? 's' : ''}` : 'La run est finie'}</h3>
       <ol class="classement">${lignes}</ol>

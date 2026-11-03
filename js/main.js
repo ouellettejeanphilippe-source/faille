@@ -44,7 +44,7 @@ import { aTraiter, feuilleDuChoix, vueBoite, vueProprio, vueCoach, vueVestiaire,
 import { ecranCeSoir, ecranSommaire, autourDeLaLigue } from './soir.js';
 import { terrainDe } from './terrain.js';
 import { ecussonHtml } from './fiche.js';
-import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe, MODES, modeDe, vedetteDe, choisirVedette } from './meta.js';
+import { nouveauMeta, noter, acheter, porter, clubDe, deblocagesDe, collectionDe, exigenceDe, choisirExigence, coachDe, MODES, modeDe, vedetteDe, choisirVedette, premiereRun } from './meta.js';
 import { lireIndex, migrer, partieActive, lirePartie, ecrirePartie, activer, supprimer, exporter, importer, lireMeta, ecrireMeta, lireOptions, ecrireOptions } from './sauvegardes.js';
 import { ecranTitre, ecranMenu, ecranParties, ecranDepart } from './menu.js';
 import { ecranCase, avantLePack, ecranExhibition } from './depart.js';
@@ -417,7 +417,7 @@ async function nouvelle() {
       }
     }
     G.pid = idNeuf();
-    G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { mode, deb: deblocagesDe(m), club: clubDe(m), exig: exigenceDe(m), coach: coachDe(m), col, vedette: G.vedette && vedetteDe(m) === cleDe(G.vedette.ref) ? vedetteDe(m) : null });
+    G.P = nouvellePartie(Math.floor(G.de() * 2 ** 32), { mode, deb: deblocagesDe(m), club: clubDe(m), exig: exigenceDe(m), coach: coachDe(m), col, vedette: G.vedette && vedetteDe(m) === cleDe(G.vedette.ref) ? vedetteDe(m) : null, premiere: premiereRun(m) });
     garder();
     entrer();
   } finally {

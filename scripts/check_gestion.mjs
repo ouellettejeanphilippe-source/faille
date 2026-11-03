@@ -12,7 +12,10 @@
  *                    une journée quand un événement attend, trois gardés ;
  *   le proprio       chaque objectif vise 2 à 5 victoires sur six, et il est
  *                    atteint si et seulement si la fiche y est ; le mandat
- *                    suit les séries ;
+ *                    se lit au classement (version 7) : les séries, puis les
+ *                    trois, les deux premiers, premier ; le premier split de
+ *                    la première run, les huit premiers, séries ou pas ; une
+ *                    partie d'avant garde ses mandats aux séries ;
  *   les packs        un pack de joueurs se tire pareil deux fois, jamais un des
  *                    tiens ; on en signe un seul, sous le plafond, avant la
  *                    journée suivante ; les niveaux sortent selon leurs chances ;
@@ -36,7 +39,8 @@
  *                    joue le moteur d'aujourd'hui (js/moteur.js) ;
  *   le départ        (version 5) le Rogue part de ses cases — la vedette, le
  *                    classeur tiré de la collection, ceux qui restent au loto —
- *                    puis du pack de départ : chaque loto rejoue, reste à son
+ *                    puis du pack de départ ; la vedette prend la case du haut
+ *                    du classeur (version 7) : chaque loto rejoue, reste à son
  *                    niveau ou en dessous, hors des rôles comblés ; un
  *                    bouche-trou par rôle vide, Régulier au plus ; la roulette
  *                    et les gardés sont refusés ; la première run reste dure ;
@@ -55,7 +59,7 @@ import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { jouerPartieV1 } from '../js/moteur-v1.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, rangTient, MANDATS, MANDAT_DE_LA_PREMIERE, MANDATS_AUX_SERIES, EN_SERIES, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, adjointsOfferts, JOURNEES_ADJOINTS, parCases, casesDe, caseEnCours, lotoDe, attendPack, refDe, LOTO } from '../js/partie.js';
 import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
 import { COACHS, XP, SEUILS_NIVEAU, ADJOINTS_MAX, couleurDe } from '../js/rogue.js';
@@ -86,7 +90,7 @@ const empreinte = P => JSON.stringify({
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { cases: 0, prises: 0, lotosPleins: 0, bouches: 0, vedettes: 0, premiersTitres: 0, runsRogue: 0, dixhuit: 0, adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { mandats: new Set(), premieres: 0, cases: 0, prises: 0, lotosPleins: 0, bouches: 0, vedettes: 0, premiersTitres: 0, runsRogue: 0, dixhuit: 0, adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -213,16 +217,27 @@ async function unRun(graine, version = null, col = [], vedette = null) {
   const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
   const coach = Object.keys(COACHS)[graine % 4];
   const deb = graine % 2 ? [] : Object.keys(DEBLOCAGES);
-  const P = nouvellePartie(graine, { deb, club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach, col, vedette });
-  if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'demie' || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
+  // Une run sur quatre est une première run : son premier split laisse bâtir (sauf sous une exigence).
+  const premiere = graine % 4 === 1;
+  const P = nouvellePartie(graine, { deb, club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach, col, vedette, premiere });
+  if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'trois' || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
     faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
   }
   if (exig) bilan.exigences++;
   // Une partie d'avant la version 3 garde sa règle : une série de séries se joue d'un bloc, d'un seul repêchage.
   if (version) P.v = version;
-  // Les cases du premier départ : la vedette, puis le classeur (une case Régulier, celles des déblocages, moins l'exigence).
+  // Les cases du premier départ : la vedette, puis le classeur (une case Régulier, celles des déblocages, moins l'exigence) ;
+  // depuis la version 7, la vedette y prend la case du haut (d'avant : elle vient en plus).
   const classeur = Math.max(0, 1 + P.fx.pilier + P.fx.etoile + P.fx.cases);
-  if (parCases(P) && casesDe(P).length !== (vedette ? 1 : 0) + classeur) faute(`${casesDe(P).length} cases au classeur pour ${classeur}${vedette ? ' et une vedette' : ''}`);
+  const prend = vedette && P.v >= 7 ? 1 : 0;
+  if (parCases(P) && casesDe(P).length !== (vedette ? 1 : 0) + Math.max(0, classeur - prend)) faute(`${casesDe(P).length} cases au classeur pour ${classeur}${vedette ? ' et une vedette' : ''}`);
+  if (parCases(P) && prend && casesDe(P).slice(1).map(c => c.niveau).join() !== casesDe({ ...P, vedette: null }).slice(1).map(c => c.niveau).join()) faute('la vedette ne prend pas la case du haut du classeur');
+  // Le mandat du premier split : les huit premiers à la première run sans exigence ; d'avant la version 7, ceux aux séries.
+  const mandats = P.v < 7 ? MANDATS_AUX_SERIES : MANDATS;
+  const voulu = P.v >= 7 && premiere && !exig ? MANDAT_DE_LA_PREMIERE[0] : mandats[Math.min(mandats.length, 1 + P.fx.mandat) - 1][0];
+  if (parCases(P) && mandatDuSplit(P)[0] !== voulu) faute(`le mandat du premier split : ${mandatDuSplit(P)[0]} au lieu de ${voulu}`);
+  if (parCases(P) && premiere && !exig && P.v >= 7 && mandatDuSplit(P, 2)[0] !== MANDATS[1][0]) faute('la première run ne reprend pas les mandats de toujours au deuxième split');
+  if (P.v >= 7 && premiere && !exig) bilan.premieres++;
   if (parCases(P)) bilan.runsRogue++;
   let milieu = null;
   while (P.etape !== 'fin' && P.run.n <= SPLITS_MAX) {
@@ -371,6 +386,11 @@ async function unRun(graine, version = null, col = [], vedette = null) {
     bilan.commandite += P.R.reports[P.R.reports.length - 1].commandite;
     const pass = P.run.passes[P.run.passes.length - 1];
     if (pass.rempli !== mandatRempli(L, pass.mandat)) faute('le bilan ne suit pas le mandat');
+    // Le mandat se lit au classement (version 7) : le rang du bilan le dit ; d'avant, il se lit aux séries.
+    const table = P.v >= 7 ? [...MANDATS, MANDAT_DE_LA_PREMIERE] : MANDATS_AUX_SERIES;
+    if (!table.some(([k]) => k === pass.mandat)) faute(`un mandat ${pass.mandat} sous la version ${P.v}`);
+    if (P.v >= 7 && pass.rempli !== rangTient(pass.rang, pass.mandat)) faute(`le mandat ${pass.mandat} au ${pass.rang}e rang : ${pass.rempli}`);
+    if (P.v >= 7) bilan.mandats.add(pass.mandat);
     if (P.etape === 'gardes' && parCases(P)) {
       // Ceux qui restent (version 5) : les gardés sont refusés, le prochain départ les tire au loto, et un gardé peut y vieillir.
       const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean);
@@ -421,9 +441,10 @@ async function unRun(graine, version = null, col = [], vedette = null) {
 
 const pasRejouees = [];
 let col = [];
-for (let g = 1; g <= RUNS + 3; g++) {
-  // Les trois dernières runs se jouent sous les versions 2, 3 et 4 : une vieille sauvegarde se rejoue pareil (la roulette, les gardés).
-  const version = g > RUNS ? g - RUNS + 1 : null;
+for (let g = 1; g <= RUNS + 4; g++) {
+  // Les quatre dernières runs se jouent sous les versions 2, 3, 4 et 6 : une vieille sauvegarde se rejoue pareil (la roulette,
+  // les gardés ; les mandats aux séries et la vedette en plus du classeur).
+  const version = g > RUNS ? [2, 3, 4, 6][g - RUNS - 1] : null;
   // Une run sur deux avec une vedette ; la collection de la run d'avant nourrit le classeur de la suivante.
   const vedette = g % 2 === 0 ? cleDe((await tirerEtoiles(hasard(g), ids, lire, 1))[0]) : null;
   const { P, milieu } = await unRun(g, version, col, vedette);
@@ -442,6 +463,12 @@ for (const { P } of dixhuits) if (empreinte(rejouer(JSON.parse(JSON.stringify(sa
 for (const [nom, ok] of refusVus) exiger(nom, ok);
 exiger('le Rogue part de ses cases et de son pack de départ', bilan.runsRogue > 0 && bilan.cases > 0 && bilan.prises > 0 && bilan.lotosPleins > 0 && bilan.vedettes > 0 && bilan.bouches > 0,
   `${bilan.runsRogue} runs, ${bilan.cases} cases (${bilan.prises} prises, ${bilan.lotosPleins} lotos pleins, ${bilan.vedettes} vedettes), ${bilan.bouches} bouche-trous`);
+/* Le mandat au classement, à la main : une ligue dont les séries sont posées, ton rang de 1 à 10. */
+const auRang = rang => ({ series: { rang: [...Array(10).keys()].map(i => (i === rang - 1 ? 0 : i < rang - 1 ? i + 1 : i)), rondes: [], champion: null } });
+const lus = [['series', 6, true], ['series', 7, false], ['huit', 7, true], ['huit', 8, true], ['huit', 9, false], ['trois', 3, true], ['trois', 4, false], ['deux', 2, true], ['deux', 3, false], ['premier', 1, true], ['premier', 2, false]];
+const malLus = lus.filter(([cle, rang, ok]) => mandatRempli(auRang(rang), cle) !== ok);
+exiger(`le mandat se lit au classement : les ${EN_SERIES} premiers font les séries, les huit premiers « séries ou pas »`, !malLus.length, malLus.map(([c, r]) => `${c} au ${r}e`).join(', ') || `${lus.length} rangs lus`);
+exiger('les runs ont vécu chaque mandat, et des premières runs', bilan.premieres > 0 && MANDATS.slice(0, 2).every(([k]) => bilan.mandats.has(k)) && bilan.mandats.has(MANDAT_DE_LA_PREMIERE[0]), `${bilan.premieres} premières runs ; ${[...bilan.mandats].join(', ')}`);
 exiger('la première run reste dure : le titre au premier split est rare', bilan.premiersTitres <= bilan.runsRogue / 3, `${bilan.premiersTitres} titres au premier split sur ${bilan.runsRogue} runs`);
 exiger('le 18-0 : la roulette, le split d\'un coup, les séries partie par partie, rien d\'autre', bilan.dixhuit === 2 && dixhuits.some(x => x.parties > 0), dixhuits.map(x => `${x.parties} parties de séries, ${x.P.run.fin}`).join(' · '));
 exiger('aucune faute au fil des runs', !fautes.size, [...fautes].slice(0, 4).join(' · ') || `${RUNS} runs, ${bilan.splits} splits, ${bilan.actions} actions`);

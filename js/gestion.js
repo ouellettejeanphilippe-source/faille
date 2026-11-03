@@ -12,8 +12,10 @@
  *                   dé du split ; « qui sort ? » : titulaire ou banc ;
  *   le banc         un sixième joueur, n'importe quel rôle, compté sous le
  *                   plafond ; il prend la place du titulaire de son rôle ;
- *   le proprio      un mandat par split (les séries, puis la demie, la finale,
- *                   le titre) ; des objectifs de six journées, payés en jetons ;
+ *   le proprio      un mandat par split, lu au classement (les séries, puis les
+ *                   trois, les deux premiers, premier) ; le premier split de la
+ *                   première run, les huit premiers ; des objectifs de six
+ *                   journées, payés en jetons ;
  *   l'entraîneur    trois défaites de suite : un événement à trancher ;
  *   le commanditaire  un sur trois, choisi avant la première journée (repris
  *                   de Teamfight Manager) : il paie chaque partie qui remplit
@@ -276,24 +278,63 @@ export async function prochaineVersion(index, lire, c) {
 }
 
 /* ---- LE PROPRIO : le mandat du split, les objectifs de six journées ---- */
+/*
+ * LE MANDAT SE LIT AU CLASSEMENT (Cap 82-0, la V5 : *le proprio juge la saison, pas une série* ; docs/parite-cap82.md
+ * F18). Une série au meilleur de cinq est à moitié un tirage : « atteindre la demie » ou « la finale » finissait une
+ * run sur un dé. Le mandat se lit donc au classement du split, ce que le DG contrôle : les séries d'abord, puis un rang
+ * qui monte. Cap 82-0 demande les séries (16 sur 32), puis les 10, les 6 et les 3 premiers ; sur dix équipes, les
+ * séries (6), puis les 3, les 2 premiers, et premier. Les séries paient toujours et donnent le titre, qui gagne la run.
+ * [clé, en mots, le rang à atteindre (null : faire les séries), séries ou pas].
+ */
 export const MANDATS = [
-  ['series', 'faire les séries'],
-  ['demie', 'atteindre les demi-finales'],
-  ['finale', 'atteindre la finale'],
-  ['titre', 'gagner le split'],
+  ['series', 'faire les séries', null],
+  ['trois', 'finir dans les trois premiers', 3],
+  ['deux', 'finir dans les deux premiers', 2],
+  ['premier', 'finir premier du classement', 1],
 ];
-/** Le mandat du split n de la run (1, 2…) : plus haut à chaque split, le titre dès le quatrième ; `cran` le monte d'autant (les exigences). */
-export const mandatDe = (n, cran = 0) => MANDATS[Math.min(n + cran, MANDATS.length) - 1];
+/*
+ * LE PREMIER SPLIT DE LA PREMIÈRE RUN (Cap 82-0, `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas ;
+ * docs/parite-cap82.md E3, la Q9). Chez Cap 82-0, le gérant attentif finissait sa première saison loin des séries et la
+ * run finissait là : son coach et ses adjoints ne vivaient jamais une deuxième saison. Le proprio de ta première run te
+ * laisse un split pour bâtir : les huit premiers sur dix, séries ou pas. Dès le deuxième split, et dès la deuxième run,
+ * les mandats de toujours.
+ */
+export const MANDAT_DE_LA_PREMIERE = ['huit', 'finir dans les huit premiers, séries ou pas', 8, true];
+/* Le mandat du 18-0 : le titre ou rien. */
+export const MANDAT_DU_DIXHUIT = ['titre', 'gagner le split', null];
+/* Les mandats d'avant la version 7, aux séries : une partie d'avant les rejoue tels quels (js/partie.js `mandatDuSplit`). */
+export const MANDATS_AUX_SERIES = [
+  ['series', 'faire les séries', null],
+  ['demie', 'atteindre les demi-finales', null],
+  ['finale', 'atteindre la finale', null],
+  MANDAT_DU_DIXHUIT,
+];
+/* Combien d'équipes font les séries (js/sim.js : les deux premières attendent en demie, les quatre suivantes jouent les quarts). */
+export const EN_SERIES = 6;
+/**
+ * Le mandat du split n de la run (1, 2…) : plus haut à chaque split ; `cran` le monte d'autant (les exigences) ;
+ * `premiere` : la première run, dont le premier split laisse bâtir (sans exigence) ; `table` : les mandats d'une version.
+ */
+export const mandatDe = (n, cran = 0, { premiere = false, table = MANDATS } = {}) => (premiere && n === 1 && !cran ? MANDAT_DE_LA_PREMIERE
+  : table[Math.max(0, Math.min(n + cran, table.length) - 1)]);
+const TOUS_LES_MANDATS = [...MANDATS, MANDAT_DE_LA_PREMIERE, ...MANDATS_AUX_SERIES];
+/** Un mandat en mots, de sa clé (ceux d'une partie d'avant compris). */
+export const motDuMandat = cle => TOUS_LES_MANDATS.find(([k]) => k === cle)[1];
 
-/** Le mandat est-il rempli ? Les deux premiers attendent en demie : ils l'atteignent d'office. */
+/** Ce rang au classement tient-il le mandat `cle` ? Les séries, sauf « séries ou pas », et le rang qu'il veut. */
+export function rangTient(rang, cle) {
+  const [, , top, sansSeries] = TOUS_LES_MANDATS.find(([k]) => k === cle);
+  return (sansSeries || rang <= EN_SERIES) && rang <= (top ?? EN_SERIES);
+}
+/** Le mandat est-il rempli ? Au classement du split ; ceux d'avant la version 7, aux séries (les deux premiers attendent en demie : ils l'atteignent d'office). */
 export function mandatRempli(L, cle) {
   const S = L.series;
   if (!S) return false;
   const dans = k => (S.rondes[k] || []).some(s => s.a === 0 || s.b === 0);
-  if (cle === 'series') return S.rang.slice(0, 6).includes(0);
   if (cle === 'demie') return dans(1);
   if (cle === 'finale') return dans(2);
-  return S.champion === 0;
+  if (cle === 'titre') return S.champion === 0;
+  return rangTient(S.rang.indexOf(0) + 1, cle);
 }
 
 export const OBJECTIF = { journees: 6, jetons: 10 };

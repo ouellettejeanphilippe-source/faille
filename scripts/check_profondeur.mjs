@@ -25,7 +25,7 @@ import { classement } from '../js/sim.js';
 import { tirerEtoiles, cleDe } from '../js/gestion.js';
 import { nouvellePartie, contratDe, refDe } from '../js/partie.js';
 import { COACHS } from '../js/rogue.js';
-import { nouveauMeta, noter, acheter, DEBLOCAGES, deblocagesDe, collectionDe, vedetteDe, choisirVedette, choisirExigence, exigenceMax, exigenceDe, clubDe } from '../js/meta.js';
+import { nouveauMeta, noter, acheter, DEBLOCAGES, deblocagesDe, collectionDe, vedetteDe, choisirVedette, choisirExigence, exigenceMax, exigenceDe, clubDe, premiereRun } from '../js/meta.js';
 import { contexte, jouerUneRun, jouerLeSplit, collectionPour, POLITIQUES } from './lib/robot.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
@@ -107,7 +107,7 @@ async function campagne(politique, c) {
     choisirExigence(m, exigenceMax(m));
     const exig = exigenceDe(m);
     const coach = politique === 'distrait' ? piger(Object.keys(COACHS), clic) : 'stratege';
-    const P = await jouerUneRun(graineDe(9000 + c, `run-${r}`), C, { deb: deblocagesDe(m), club: clubDe(m), coach, col: collectionPour(ctx, [...collectionDe(m).keys()]), vedette: vedetteDe(m), exig }, SPLITS_MAX, politique);
+    const P = await jouerUneRun(graineDe(9000 + c, `run-${r}`), C, { deb: deblocagesDe(m), club: clubDe(m), coach, col: collectionPour(ctx, [...collectionDe(m).keys()]), vedette: vedetteDe(m), exig, premiere: premiereRun(m) }, SPLITS_MAX, politique);
     noter(m, `r${r}`, P, r + 1);
     acheterDans(m);
     const titre = P.run.fin === 'gagnee';
