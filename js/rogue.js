@@ -229,7 +229,7 @@ export const ADJOINTS_MAX = 3;
 /** Ce qu'un adjoint fait sur les canaux : son gain et son prix, ensemble. */
 export const effetDeLAdjoint = id => sommerEffets([ADJOINTS[id][2], ADJOINTS[id][3]]);
 
-/** Les effets de ton cinq : ta stratégie (js/strategie.js), les cartes du plan, les liens d'origine et ton staff, sommés par le moteur. */
+/** Les effets de ton cinq : ton plan de match (js/strategie.js), les cartes du plan, les liens d'origine et ton staff, sommés par le moteur. */
 export function effetsDeToi(R, liens = [], strategie = null, staff = []) {
   return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), ...liens.map(id => LIENS[id][3]), ...staff.flatMap(id => [ADJOINTS[id][2], ADJOINTS[id][3]])]);
 }

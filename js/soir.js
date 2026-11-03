@@ -69,8 +69,11 @@ function profilOuSplit(L, i, ctx, adversaires) {
   return { pj, v: e.v, k: e.joueurs.reduce((s, j) => s + j.k, 0) / pj, m: e.joueurs.reduce((s, j) => s + j.m, 0) / pj, tours: par('tours'), dragons: par('dragons'), barons: par('barons'), herauts: par('herauts'), duree: null, split: true };
 }
 
-/** « CE SOIR » : l'affiche, les deux équipes face à face, leur cinq et ce qu'il joue, ce qu'ils priorisent. `identite` : leur plan en mots, ou null. */
-export function ecranCeSoir(P, ctx, s, identite) {
+/**
+ * « CE SOIR » : l'affiche, les deux équipes face à face, ce qu'ils priorisent et ton plan de match, leur cinq et ce
+ * qu'il joue. `identite` : ce qu'ils priorisent, en mots, ou null ; `plan` : la ligne de ton plan (js/bureau.js `lignePlan`).
+ */
+export function ecranCeSoir(P, ctx, s, identite, plan = '') {
   const L = P.L;
   const nous = s.a === 0 ? 0 : 1;
   const i = nous ? s.a : s.b;
@@ -100,6 +103,7 @@ export function ecranCeSoir(P, ctx, s, identite) {
       <div class="affiche-equipe"><small>${esc(eux.split || '')}</small><b>${esc(eux.nom)}</b><small>${rangMot(rangDe(L, i))} · ${ficheDe(L, i)}</small>${forme(L, i)}</div></div>
     ${lignes ? `<h3>Face à face${b && b.split ? ' · eux : leur vrai split' : ' · dans ta ligue'}</h3><ul class="faces">${lignes}</ul>` : '<p class="sous">Les chiffres face à face viennent avec ta première partie.</p>'}
     ${identite ? `<p class="mandat">Ils priorisent ${esc(identite)}.</p>` : ''}
+    ${plan}
     <h3>Leur cinq</h3><ol class="dt-camp rouge soir-cinq">${leurCinq}</ol>
     <p class="sous">Ils bannissent tes plus joués ; leur fétiche se voit à côté de chacun.</p>
     <div class="actionbar"><button id="soir-jouer" class="go">Jouer ce soir</button><button id="soir-regarder">▶ Regarder</button></div>`;

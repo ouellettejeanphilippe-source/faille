@@ -196,7 +196,24 @@ Les **liens d'origine** (`LIENS`, js/rogue.js, repris des « liens » de LoL Esp
 
 L'**entraînement** (js/gestion.js) ne crée aucun canal : un champion entraîné entre au bout du bassin du joueur, compté pour le quart de son plus joué (`ENTRAINEMENT.part`). Le confort le lit comme les autres : il coûte −0,3 écart type, entre ses vrais champions et le hors-bassin (−0,6). `check_gestion` vérifie qu'il tombe là. L'écran le dit « entraîné », jamais en parties.
 
-## 10. La stratégie (jalon 5)
+## 10. Le plan de match (jalon 8, P4)
+
+`js/strategie.js` `PLANS`. Comme la V17 de Cap 82-0 : *un plan change la forme du match, pas sa force*. Avant chaque partie, ton cinq choisit ce qu'il priorise, ou joue sa partie ; la décision dure jusqu'à la suivante et se change avant chaque partie, séries comprises (la Boîte, Ce soir, le Cinq). Six plans : le contrôle des dragons, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, jouer pour le tardif.
+
+- **Chaque plan paie ce qu'il donne.** Son gain et son prix passent par les canaux (§ 6) ; ni le gain ni le prix ne suivent tes joueurs. Le prix de chacun est réglé pour que le plan vaille zéro victoire, joué à chaque partie, sur 96 ligues d'essai (graines 4000) ; l'erreur type d'un banc de 48 ligues est d'environ ±0,07 victoire par split (l'écart type d'une ligue à l'autre, 0,5).
+- **Aucun prix dans un canal qu'une époque ne connaît pas.** Le contrôle des dragons et le tardif payaient en héraut : avant 2016, le prix était gratuit, et le plan valait plus tôt que tard (de −0,3 à 0 victoire d'un banc à l'autre). Le dragon paie maintenant au Nashor et au haut de la carte, le tardif à la phase de lignes. Le héraut, lui, ne se joue que dans une partie qui en a un : l'année d'une partie est celle des deux époques mêlées (`anneeEntre`, comme `regles`).
+- **Le Nashor n'a plus son plan.** Mesuré contre 184 adversaires, il n'était le meilleur contre aucun, et il doublait le tardif, qui le prend.
+- **Le plan suit l'adversaire du soir.** `js/partie.js` pose les canaux du plan pour la partie de la journée, dans l'année de cette partie ; au banc de mesure, `planSurLeBanc` (scripts/lib/effets.mjs) les pose série par série de la même façon.
+
+**Mesuré** (`check_plan_de_match`) : ta partie ne change rien et un plan ne laisse rien derrière lui ; joué à chaque partie, chacun reste sous la borne d'une commune de Cap 82-0 ramenée à un split (±0,22 victoire) ; chacun se voit sur sa signature, là où il se joue (+0,5 dragon, +0,25 héraut, +0,45 tour, +0,9 élimination dans la partie, −0,65 min, +2 min) ; et aucun ne domine. Ton cinq, Team Vitality du Mondial 2018 (une vraie équipe du milieu, d'une époque à héraut), contre 184 adversaires depuis 2016 : chaque plan y était le meilleur contre 11 à 46 d'entre eux, et tous valaient moins de ±0,1 victoire en moyenne. Le juge garde huit de ces adversaires, un favori, un faible et un témoin par plan, et demande que chaque plan soit le meilleur (au bruit près) contre au moins un, et aucun contre tous.
+
+**Ce que l'écran en dit** : ce qu'il fait, ce qu'il donne et ce qu'il coûte, puis ce qu'il change sur la feuille, mesuré en paires (`plan:*` dans js/impacts.js, § 8). Le robot attentif lit le moteur à la première rencontre d'un adversaire, comme celui de Cap 82-0 : chaque plan contre sa partie, 40 parties en paires, et il garde celui qui rend le plus, sa partie si aucun ne rend.
+
+**Les vraies équipes jouent leur vraie partie** : aucun plan ne s'ajoute à elles (elles sont la calibration). Leur **identité** se lit sur leurs vraies parties, l'objectif qu'elles prenaient le plus au-dessus de la moyenne de leur split, et Ce soir la dit.
+
+### Avant la version 8 : la stratégie au fit (jalon 5)
+
+Une partie d'avant la version 8 la rejoue telle quelle (`STRATEGIES_AU_FIT`, `effetAuFit`). Mesuré au jalon 8 (`check_profondeur`) : elle donnait de la force à qui avait les bons joueurs, de +0,7 à +2,1 victoires par split au tiers le mieux ajusté, et le robot attentif la jouait toujours.
 
 `js/strategie.js`. Le plan de match de ton cinq, au centre du split : sept stratégies — le contrôle des dragons, jouer autour du Nashor, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, jouer pour le tardif. Chacune **demande** des joueurs (trois rôles et un axe chacun : un jungler d'objectifs, un haut qui gagne sa ligne…), et son **fit** est la moyenne de ces sous-cotes, jugées dans le split de chaque joueur. Comme les systèmes de Cap 82-0 :
 
@@ -207,8 +224,6 @@ L'**entraînement** (js/gestion.js) ne crée aucun canal : un champion entraîn�
 Le fit se dit en mots, comme un badge (Sur mesure, Bon fit, Fit moyen, À contre-emploi ; ✓ ≈ ✗ par demande), jamais en cote.
 
 **Mesuré en paires** (`check_rogue`) : chaque équipe traitée joue la stratégie avec SES joueurs ; le tiers le mieux ajusté y gagne de 0,5 à 2,5 victoires par saison, le tiers le moins bien ajusté y perd (0 ou moins), et chacune se voit sur sa propre signature (les dragons, le Nashor, les hérauts, les tours que l'équipe prend de plus que l'autre ; la durée ; les objectifs). Mesuré le 30 octobre 2026, sur le moteur d'aujourd'hui : le tiers le mieux ajusté gagne de +0,73 (jouer autour du Nashor) à +2,05 (pousser en solitaire) ; le moins bien ajusté perd de −0,43 (le contrôle des dragons) à −0,83 (pousser en solitaire). L'écart est plus grand qu'au moteur d'avant (+0,5 à +1,1, puis 0 à −0,4) : un plan joue sur plus de prises (les plaques, la poussée, la bataille d'un objectif préparée), et le fit y compte plus. Une lecture a un bruit d'environ ± 0,3 victoire par tiers (40 équipes) : d'autres ligues d'essai donnent jusqu'à 2,5 pour pousser en solitaire et l'agression précoce, et des shards rebâtis (les sorts de chacun, le Mondial 2023 complété) 2,2 pour le tardif — d'où `DOSE_COMBAT` et `PREPARE` (§ 6), qui gardent les deux jeux de shards dans leurs bornes.
-
-**Les vraies équipes jouent leur vraie partie** : aucune stratégie ne s'ajoute à elles (elles sont la calibration). Leur **identité** se lit sur leurs vraies parties — l'objectif qu'elles prenaient le plus au-dessus de la moyenne de leur split — et le dépisteur la dit.
 
 ## 11. Les pouvoirs du coach, phase par phase (jalon 6)
 

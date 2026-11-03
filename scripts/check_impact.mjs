@@ -7,8 +7,7 @@
  *                           a mesuré (MOTEUR_MESURE) — sinon, `node scripts/impact.mjs` la refait ;
  *   le témoin à zéro        sans effet, les deux passes d'une paire sont identiques : rien ne bouge ;
  *   les mots                jamais un « % », jamais une victoire ; le signe dit le sens de la moyenne ; une ligne
- *                           dite dépasse son pas et deux erreurs types (js/impact.js `PAS`, `BRUIT`) ; une stratégie
- *                           se lit à son fit.
+ *                           dite dépasse son pas et deux erreurs types (js/impact.js `PAS`, `BRUIT`).
  *
  * Que la table égale ce que le moteur joue, c'est check_chiffres.
  *
@@ -30,7 +29,7 @@ exiger('la table n\'a rien de plus que les effets', !deTrop.length, deTrop.join(
 const perimes = effets.filter(e => IMPACTS[e.cle] && IMPACTS[e.cle].sig !== e.sig).map(e => e.cle);
 exiger('chaque effet a été mesuré tel qu\'il est (sinon : node scripts/impact.mjs)', !perimes.length, perimes.join(', ') || 'les signatures tiennent');
 exiger('le moteur est celui qu\'on a mesuré (sinon : node scripts/impact.mjs)', MOTEUR_MESURE === empreinteDuMoteur(), `${MOTEUR_MESURE} · ${empreinteDuMoteur()}`);
-exiger('chaque ligne de la table porte toutes les stats de la feuille', Object.values(IMPACTS).every(x => STATS_DE_LA_FEUILLE.every(c => (x.d ? x.d[c] : x.a[c] !== undefined))));
+exiger('chaque ligne de la table porte toutes les stats de la feuille', Object.values(IMPACTS).every(x => x.d && STATS_DE_LA_FEUILLE.every(c => x.d[c])));
 
 /* Le témoin à zéro : deux ligues, sans effet. */
 const splits = lireSplits();
@@ -44,9 +43,8 @@ if (splits.length) {
 const fautes = [];
 let dites = 0, muets = [];
 for (const e of effets) {
-  const fit = e.genre === 'strategie' ? 0.4 : 0;
-  const d = impactDe(e.cle, fit);
-  const lignes = chiffresDe(e.cle, { fit, max: 7 });
+  const d = impactDe(e.cle);
+  const lignes = chiffresDe(e.cle, { max: 7 });
   if (!lignes.length) muets.push(e.cle);
   for (const l of lignes) {
     dites++;
@@ -55,12 +53,9 @@ for (const e of effets) {
     if ((m > 0) !== l.txt.startsWith('+')) fautes.push(`${e.cle} : le signe de « ${l.txt} » contre ${m}`);
     if (Math.abs(m) < PAS[l.cle] || Math.abs(m) < BRUIT * se) fautes.push(`${e.cle} : « ${l.txt} » sous le bruit (${m} ± ${se})`);
   }
-  if (/%|victoire/i.test(phraseDe(e.cle, { fit }))) fautes.push(`${e.cle} : ${phraseDe(e.cle, { fit })}`);
+  if (/%|victoire/i.test(phraseDe(e.cle))) fautes.push(`${e.cle} : ${phraseDe(e.cle)}`);
 }
 exiger('les mots : jamais un « % » ni une victoire, le bon signe, rien sous le bruit', !fautes.length, fautes.slice(0, 4).join(' · ') || `${dites} lignes dites`);
-// Une stratégie se lit à son fit : la droite de la table, a + b × fit.
-const s = Object.keys(IMPACTS).find(k => k.startsWith('strategie:'));
-if (s) exiger('une stratégie se lit à son fit (a + b × fit)', STATS_DE_LA_FEUILLE.every(c => Math.abs(impactDe(s, 1)[c][0] - (IMPACTS[s].a[c] + IMPACTS[s].b[c])) < 1e-9));
 // Le plus fort d'abord, et seulement ce qui dépasse le bruit.
 const essai = motsDeStats({ elim: [0.4, 0.1], morts: [-1.2, 0.1], dragons: [0.05, 0.01], nashor: [0.3, 0.2], herauts: [0, 0], tours: [0, 0], duree: [0, 0] }, 7);
 exiger('les mots : le plus fort d\'abord, rien sous le pas ni sous le bruit', essai.map(x => x.txt).join(' · ') === '−1,2 mort · +0,4 élimination' && essai[0].bon === true, essai.map(x => x.txt).join(' · '));

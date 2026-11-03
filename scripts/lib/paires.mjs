@@ -60,11 +60,12 @@ const victoires = L => L.equipes.map((_, i) => L.journees.flat().filter(s => s.g
  * Un banc de mesure : des ligues, leurs graines, et la passe neutre de chacune, jouée une seule fois.
  * `mesurer(opts)` rend { dv, parEquipe, joue, forme, ecarts, parties } :
  *   dv          les victoires de plus par split de 18, en moyenne ;
- *   parEquipe   [[équipe, ΔV]] (le fit d'une stratégie se lit dessus) ;
+ *   parEquipe   [[équipe, ΔV]] ;
  *   joue        `opts.pouvoir` : la part des parties où il a joué (la forme ne lit que celles-là) ;
  *   forme       l'écart moyen de chaque clé de `profil`, par partie, contre la passe neutre ;
  *   ecarts      { clé : [écarts par partie] } ; `parties` : [l'équipe traitée de chaque partie mesurée] ;
  *   grappe      [la ligue de chaque partie mesurée] (l'erreur type se compte par ligue).
+ * `opts.garder(L, s)` : la forme ne lit que les séries qu'il garde (un plan qui ne se joue pas à toutes les époques).
  */
 export function banc(splits, nombre, depuis = 500) {
   const ligues = liguesDEssai(splits, nombre, depuis);
@@ -81,7 +82,7 @@ export function banc(splits, nombre, depuis = 500) {
       vA.forEach((_, i) => { const d = pair(i) ? vA[i] - vB[i] : vB[i] - vA[i]; dv.push(d); parEquipe.push([ligue[i], d]); });
       const neutre = O.journees.flat();
       A.journees.flat().forEach((s, k) => {
-        if (pair(s.a) === pair(s.b)) return;
+        if (pair(s.a) === pair(s.b) || (opts.garder && !opts.garder(A, s))) return;
         s.parties.forEach((p, n) => {
           const nous = pair(p.bleu) ? 0 : 1;
           if (opts.pouvoir) {
@@ -109,24 +110,4 @@ export function impactDe(m) {
     const my = moyenne(xs);
     return [c, [my, erreurParGrappe(xs.map(x => x - my), m.grappe)]];
   }));
-}
-
-/**
- * L'impact d'une stratégie, qui suit le fit de l'équipe qui la joue : une droite par stat, l'écart d'une partie contre
- * le fit de l'équipe traitée (les moindres carrés). Rend { a, b, se } : a + b × fit, et l'erreur type au fit moyen
- * (par ligue, comme une moyenne).
- */
-export function droiteDe(m, fitDe) {
-  const fits = m.parties.map(fitDe);
-  const mf = moyenne(fits), vf = moyenne(fits.map(f => (f - mf) ** 2)) || 1;
-  const out = { a: {}, b: {}, se: {} };
-  for (const c of STATS_DE_LA_FEUILLE) {
-    const xs = m.ecarts[c === 'tours' ? 'tours_nous' : c];
-    const my = moyenne(xs);
-    const b = moyenne(xs.map((y, k) => (fits[k] - mf) * (y - my))) / vf;
-    out.a[c] = my - b * mf;
-    out.b[c] = b;
-    out.se[c] = erreurParGrappe(xs.map((y, k) => y - (out.a[c] + b * fits[k])), m.grappe);
-  }
-  return out;
 }

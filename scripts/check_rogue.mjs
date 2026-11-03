@@ -37,14 +37,12 @@ import { banc } from './lib/paires.mjs';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
 import { CARTES, COACHS, PACKS, JETONS, LIENS, ADJOINTS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, effetDeLAdjoint, pouvoirsDeToi, pouvoirsDuPersonnage, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
-import { STRATEGIES, effetDeStrategie, fitDe } from '../js/strategie.js';
 import { lireSplits } from './lib/vestiaires.mjs';
 import { exiger, borne, informer, verdict } from './verdict.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const { classes } = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/champions.json'), 'utf8'));
 const splits = lireSplits();
-const moyenne = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
 
 const LIGUES = 12, EQUIPES = 10;
 const MAX_V = { commune: 0.6, peu: 1, rare: 1.5, legendaire: 2.5 };
@@ -95,27 +93,8 @@ if (splits.length) {
   }
 
   /*
-   * LES STRATÉGIES : chaque équipe traitée joue la stratégie avec SES joueurs.
-   * Elle doit compter, et selon le fit : le tiers le mieux ajusté y gagne, le
-   * tiers le moins bien ajusté y perd.
-   */
-  // Ce qui doit se voir de chaque stratégie, par partie, contre une équipe qui ne la joue pas.
-  const SIGNE = { dragons: ['nos_dragons', 0.3], nashor: ['nos_barons', 0.1], heraut: ['nos_herauts', 0.1], split: ['nos_tours', 0.3], combats: ['nosObjectifs', 0.2], agression: ['duree', -0.3], tardif: ['nos_barons', 0.1] };
-  for (const [id, [ico, nom]] of Object.entries(STRATEGIES)) {
-    const m = mesurer({ effet: e => effetDeStrategie(id, e.cinq) });
-    const tri = m.parEquipe.map(([e, d]) => [fitDe(id, e.cinq), d]).sort((a, b) => a[0] - b[0]);
-    const tiers = Math.floor(tri.length / 3);
-    const bas = moyenne(tri.slice(0, tiers).map(x => x[1])), haut = moyenne(tri.slice(-tiers).map(x => x[1]));
-    borne(`${ico} ${nom}, le tiers le mieux ajusté : victoires de plus`, haut, 0.5, MAX_V.legendaire);
-    borne(`${ico} ${nom}, le tiers le moins bien ajusté : victoires de plus`, bas, -MAX_V.legendaire, 0);
-    const [cle, seuil] = SIGNE[id];
-    exiger(`${ico} ${nom} se voit sur la feuille : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
-    informer(`${ico} ${nom} : en moyenne`, `${m.dv.toFixed(2)} victoire par saison · ${ecrire(m.forme)}`);
-  }
-
-  /*
    * Les coachs : chaque pouvoir seul, puis les trois ensemble (le palier III), sans carte. Un pouvoir ne frappe
-   * qu'une phase : il se voit sur SA signature, les parties où il joue, comme une stratégie.
+   * qu'une phase : il se voit sur SA signature, les parties où il joue.
    */
   const SIGNE_POUVOIR = {
     traque: ['k', 0.5], curee: ['duree', -0.5], carnage: ['k', 0.5],

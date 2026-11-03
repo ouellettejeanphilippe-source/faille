@@ -284,18 +284,27 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
     - `check_gestion` : onze rangs lus à la main ; chaque mandat vécu en run ; le rang du bilan tient le mandat ; la vedette prend la case du haut ; une run de la version 6 garde ses mandats aux séries.
     - `check_meta` : seule la première run laisse bâtir ; un 18-0 n'en est pas une.
     - `check_profondeur` reste rouge (cinq campagnes, contre main). Le robot d'avant gagne moins : 4 titres en 60 runs, contre 7. L'attentif gagne toujours son titre au premier split de sa première run. Après ce titre, il le regagne dans 93 % de ses runs, contre 75 % : sa run ne s'arrête plus sur un mandat « le titre », elle dure tant qu'il finit premier. Le mandat n'était pas la cause, sa force l'est (F34, F10, B6 : P4 et P11).
-- [ ] **P4 · Des plans par partie** (B6 ; Q2)
-  - Les sept stratégies deviennent les plans de la partie (la V17 de Cap 82-0) : ils changent la forme, pas la force, et se disent en vraies stats.
-  - Le gain au fit part.
-  - La règle ferme « Une stratégie : son gain suit le fit » est réécrite.
-  - Les fichiers : js/strategie.js, js/partie.js, js/soir.js ; `check_plan_de_match` (neuf : aucun plan ne domine), `check_rogue`.
+- [x] **P4 · Des plans par partie** (B6 ; Q2)
+  - **Six plans par partie** (js/strategie.js `PLANS`), comme la V17 de Cap 82-0 : ils changent la forme, pas la force. Le gain au fit est parti.
+    - Chaque prix est réglé pour que le plan vaille zéro victoire sur 96 ligues d'essai.
+    - Le Nashor rejoint le tardif : contre 184 adversaires, il n'était jamais le meilleur et il le doublait.
+    - Aucun prix ne se paie dans un canal qu'une époque ne connaît pas. Le dragon et le tardif payaient en héraut : avant 2016, leur prix était gratuit.
+    - Le héraut ne se joue que dans une partie qui en a un (`planJoue`, `anneeEntre`).
+  - **Le plan suit l'adversaire du soir** (js/partie.js). Il se choisit à la Boîte, à Ce soir (qui le redit) et au Cinq. Il dure jusqu'à ce qu'on le change, et se change avant chaque partie, séries comprises.
+  - **À l'écran** : ce que le plan fait, ce qu'il donne, ce qu'il coûte, et ce qu'il change sur la feuille, mesuré (`plan:*` dans js/impacts.js, 63 effets). « Pas ce soir » quand le héraut ne se joue pas.
+  - **La sauvegarde passe à la version 8.** Une partie d'avant garde sa stratégie au fit (`STRATEGIES_AU_FIT`). Elle doit rester de toute façon pour les v5 et avant, qui rejouent le moteur gelé ; la garder aux v6 et v7 ne coûte aucune copie de plus.
+  - **Les juges.**
+    - `check_plan_de_match` (neuf, dans `tout.mjs`, 21 s), sur le modèle de celui de Cap 82-0 : ta partie ne change rien ; joué à chaque partie, chaque plan reste sous ±0,22 V par split (de −0,08 à +0,15 sur 48 ligues) ; chacun se voit sur sa signature ; aucun ne domine contre huit adversaires (un favori, un faible, un témoin par plan, tirés du balai).
+    - `check_rogue` perd ses stratégies au fit. `check_gestion` refuse le Nashor en version 8.
+    - Le robot attentif lit le moteur contre chaque adversaire, comme celui de Cap 82-0 (40 parties par plan : une lecture bruitée).
+    - `check_profondeur` reste rouge, mais la force de la stratégie au fit est partie (contre P3, mêmes dés). L'écart attentif − distrait passe de +2,8 à +2,1 V par split, l'écart attentif − défaut de +2,3 à +1,4. Après son premier titre, l'attentif le regagne dans 73 % de ses runs, contre 93 %. Il gagne toujours au premier split de sa première run : restent le marché (F34) et les packs (F10), à P11. Le juge prend maintenant 44 s, à cause de la lecture du robot.
 - [ ] **P5 · Les adjoints de la V22, et le plan de jeu qui part** (D7, D8, D11, E1 ; Q1, Q7, Q10)
   - La main tient quatre cartes ; on poste une carte sur une case libre.
   - Un séjour dure 3 journées, 4 si le style rejoint le coach ; le repos, 4.
   - Les cases suivent le niveau du coach.
   - Un parmi trois est offert aux journées 2, 7, 11 et 15.
   - Le staff de la V21 part. Le plan de jeu de 15 cartes et ses packs partent aussi ; leurs meilleures idées deviennent des styles.
-  - La sauvegarde passe à la version 8 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore.
+  - La sauvegarde passe à la version 9 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore. Les règles gardées pour les v6 à v8 (les mandats aux séries de P3, la stratégie au fit de P4) partent alors, sauf pour les v5 et avant.
   - Les bornes de Cap 82-0 ramenées à un split se jugent (dites depuis P2), et chaque style se voit sur la feuille, au-dessus du bruit de la table d'impact (`check_impact`).
   - Les fichiers : `js/adjoints.js` (neuf), js/rogue.js, js/partie.js, js/bureau.js ; `check_gestion` (le séjour rejoué), `check_rogue` (chaque style sous sa borne, visible), `check_sauvegardes` (neuf : une run v6 se recharge).
 - [ ] **P6 · Le coach juste** (D1, D2, D3)
@@ -427,3 +436,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
 - 2026-11-03 — **Le mandat au classement (jalon 8, P3)**. Le proprio juge le rang du split, pas une série : les séries, puis les trois, les deux premiers, premier. Le premier split de ta première run laisse bâtir (les huit premiers, séries ou pas), et ta vedette prend la case du haut du classeur. La sauvegarde passe à la version 7 ; une partie d'avant garde ses mandats aux séries.
   - `check_gestion` et `check_meta` le prouvent. `check_profondeur` reste rouge : le mandat n'était pas la cause, l'attentif gagne toujours au premier split.
   - sw.js 0.16.0.
+- 2026-11-03 — **Des plans par partie (jalon 8, P4)**. La stratégie devient le plan de match de la V17 de Cap 82-0 : six plans, choisis partie par partie, qui changent la forme et pas la force. Chacun est réglé à zéro victoire, aucun ne domine, et le héraut ne se joue que là où il existe. La sauvegarde passe à la version 8 ; une partie d'avant garde sa stratégie au fit.
+  - `check_plan_de_match` (neuf) le prouve. Le robot attentif lit le moteur contre chaque adversaire.
+  - `check_profondeur` : mener vaut moins (+2,1 V contre +2,8), et l'attentif gagne moins souvent après son premier titre (73 % contre 93 %), mais toujours dès la run 1.
+  - sw.js 0.17.0.

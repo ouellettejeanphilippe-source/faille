@@ -15,7 +15,7 @@ import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, EN_SERIES, motDuMandat, rangTient, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
 import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, parCases } from './partie.js';
-import { STRATEGIES, lireFit, fitDe, identiteDe } from './strategie.js';
+import { PLANS, STRATEGIES_AU_FIT, IDENTITES, identiteDe, planJoue, anneeEntre } from './strategie.js';
 import { phraseDe, chiffresDe } from './impact.js';
 import { jetonsDe, valeurDesGains, LIENS, liensDe, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
 import { carteDuCoach } from './boutique.js';
@@ -39,15 +39,18 @@ function phraseMandat(P) {
   return `Split ${n} de ta run${P.exig ? ` (🔺 ${P.exig})` : ''} : le proprio veut ${mot}.${suite} Un titre gagne la run.`;
 }
 
-/* ---- LA STRATÉGIE ---- */
-const AXES_MOTS = { objectifs: 'objectifs', vision: 'vision', ligne: 'ligne', pression: 'pression', implication: 'implication', survie: 'survie', degats: 'dégâts' };
-const CLASSE_FIT = { 'Sur mesure': 'fit-haut', 'Bon fit': 'fit-bon', 'Fit moyen': 'fit-moyen', 'À contre-emploi': 'fit-bas' };
-
-/* Ce qu'une stratégie demande, rôle par rôle, avec son signe (✓ ≈ ✗). */
-const demandes = (id, cinq) => {
-  const { demandes: d } = lireFit(id, cinq);
-  return `<span class="demandes">${d.map(([r, axe, signe]) => `<span class="demande">${ROLES[r]} · ${AXES_MOTS[axe]} <b>${signe}</b></span>`).join('')}</span>`;
-};
+/* ---- LE PLAN DE MATCH ---- */
+/* Les plans qu'une partie connaît : ceux d'aujourd'hui, ou (avant la version 8) les stratégies au fit. */
+const plansDe = P => (P.v >= 8 ? PLANS : STRATEGIES_AU_FIT);
+/* Ton plan : [icône, nom, ce qu'il fait], ou null (ta partie). */
+const tonPlan = P => (P.strategie ? plansDe(P)[P.strategie] : null);
+/* L'adversaire de ce soir et l'année de votre partie (le héraut n'existe pas avant 2016), ou null. */
+function ceSoir(L) {
+  const s = taSerie(L);
+  if (!s) return null;
+  const i = s.a === 0 ? s.b : s.a;
+  return { s, i, annee: anneeEntre(L.equipes[0], L.equipes[i]) };
+}
 
 /** L'identité d'une équipe de la ligue (sa vraie partie), en une phrase ; null si rien ne ressort. */
 export function planAdverse(P, ctx, i) {
@@ -56,39 +59,39 @@ export function planAdverse(P, ctx, i) {
   const { split } = ctx.splits.get(a.id);
   const x = identiteDe(split, split.equipes.find(e => e.nom === a.e));
   if (!x) return null;
-  const [ico, nom] = STRATEGIES[x.id];
-  return `${ico} ${nom[0].toLowerCase()}${nom.slice(1)} : ${virgule(x.sien)} par partie, ${virgule(x.moyenne)} en moyenne dans leur split`;
+  const [ico, nom] = IDENTITES[x.id];
+  return `${ico} ${nom} : ${virgule(x.sien)} par partie, ${virgule(x.moyenne)} en moyenne dans leur split`;
 }
 
-/** Le panneau du plan de match, à l'Effectif. */
+/** Le panneau du plan de match, au Cinq. */
 function panneauStrategie(P) {
-  const cinq = P.L.equipes[0].cinq;
-  if (!P.strategie) {
-    return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match</span><b>Aucune stratégie</b><small>Ton cinq joue sa partie. Choisis ce que tu priorises : les dragons, le Nashor, la pression de côté…</small></button>`;
-  }
-  const [ico, nom, texte] = STRATEGIES[P.strategie];
-  const { mot } = lireFit(P.strategie, cinq);
-  return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match · <span class="${CLASSE_FIT[mot]}">${mot}</span></span><b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>${demandes(P.strategie, cinq)}</button>`;
+  const x = tonPlan(P);
+  if (!x) return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match</span><b>Ta partie</b><small>Ton cinq joue sa partie. Avant chaque partie, choisis ce qu'il priorise : les dragons, le héraut, la poussée de côté…</small></button>`;
+  return `<button id="ouvrir-strategie" class="plan-match"><span class="plan-tete">Ton plan de match</span><b>${x[0]} ${esc(x[1])}</b><small>${esc(x[2])}</small></button>`;
 }
 
-/** L'écran de la stratégie : chacune, son fit pour ton cinq, ce qu'elle demande, ce qu'elle fait. */
+/*
+ * L'ÉCRAN DU PLAN DE MATCH : chaque plan, ce qu'il fait, ce qu'il donne et ce qu'il coûte, et ce qu'il change sur la
+ * feuille, mesuré (js/impact.js) ; ce qu'ils priorisent, en face. Une partie d'avant la version 8 garde ses stratégies au fit.
+ */
 export function ecranStrategie(P, ctx) {
   const L = P.L;
-  const cinq = L.equipes[0].cinq;
-  const s = taSerie(L);
-  const enFace = s ? planAdverse(P, ctx, s.a === 0 ? s.b : s.a) : null;
-  const items = Object.entries(STRATEGIES).map(([id, [ico, nom, texte]]) => {
-    const { mot } = lireFit(id, cinq);
+  const soir = ceSoir(L);
+  const enFace = soir ? planAdverse(P, ctx, soir.i) : null;
+  const neuf = P.v >= 8;
+  const items = Object.entries(plansDe(P)).map(([id, x]) => {
+    const [ico, nom, texte] = x;
+    const pasCeSoir = neuf && soir && !planJoue(id, soir.annee);
+    const dit = !neuf ? '' : pasCeSoir ? `Pas de héraut avant ${x[6]} : ce soir, il ne se joue pas.` : `${phraseDe(`plan:${id}`)}.`;
     return `<li><button class="strategie${P.strategie === id ? ' active' : ''}" data-strategie="${id}">
-      <span class="plan-tete"><span class="${CLASSE_FIT[mot]}">${mot}</span></span><b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>
-      ${demandes(id, cinq)}
-      <small class="fait">Avec ton cinq : ${esc(phraseDe(`strategie:${id}`, { fit: fitDe(id, cinq) }))}.</small></button></li>`;
+      <b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>
+      ${neuf ? `<small class="fait">Donne : ${esc(x[3])}. Coûte : ${esc(x[4])}.</small><small class="fait">${esc(dit)}</small>` : ''}</button></li>`;
   }).join('');
-  return `<h2>La stratégie</h2>
-    <p class="sous">Ce que ton cinq priorise, à chaque partie. Son gain suit ce que tes joueurs savent faire (le fit) ; son prix se paie toujours. À contre-emploi, elle coûte plus qu'elle ne rapporte.</p>
-    ${enFace ? `<p class="mandat">En face, ${esc(L.equipes[s.a === 0 ? s.b : s.a].nom)} priorise ${esc(enFace)}.</p>` : ''}
-    <ul class="cartes-jeu bande-cartes">${items}<li><button class="strategie${P.strategie ? '' : ' active'}" data-strategie=""><b>Aucune stratégie</b><small>Ton cinq joue sa partie, sans rien prioriser.</small></button></li></ul>
-    <p class="sous">Glisse pour les voir toutes ; touche celle que tu joues.</p>`;
+  return `<h2>Ton plan de match</h2>
+    <p class="sous">${neuf ? 'Ce que ton cinq priorise, partie par partie : il change la partie, pas ta force. Chaque plan paie ce qu\'il donne ; selon l\'adversaire, l\'un rend plus que l\'autre. Il dure jusqu\'à ce que tu le changes.' : 'Une partie d\'avant la version 8 : ta stratégie joue encore au fit de tes joueurs.'}</p>
+    ${enFace ? `<p class="mandat">En face, ${esc(L.equipes[soir.i].nom)} priorise ${esc(enFace)}.</p>` : ''}
+    <ul class="cartes-jeu bande-cartes">${items}<li><button class="strategie${P.strategie ? '' : ' active'}" data-strategie=""><b>Ta partie</b><small>Ton cinq joue sa partie, sans rien prioriser.</small></button></li></ul>
+    <p class="sous">Glisse pour les voir tous ; touche celui que tu joues.</p>`;
 }
 
 /** Le nombre de messages qui attendent une décision. */
@@ -150,6 +153,14 @@ export function bandeChiffres(P) {
     ${P.mode === 'dixhuit' ? `<div><small>Séries</small><b>${L.series ? (L.series.champion === null ? 'en cours' : L.series.champion === 0 ? 'titre' : 'finies') : 'à venir'}</b><small>six équipes</small></div>` : `<div><small>Jetons</small><b>🪙 ${jetonsDe(L, P.R)}</b><small>à dépenser</small></div>`}</div>`;
 }
 
+/** La ligne de ton plan de ce soir, qui ouvre le plan de match (la Boîte ; Ce soir, `id` « soir-plan ») ; il se dit s'il ne se joue pas ce soir. */
+export function lignePlan(P, id = 'ouvrir-strategie') {
+  const [ico, nom] = tonPlan(P) || ['🧭', 'Ta partie'];
+  const soir = ceSoir(P.L);
+  const muet = P.v >= 8 && P.strategie && soir && !planJoue(P.strategie, soir.annee);
+  return `<button id="${id}" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}${muet ? ' · pas ce soir' : ''}</b><span>›</span></button>`;
+}
+
 /** LA BOÎTE : la partie de ce soir, ton plan, à faire (une ligne par choix), hier soir, la une. Elle tient en un écran. */
 export function vueBoite(P) {
   const L = P.L;
@@ -157,10 +168,9 @@ export function vueBoite(P) {
   const faire = aFaire(P);
   const une = laUne(L);
   const cadeau = P.cadeau && L.jour === 0 ? `<p class="une-note">🎁 Le proprio t'offre un pack argent : ${P.cadeau.map(c => `${CARTES[c][0]} ${esc(CARTES[c][1])}`).join(', ')}. Au Marché, au plan de jeu.</p>` : '';
-  const [ico, nom] = P.strategie ? STRATEGIES[P.strategie] : ['🧭', 'Aucune stratégie'];
   const dix = P.mode === 'dixhuit';
   return `${carteCeSoir(L, s)}
-    ${s && !dix ? `<button id="ouvrir-strategie" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}</b><span>›</span></button>` : ''}
+    ${s && !dix ? lignePlan(P) : ''}
     ${dix ? '' : `<h3 class="a-faire">À faire${faire ? ' · 1 à régler' : ' · à jour'}</h3>${faire}`}
     ${cadeau}
     <h3>Hier soir</h3>${hierSoir(L)}
