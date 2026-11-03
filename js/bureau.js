@@ -14,10 +14,11 @@
 import { esc, virgule } from './util.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { MARCHE, EN_SERIES, motDuMandat, rangTient, ELAN, OBJECTIF, EVENEMENTS, COMMANDITAIRES, ENTRAINEMENT, objectifsDe, gainsDe, partiesCommanditees, aTravailler, dateLimite, marcheOuvert, masseDe, plafondDe, placements, cleDe } from './gestion.js';
-import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, parCases } from './partie.js';
-import { PLANS, STRATEGIES_AU_FIT, IDENTITES, identiteDe, planJoue, anneeEntre } from './strategie.js';
+import { taSerie, enAttente, gardesDe, mandatDuSplit, coachDeLaPartie, mainDeLaPartie } from './partie.js';
+import { PLANS, IDENTITES, identiteDe, planJoue, anneeEntre } from './strategie.js';
 import { phraseDe, chiffresDe } from './impact.js';
-import { jetonsDe, valeurDesGains, LIENS, liensDe, CARTES, COACHS, XP, TALENT, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
+import { jetonsDe, valeurDesGains, LIENS, liensDe, COACHS, XP, TALENT } from './rogue.js';
+import { ADJOINTS, MAIN_MAX, SEJOUR, SEJOUR_SYNERGIE, REPOS, JOURNEES_ADJOINTS } from './adjoints.js';
 import { carteDuCoach } from './boutique.js';
 import { iconeChampion } from './images.js';
 import { classement } from './sim.js';
@@ -40,10 +41,8 @@ function phraseMandat(P) {
 }
 
 /* ---- LE PLAN DE MATCH ---- */
-/* Les plans qu'une partie connaît : ceux d'aujourd'hui, ou (avant la version 8) les stratégies au fit. */
-const plansDe = P => (P.v >= 8 ? PLANS : STRATEGIES_AU_FIT);
-/* Ton plan : [icône, nom, ce qu'il fait], ou null (ta partie). */
-const tonPlan = P => (P.strategie ? plansDe(P)[P.strategie] : null);
+/* Ton plan : [icône, nom, ce qu'il fait…], ou null (ta partie). */
+const tonPlan = P => (P.strategie ? PLANS[P.strategie] : null);
 /* L'adversaire de ce soir et l'année de votre partie (le héraut n'existe pas avant 2016), ou null. */
 function ceSoir(L) {
   const s = taSerie(L);
@@ -72,23 +71,21 @@ function panneauStrategie(P) {
 
 /*
  * L'ÉCRAN DU PLAN DE MATCH : chaque plan, ce qu'il fait, ce qu'il donne et ce qu'il coûte, et ce qu'il change sur la
- * feuille, mesuré (js/impact.js) ; ce qu'ils priorisent, en face. Une partie d'avant la version 8 garde ses stratégies au fit.
+ * feuille, mesuré (js/impact.js) ; ce qu'ils priorisent, en face.
  */
 export function ecranStrategie(P, ctx) {
   const L = P.L;
   const soir = ceSoir(L);
   const enFace = soir ? planAdverse(P, ctx, soir.i) : null;
-  const neuf = P.v >= 8;
-  const items = Object.entries(plansDe(P)).map(([id, x]) => {
-    const [ico, nom, texte] = x;
-    const pasCeSoir = neuf && soir && !planJoue(id, soir.annee);
-    const dit = !neuf ? '' : pasCeSoir ? `Pas de héraut avant ${x[6]} : ce soir, il ne se joue pas.` : `${phraseDe(`plan:${id}`)}.`;
+  const items = Object.entries(PLANS).map(([id, x]) => {
+    const [ico, nom, texte, donne, coute] = x;
+    const dit = soir && !planJoue(id, soir.annee) ? `Pas de héraut avant ${x[6]} : ce soir, il ne se joue pas.` : `${phraseDe(`plan:${id}`)}.`;
     return `<li><button class="strategie${P.strategie === id ? ' active' : ''}" data-strategie="${id}">
       <b>${ico} ${esc(nom)}</b><small>${esc(texte)}</small>
-      ${neuf ? `<small class="fait">Donne : ${esc(x[3])}. Coûte : ${esc(x[4])}.</small><small class="fait">${esc(dit)}</small>` : ''}</button></li>`;
+      <small class="fait">Donne : ${esc(donne)}. Coûte : ${esc(coute)}.</small><small class="fait">${esc(dit)}</small></button></li>`;
   }).join('');
   return `<h2>Ton plan de match</h2>
-    <p class="sous">${neuf ? 'Ce que ton cinq priorise, partie par partie : il change la partie, pas ta force. Chaque plan paie ce qu\'il donne ; selon l\'adversaire, l\'un rend plus que l\'autre. Il dure jusqu\'à ce que tu le changes.' : 'Une partie d\'avant la version 8 : ta stratégie joue encore au fit de tes joueurs.'}</p>
+    <p class="sous">Ce que ton cinq priorise, partie par partie : il change la partie, pas ta force. Chaque plan paie ce qu'il donne ; selon l'adversaire, l'un rend plus que l'autre. Il dure jusqu'à ce que tu le changes.</p>
     ${enFace ? `<p class="mandat">En face, ${esc(L.equipes[soir.i].nom)} priorise ${esc(enFace)}.</p>` : ''}
     <ul class="cartes-jeu bande-cartes">${items}<li><button class="strategie${P.strategie ? '' : ' active'}" data-strategie=""><b>Ta partie</b><small>Ton cinq joue sa partie, sans rien prioriser.</small></button></li></ul>
     <p class="sous">Glisse pour les voir tous ; touche celui que tu joues.</p>`;
@@ -100,7 +97,7 @@ export const aTraiter = P => (enAttente(P) ? 1 : 0);
 /*
  * LA DÉCISION QUI ATTEND, décrite une fois (Cap 82-0, V21 : *les événements et choix devraient être en plein
  * écran, pas dans la boîte*) : sa voix, son sujet, le fait, ses réponses — un événement, un talent du coach, un
- * adjoint pour le staff. La Boîte n'en montre que la ligne ; la ligne ouvre la feuille. null : rien n'attend.
+ * adjoint pour ta main. La Boîte n'en montre que la ligne ; la ligne ouvre la feuille. null : rien n'attend.
  */
 function decisionDe(P) {
   const ev = enAttente(P);
@@ -111,15 +108,14 @@ function decisionDe(P) {
     return { ico: co.ico, qui: co.nom, titre: 'Un talent', etat: 'À choisir', texte: `Niveau ${coachDeLaPartie(P).n} : un de mes pouvoirs grandit de ${Math.round(100 * TALENT)} %, ouvert ou pas encore. Lequel ?`,
       options: ev.choix.map(id => { const x = co.pouvoirs.find(g => g.id === id); return { choix: id, nom: x.nom, desc: `${x.condition} : ${phraseDe(`pouvoir:${id}:grandi`, { quand: true })}` }; }) };
   }
-  if (ev.id === 'adjoint' || ev.id === 'quiPart') {
-    // Le staff : un adjoint parmi trois, ou qui part quand il y en a un de trop.
-    const co = COACHS[P.R.coach.id];
-    const option = id => (id === 'aucun' ? { choix: 'aucun', nom: 'Personne cette fois', desc: 'Le staff reste comme il est.', aucun: true }
-      : { choix: id, nom: `${ADJOINTS[id][0]} ${ADJOINTS[id][1]}`, desc: echange(id) });
-    const adjoint = ev.id === 'adjoint';
-    return { ico: co.ico, qui: co.nom, titre: adjoint ? 'Un adjoint pour ton staff' : 'Qui part ?', etat: adjoint ? 'À choisir' : 'À trancher',
-      texte: adjoint ? `Trois candidats, gratuits. Chacun est un échange : ce qu'il donne, ce qu'il coûte, à chaque partie. Ton staff : ${P.staff.length}/${ADJOINTS_MAX}.`
-        : `Le staff tient ${ADJOINTS_MAX} adjoints : un des ${ADJOINTS_MAX + 1} s'en va.`,
+  if (ev.id === 'adjoint') {
+    // Un adjoint parmi trois, pour ta main ; une main pleine laisse partir la plus ancienne hors poste, et l'offre le dit.
+    const co = P.R.coach ? COACHS[P.R.coach.id] : null;
+    const option = id => (id === 'aucun' ? { choix: 'aucun', nom: 'Personne cette fois', desc: 'Ta main reste comme elle est.', aucun: true }
+      : { choix: id, nom: `${ADJOINTS[id].ico} ${ADJOINTS[id].nom}`, desc: styleEnMots(P, id) });
+    const part = ev.part && ADJOINTS[ev.part];
+    return { ico: co ? co.ico : '🧑‍🏫', qui: co ? co.nom : 'Ton coach', titre: 'Un adjoint pour ta main', etat: 'À choisir',
+      texte: `Trois candidats, gratuits. Chacun est un style : posté, il joue ${SEJOUR} journées (${SEJOUR_SYNERGIE} s'il rejoint ton coach), puis se repose ${REPOS} journées. Ta main : ${P.main.length}/${MAIN_MAX}.${part ? ` Elle est pleine : ${part.ico} ${part.nom} partira.` : ''}`,
       options: ev.choix.map(option) };
   }
   const E = EVENEMENTS[ev.id];
@@ -157,7 +153,7 @@ export function bandeChiffres(P) {
 export function lignePlan(P, id = 'ouvrir-strategie') {
   const [ico, nom] = tonPlan(P) || ['🧭', 'Ta partie'];
   const soir = ceSoir(P.L);
-  const muet = P.v >= 8 && P.strategie && soir && !planJoue(P.strategie, soir.annee);
+  const muet = P.strategie && soir && !planJoue(P.strategie, soir.annee);
   return `<button id="${id}" class="ligne-plan"><small>Ton plan</small><b>${ico} ${esc(nom)}${muet ? ' · pas ce soir' : ''}</b><span>›</span></button>`;
 }
 
@@ -167,12 +163,10 @@ export function vueBoite(P) {
   const s = taSerie(L);
   const faire = aFaire(P);
   const une = laUne(L);
-  const cadeau = P.cadeau && L.jour === 0 ? `<p class="une-note">🎁 Le proprio t'offre un pack argent : ${P.cadeau.map(c => `${CARTES[c][0]} ${esc(CARTES[c][1])}`).join(', ')}. Au Marché, au plan de jeu.</p>` : '';
   const dix = P.mode === 'dixhuit';
   return `${carteCeSoir(L, s)}
     ${s && !dix ? lignePlan(P) : ''}
     ${dix ? '' : `<h3 class="a-faire">À faire${faire ? ' · 1 à régler' : ' · à jour'}</h3>${faire}`}
-    ${cadeau}
     <h3>Hier soir</h3>${hierSoir(L)}
     ${une ? `<div class="une"><small>La une</small><b>${esc(une.titre)}</b><p>${esc(une.voix)} : « ${esc(une.mot)} »</p><small>${esc(une.fait)}</small></div>` : ''}`;
 }
@@ -225,7 +219,7 @@ export function vueProprio(P) {
 }
 
 /** LE COACH : le personnage et son staff, et la route des prochaines journées. */
-export const vueCoach = P => `${tonCoach(P) || '<p class="sous">Une partie d\'avant le coach-personnage : ton coach s\'achète au Marché, au plan de jeu.</p>'}${laRoute(P.L)}`;
+export const vueCoach = P => `${tonCoach(P) || '<p class="sous">Une partie d\'avant le coach-personnage : elle n\'a pas de coach.</p>'}${laRoute(P.L)}`;
 
 /** LE VESTIAIRE : la forme de tes joueurs, tes liens d'origine, l'entraînement, ton histoire dans la run. `qui` : le rôle ouvert à l'entraînement. */
 export function vueVestiaire(P, ctx, qui) {
@@ -289,22 +283,46 @@ function lEntrainement(P, ctx, qui) {
     ${corps}${faits.length ? `<p class="sous">Déjà entraînés : ${faits.join(' · ')}.</p>` : ''}`;
 }
 
-/* Un adjoint, un échange : ce qu'il donne et ce qu'il coûte, par partie, sur la feuille (js/impact.js). */
+/* Un adjoint, son style : ce qu'il donne et ce qu'il coûte, par partie où il est en poste, sur la feuille (js/impact.js). */
 function echange(id) {
   const l = chiffresDe(`adjoint:${id}`, { max: 4 });
   const dit = x => (x.length ? `≈ ${x.map(y => y.txt).join(', ')}` : 'rien de net');
   return `Par partie, il donne ${dit(l.filter(x => x.bon !== false))} ; il coûte ${dit(l.filter(x => x.bon === false))}.`;
 }
+/* Un adjoint en mots : son style, ce qu'il change, et s'il rejoint ton coach. */
+function styleEnMots(P, id) {
+  const A = ADJOINTS[id];
+  return `${A.style}. ${echange(id)}${P.R.coach && A.voie === P.R.coach.id ? ` Il rejoint ton coach : ${SEJOUR_SYNERGIE} journées en poste.` : ''}`;
+}
 
-/* TON COACH, le personnage (version 4) : son niveau, son expérience, ses pouvoirs et ses talents ; son staff. */
+/* TON COACH, le personnage : son niveau, son expérience, ses pouvoirs et ses talents ; sa main d'adjoints. */
 function tonCoach(P) {
-  if (P.v < 4 || !P.R.coach) return '';
+  if (!P.R.coach) return '';
   const c = coachDeLaPartie(P);
   return `<h3>Ton coach</h3><div class="coach-carte">${carteDuCoach(c.id, { niveau: c.n, talents: P.talents, xp: c.xp, prochain: c.prochain })}</div>
-    <p class="sous">L'expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre, et ${XP.couleur} de plus par série gagnée avec une carte de sa couleur au plan.</p>
-    <h3>Son staff · ${P.staff.length}/${ADJOINTS_MAX}</h3>
-    ${P.staff.length ? `<ul class="liens">${P.staff.map(id => `<li class="actif"><b>${ADJOINTS[id][0]} ${esc(ADJOINTS[id][1])}</b><small>${esc(echange(id))}</small></li>`).join('')}</ul>` : ''}
-    <p class="sous">Un adjoint parmi trois, gratuit, aux journées 6 et 12 de chaque split ; chacun est un échange, qui paie quand il s'emboîte avec ta stratégie, tes cartes, ton coach.</p>`;
+    <p class="sous">L'expérience : ${XP.serie} par série gagnée, ${XP.ronde} par ronde de séries gagnée, ${XP.titre} pour un titre.</p>
+    ${taMain(P)}`;
+}
+
+/*
+ * SA MAIN (js/adjoints.js) : chaque carte, son style, où elle en est (en poste, au repos, prête), ses séjours ; « Poster »
+ * sur une carte prête quand une case est libre.
+ */
+function taMain(P) {
+  const { cartes, cases, libres } = mainDeLaPartie(P);
+  const co = P.R.coach && P.R.coach.id;
+  const journees = n => `${n} journée${n > 1 ? 's' : ''}`;
+  const lignes = cartes.map(c => {
+    const A = ADJOINTS[c.cle];
+    const etat = c.etat === 'poste' ? `En poste · encore ${journees(c.reste)}` : c.etat === 'repos' ? `Au repos · ${journees(c.reste)}` : 'Prêt';
+    const faits = c.sejours.filter(x => x.fin > x.debut);
+    const fiche = faits.length ? ` · ${faits.length} séjour${faits.length > 1 ? 's' : ''}, ${faits.reduce((n, x) => n + x.v, 0)}-${faits.reduce((n, x) => n + x.d, 0)}` : '';
+    const poster = c.etat === 'prete' && libres > 0 && P.L ? `<button class="signer" data-poster="${c.cle}">Poster</button>` : '';
+    return `<li class="${c.etat === 'poste' ? 'actif' : ''}"><b>${A.ico} ${esc(A.nom)}</b><small>${esc(A.style)}${A.voie === co ? ' · rejoint ton coach' : ''} · ${esc(etat)}${fiche}</small><small>${esc(echange(c.cle))}</small><small>« ${esc(A.dit)} »</small>${poster}</li>`;
+  }).join('');
+  return `<h3>Sa main · ${cartes.length}/${MAIN_MAX} · en poste ${cases - libres}/${cases}</h3>
+    ${lignes ? `<ul class="liens">${lignes}</ul>` : ''}
+    <p class="sous">Un adjoint parmi trois, gratuit, aux journées ${JOURNEES_ADJOINTS.join(', ')} de chaque split. Posté, il joue ${SEJOUR} journées (${SEJOUR_SYNERGIE} s'il rejoint ton coach ; une ronde de séries compte pour une), puis se repose ${REPOS} journées. Ton coach en poste un de plus aux niveaux 3 et 5.</p>`;
 }
 
 /**
@@ -386,15 +404,15 @@ function palmaresDuBilan(pass) {
   return `${t ? `<h3>Tes trophées</h3><ul class="trophees">${t}</ul>` : ''}${g ? `<h3>Les galons, gravés à leur carte</h3><ul class="trophees">${g}</ul>` : ''}`;
 }
 
-/** Le bilan d'un split fini, et ceux qui restent (ou la fin de la run). `gardes` : les clés choisies ; `vieux` : clé → la version qui vieillit. */
-export function ecranBilan(P, gardes, vieux = new Map()) {
+/** Le bilan d'un split fini, et ceux qui restent (ou la fin de la run). */
+export function ecranBilan(P) {
   const pass = P.run.passes[P.run.passes.length - 1];
   const mot = motDuMandat(pass.mandat);
   const dix = P.mode === 'dixhuit';
   const titre = pass.champion ? (dix ? 'Le 18-0 : champion !' : 'Champion du split !') : dix ? 'Le 18-0 est joué' : pass.rempli ? 'Mandat rempli' : pass.sursis ? 'Le proprio pardonne' : 'Mandat manqué';
   const gagne = valeurDesGains(P.R.reports[P.R.reports.length - 1]);
   const entete = `<div class="ecran-tete"><h1>${titre}</h1><p class="sous">${dix ? 'Le 18-0' : `Split ${pass.n} · le proprio voulait ${mot}`}. Ta saison : ${pass.fiche[0]}-${pass.fiche[1]}, ${rangMot(pass.rang)} au classement.${pass.sursis ? ' Le proprio patient te garde une fois.' : ''}</p></div>`;
-  const tete = `${dix ? '<p class="etat">Tes cinq joueurs sont à ta collection. Le 18-0 ne compte pas aux médailles.</p>' : `<p class="etat">Ce split t'a rapporté ${gagne} 🪙 ; tu en as ${jetonsDe(null, P.R)}. Tes cartes et ton coach te suivent.</p>`}
+  const tete = `${dix ? '<p class="etat">Tes cinq joueurs sont à ta collection. Le 18-0 ne compte pas aux médailles.</p>' : `<p class="etat">Ce split t'a rapporté ${gagne} 🪙 ; tu en as ${jetonsDe(null, P.R)}. Ton coach et sa main te suivent.</p>`}
     ${palmaresDuBilan(pass)}`;
   if (P.etape === 'fin') {
     const lignes = P.run.passes.map(p => `<li><span class="rang">${p.n}</span><span class="equipe"><b>${p.champion ? 'Champion' : dix ? 'Sans titre' : p.rempli ? 'Mandat rempli' : p.sursis ? 'Pardonné' : 'Mandat manqué'}</b><small>${motDuMandat(p.mandat)}</small></span><span class="fiche">${p.fiche[0]}-${p.fiche[1]}</span></li>`).join('');
@@ -406,24 +424,10 @@ export function ecranBilan(P, gardes, vieux = new Map()) {
   }
   const max = gardesDe(P);
   const tous = [...Object.entries(ROLES).map(([r, m]) => [m, P.eff.cinq[r]]), ['Banc', P.eff.banc]].filter(([, c]) => c);
-  if (parCases(P)) {
-    // Ceux qui restent (version 5) se tirent au loto au prochain départ, jamais au choix.
-    const lignes = tous.map(([m, c]) => `<li class="case pleine"><span class="case-role">${m}</span>${vignette(c)}<span class="qui"><b>${esc(c.n)}</b><small>${esc(c.niveau)} · ${esc(c.split)}</small></span>${coutHtml(c.cout)}</li>`).join('');
-    return `${entete}<div class="corps">${tete}<h3>Ceux qui restent</h3>
-      <p class="sous">Au prochain départ, ${max} case${max > 1 ? 's' : ''} te les offre${max > 1 ? 'nt' : ''} au loto, par niveau : tu en gardes un par case, ou personne. Un joueur qui a joué un split réel plus récent y vieillit. Le pack de départ comble le reste.</p>
-      <ol class="alignement serre">${lignes}</ol></div>
-      <div class="actionbar"><button id="bilan-suivant" class="go">Split ${pass.n + 1} : ${mandatDuSplit(P, pass.n + 1)[1]}</button></div>`;
-  }
-  const cases = tous.map(([m, c]) => {
-    const cle = cleDe(c.ref);
-    const pris = gardes.has(cle);
-    const v = vieux.get(cle);
-    const age = v ? `<small class="vieillit">Vieillit : ${esc(v.split)} · ${esc(v.niveau)} · ${v.cout} pt${v.cout > 1 ? 's' : ''}</small>` : '';
-    return `<li class="case pleine${pris ? ' garde' : ''}"><span class="case-role">${m}</span>${vignette(c)}<span class="qui"><b>${esc(c.n)}</b><small>${esc(c.niveau)} · ${esc(c.split)}</small>${age}</span>${coutHtml(v ? v.cout : c.cout)}
-      <button class="garder" data-garder="${esc(cle)}"${!pris && gardes.size >= max ? ' disabled' : ''}>${pris ? 'Gardé' : 'Garder'}</button></li>`;
-  }).join('');
-  return `${entete}<div class="corps">${tete}<h3>Ceux qui restent · ${gardes.size}/${max}</h3>
-    <p class="sous">Garde jusqu'à ${max} joueurs : ils gardent leur place sous le plafond, la roulette comble le reste. Un joueur qui a joué le Mondial suivant y vieillit : il devient sa version de ce split-là.</p>
-    <ol class="alignement serre">${cases}</ol></div>
+  // Ceux qui restent se tirent au loto au prochain départ, jamais au choix.
+  const lignes = tous.map(([m, c]) => `<li class="case pleine"><span class="case-role">${m}</span>${vignette(c)}<span class="qui"><b>${esc(c.n)}</b><small>${esc(c.niveau)} · ${esc(c.split)}</small></span>${coutHtml(c.cout)}</li>`).join('');
+  return `${entete}<div class="corps">${tete}<h3>Ceux qui restent</h3>
+    <p class="sous">Au prochain départ, ${max} case${max > 1 ? 's' : ''} te les offre${max > 1 ? 'nt' : ''} au loto, par niveau : tu en gardes un par case, ou personne. Un joueur qui a joué un split réel plus récent y vieillit. Le pack de départ comble le reste.</p>
+    <ol class="alignement serre">${lignes}</ol></div>
     <div class="actionbar"><button id="bilan-suivant" class="go">Split ${pass.n + 1} : ${mandatDuSplit(P, pass.n + 1)[1]}</button></div>`;
 }

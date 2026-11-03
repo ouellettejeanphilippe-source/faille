@@ -19,44 +19,44 @@
  * LES DEUX MODES (Cap 82-0, js/meta.js MODES). Le 18-0 : la roulette et le
  * vestiaire bâtissent ton cinq, le split se joue d'un coup, les séries partie
  * par partie ; aucune carte, aucun coach, aucune décision, aucun jeton. Le
- * Rogue (version 5) PART FAIBLE : au départ d'une run, tes CASES — ton joueur
- * de concession, puis le classeur, des lotos de trois cartes de ta collection
- * par niveau dont tu gardes une ou aucune, sous le plafond — puis le PACK DE
- * DÉPART de bouche-trous comble les rôles vides (js/gestion.js) ; entre deux
- * splits, ceux qui restent se tirent au loto par niveau, jamais au choix
- * (Cap 82-0 : *garder des joueurs de run en run devrait être fait dans une
- * loto*). Une partie d'avant la version 5 garde sa roulette et ses gardés.
+ * Rogue PART FAIBLE : au départ d'une run, tes CASES — ton joueur de
+ * concession, qui prend la case du haut du classeur, puis des lotos de trois
+ * cartes de ta collection par niveau dont tu gardes une ou aucune, sous le
+ * plafond — puis le PACK DE DÉPART de bouche-trous comble les rôles vides
+ * (js/gestion.js) ; entre deux splits, ceux qui restent se tirent au loto par
+ * niveau, jamais au choix (Cap 82-0 : *garder des joueurs de run en run
+ * devrait être fait dans une loto*).
  *
- * LE MOTEUR (version 6) : une partie se joue comme une vraie (js/moteur.js) —
- * les sorts d'invocateur, les niveaux, les combats, les monstres et les tours
- * de son époque. Une partie d'avant la version 6 garde le moteur d'alors
- * (js/moteur-v1.js, gelé) : rejouée sous sa graine, elle redonne les mêmes
- * parties (check_gestion le prouve sur une run de la version 5).
+ * LE PROPRIO juge le rang du split (js/gestion.js MANDATS) ; le premier split
+ * de ta première run laisse bâtir (`premiere`, posé au départ). LE PLAN DE
+ * MATCH change la forme d'une partie, pas sa force (js/strategie.js PLANS),
+ * contre l'adversaire du soir. LA MAIN DE TON COACH (version 9, Cap 82-0
+ * V22, js/adjoints.js) : des adjoints offerts un parmi trois, que tu postes
+ * pour un séjour ; le staff et le plan de jeu de quinze cartes sont partis.
  *
- * LE MANDAT AU CLASSEMENT (version 7, Cap 82-0 V5) : le proprio juge le rang
- * du split, pas une série (js/gestion.js MANDATS) ; le premier split de ta
- * première run laisse bâtir (`premiere`, posé au départ) ; ta vedette prend
- * la case du haut du classeur. Une partie d'avant la version 7 garde ses
- * mandats aux séries et sa vedette en plus.
- *
- * LE PLAN DE MATCH (version 8, Cap 82-0 V17) : la stratégie devient le plan
- * de la partie, qui change sa forme, pas sa force (js/strategie.js PLANS) ;
- * il se joue contre l'adversaire du soir, dans l'année de leur partie. Une
- * partie d'avant la version 8 garde sa stratégie au fit.
+ * LES VIEILLES PARTIES (version 9, la Q10 ; Cap 82-0 : *la saison en cours se
+ * rejoue*) : une partie en cours se rejoue avec les règles d'aujourd'hui, et
+ * un geste que le jeu ne connaît plus — une carte au plan, un pack de cartes,
+ * un adjoint du staff, un gardé au choix — s'ignore (`P.ignores` les compte,
+ * l'écran le dit une fois). Seul le moteur reste celui de sa version : une
+ * partie d'avant la version 6 joue celui d'alors (js/moteur-v1.js, gelé).
+ * La version d'une sauvegarde ne choisit plus que son moteur ; le méta n'est
+ * jamais réécrit (js/meta.js `noter`).
  */
 import { melangerTempos } from './canaux.js';
 import { joueurDuMoteur, equipeReelle, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
-import { repecher, repecherPartie, attendRepechage } from './repechage.js';
-import { PLANS, STRATEGIES_AU_FIT, effetDuPlan, effetAuFit, anneeEntre } from './strategie.js';
+import { repecherPartie, attendRepechage } from './repechage.js';
+import { PLANS, effetDuPlan, anneeEntre } from './strategie.js';
 import { PLAFOND, TARIFS, signable } from './cotes.js';
-import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
+import { nouveauRogue, effetsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, COACHS, NIVEAU_DES_TALENTS } from './rogue.js';
+import { ADJOINTS, JOURNEES_ADJOINTS, adjointsOfferts, quiPartDeLaMain, etatDe, casesLibres, casesDuNiveau, effetsDesPostes, sejoursDe } from './adjoints.js';
 import { hasard, graineDe } from './hasard.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, MANDATS_AUX_SERIES, MANDAT_DU_DIXHUIT, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, MANDAT_DU_DIXHUIT, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe, MODES } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 8;
+export const VERSION = 9;
 /** Un loto : trois cartes, tu en gardes une ou aucune. */
 export const LOTO = 3;
 /* Les niveaux des cases de ceux qui restent, dans l'ordre où elles s'ouvrent (GARDES, plus le noyau). */
@@ -84,22 +84,22 @@ export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach 
   const fx = effetDe(rogue ? deb : [], rogue ? exig : 0);
   const P = {
     v: VERSION, graine, mode: MODES[mode] ? mode : 'rogue', log: [], etape: 'bati', deb: rogue ? [...deb] : [], club: club || CLUB_DEPART, exig: rogue ? exig : 0, fx,
-    coach: rogue ? coach : null, talents: [], staff: [], enTrop: null,
+    coach: rogue ? coach : null, talents: [], main: [], offres: [], ignores: 0,
     col: rogue ? col.map(({ cle, niveau }) => ({ cle, niveau })) : [], vedette: rogue ? vedette : null, premiere: rogue && !!premiere, cases: [], bouches: false, restes: [],
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
     tirage: null, relances: relancesNeuves(),
     L: null, dernier: null, adversaires: [], decisions: {}, bons: 0, entrainement: null, strategie: null,
-    cartes: [], cadeau: null, offrePack: null,
+    cartes: [], offrePack: null,
   };
   if (fx.jetons) P.R.primes.push({ cle: 'depart', jetons: fx.jetons });
   if (P.coach) P.R.coach = { id: P.coach, depuis: 0 };
   return P;
 }
 
-/** Le Rogue qui part de ses cases (version 5) ; faux au 18-0 et dans une partie d'avant, qui garde sa roulette. */
-export const parCases = P => P.mode !== 'dixhuit' && P.v >= 5;
+/** Le Rogue part de ses cases ; le 18-0, de la roulette. */
+export const parCases = P => P.mode !== 'dixhuit';
 /** La ref d'une clé de carte (js/gestion.js cleDe). */
 export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id, e, n, r }; };
 
@@ -107,9 +107,9 @@ export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id,
  * LES CASES d'un départ, dans l'ordre : au premier split de la run, ton joueur
  * de concession (s'il y en a un), puis le classeur — une case ★ Étoile et une
  * case Pilier par déblocage, une case Régulier toujours ; l'exigence « Le
- * classeur mince » retire la meilleure. Depuis la version 7, ta vedette prend
- * la case du haut (Cap 82-0, `departDuClasseur` : en plus d'elle, l'attentif
- * gagnait son premier titre dès la deuxième run). Entre deux splits, ceux qui restent :
+ * classeur mince » retire la meilleure. Ta vedette prend la case du haut
+ * (Cap 82-0, `departDuClasseur` : en plus d'elle, l'attentif gagnait son
+ * premier titre dès la deuxième run). Entre deux splits, ceux qui restent :
  * GARDES cases (le noyau en ajoute une, le vestiaire mince en retire une),
  * Pilier puis Régulier puis ★ Étoile, tirées de ton effectif du split fini.
  * Chaque case : { id, niveau, source } — source : 'vedette', 'col', 'restes'.
@@ -117,7 +117,7 @@ export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id,
 export function casesDe(P) {
   if (!parCases(P)) return [];
   if (P.run.n === 1) {
-    const prend = P.vedette && P.v >= 7 ? 1 : 0;
+    const prend = P.vedette ? 1 : 0;
     const classeur = [...Array(Math.max(0, P.fx.etoile)).fill('★ Étoile'), ...Array(Math.max(0, P.fx.pilier)).fill('Pilier'), 'Régulier'].slice(Math.max(0, -P.fx.cases) + prend);
     return [...(P.vedette ? [{ id: 'vedette', niveau: null, source: 'vedette' }] : []), ...classeur.map((niveau, k) => ({ id: `classeur-${k}`, niveau, source: 'col' }))];
   }
@@ -157,29 +157,26 @@ export const attendPack = P => parCases(P) && P.etape === 'bati' && !caseEnCours
 
 /** Les relances d'une sorte qu'un repêchage permet. */
 export const relancesMax = (P, k) => RELANCES[k][1];
-/** Combien de joueurs restent d'un split à l'autre (avant la version 5 : les gardés ; depuis : les cases de ceux qui restent). */
+/** Combien de joueurs restent d'un split à l'autre : les cases de ceux qui restent. */
 export const gardesDe = P => GARDES + P.fx.gardes;
-/** Le mandat du split n de la run, monté par les exigences : [clé, en mots, …]. Au 18-0, le titre ; avant la version 7, aux séries. */
-export const mandatDuSplit = (P, n = P.run.n) => (P.mode === 'dixhuit' ? MANDAT_DU_DIXHUIT
-  : mandatDe(n, P.fx.mandat, P.v >= 7 ? { premiere: P.premiere } : { table: MANDATS_AUX_SERIES }));
+/** Le mandat du split n de la run, monté par les exigences : [clé, en mots, …]. Au 18-0, le titre. */
+export const mandatDuSplit = (P, n = P.run.n) => (P.mode === 'dixhuit' ? MANDAT_DU_DIXHUIT : mandatDe(n, P.fx.mandat, P.premiere));
 /** Combien d'agents libres le dépisteur trouve par journée. */
 export const offreDe = P => MARCHE.offre + P.fx.offre;
 
-/** (Avant la version 4) ce que coûte le prochain coach : rien pour le premier de la run avec le déblocage du coach. */
-export const prixDuCoach = P => (P.fx.coachGratuit && !P.R.achats.some(x => x.quoi === 'coach') ? 0 : PRIX_COACH);
 
-/** Le coach-personnage (version 4) : son expérience, son niveau, ce qui manque pour le suivant. */
+/** Le coach-personnage : son expérience, son niveau, ce qui manque pour le suivant. */
 export function coachDeLaPartie(P) {
   const xp = xpDe(P.L, P.R, P.fx.xp);
   return { id: P.R.coach && P.R.coach.id, xp, ...niveauDe(xp) };
 }
 
-/* Les pouvoirs que ton coach joue maintenant : son niveau et ses talents ; avant la version 4, ses paliers de confiance. */
-const pouvoirsDeLaPartie = P => (P.v >= 4 ? (P.R.coach ? pouvoirsDuPersonnage(P.R.coach.id, coachDeLaPartie(P).n, P.talents) : []) : pouvoirsDeToi(P.R));
+/* Les pouvoirs que ton coach joue maintenant : son niveau et ses talents. */
+const pouvoirsDeLaPartie = P => (P.R.coach ? pouvoirsDuPersonnage(P.R.coach.id, coachDeLaPartie(P).n, P.talents) : []);
 
 /* Un talent à choisir : un par niveau de NIVEAU_DES_TALENTS atteint, sur un des trois pouvoirs qui n'en a pas encore. */
 function talentEnAttente(P) {
-  if (P.v < 4 || !P.R.coach) return null;
+  if (!P.R.coach) return null;
   const dus = NIVEAU_DES_TALENTS.filter(n => coachDeLaPartie(P).n >= n).length;
   if (P.talents.length >= dus) return null;
   const choix = COACHS[P.R.coach.id].pouvoirs.map(x => x.id).filter(id => !P.talents.includes(id));
@@ -225,48 +222,46 @@ export function taSerie(L) {
 }
 
 /*
- * LE STAFF (version 4) : aux journées JOURNEES_ADJOINTS de chaque split, ton
- * coach se voit offrir un adjoint parmi trois (pas déjà au staff), tirés de la
- * graine de la run ; tu en prends un, ou personne. Le staff tient
- * ADJOINTS_MAX ; un de plus, et « qui part ? » attend.
+ * LA MAIN DE TON COACH (version 9, js/adjoints.js) : aux journées
+ * JOURNEES_ADJOINTS de chaque split, au cadeau du proprio et dans une
+ * histoire (`P.offres`), un adjoint parmi trois, gratuit, entre dans ta main ;
+ * une main pleine laisse partir la plus ancienne hors poste (`part`). Tu en
+ * postes une quand une case est libre ; son séjour se compte en séries jouées.
  */
-export const JOURNEES_ADJOINTS = [6, 12];
-export function adjointsOfferts(P, cle) {
-  const de = hasard(graineDe(P.graine, `adjoints-${cle}`));
-  const libres = Object.keys(ADJOINTS).filter(id => !P.staff.includes(id));
-  for (let i = libres.length - 1; i > 0; i--) { const k = Math.floor(de() * (i + 1)); [libres[i], libres[k]] = [libres[k], libres[i]]; }
-  return libres.slice(0, 3);
-}
+const coachId = P => (P.R.coach ? P.R.coach.id : null);
 function adjointEnAttente(P) {
-  if (P.v < 4 || !P.L || P.L.series) return null;
-  if (P.enTrop) return { cle: `${P.run.n}-quiPart-${P.staff.length}`, id: 'quiPart', choix: [...P.staff, P.enTrop] };
-  const j = JOURNEES_ADJOINTS.find(x => P.L.jour >= x && !(`${P.run.n}-adjoint-${x}` in P.decisions));
-  if (j === undefined) return null;
-  const cle = `${P.run.n}-adjoint-${j}`;
-  return { cle, id: 'adjoint', choix: [...adjointsOfferts(P, cle), 'aucun'] };
+  if (!P.L || P.L.series) return null;
+  const cle = [...JOURNEES_ADJOINTS.filter(j => P.L.jour >= j).map(j => `${P.run.n}-adjoint-${j}`), ...P.offres].find(k => !(k in P.decisions));
+  if (!cle) return null;
+  return { cle, id: 'adjoint', choix: [...adjointsOfferts(P.main, P.graine, cle), 'aucun'], part: quiPartDeLaMain(P.main, P.R.joue.length, coachId(P)) };
+}
+/** Ta main, carte par carte : { cle, etat ('poste', 'repos', 'prete'), reste (en journées), sejours } ; et tes cases en poste. */
+export function mainDeLaPartie(P) {
+  const g = P.R.joue.length, co = coachId(P), n = coachDeLaPartie(P).n;
+  return {
+    cartes: P.main.map(c => ({ cle: c.cle, ...etatDe(c, g, co), sejours: sejoursDe(c, P.R.joue, co) })),
+    cases: casesDuNiveau(n), libres: casesLibres(P.main, g, co, n),
+  };
 }
 
-/** L'événement que la partie attend (un événement de la gestion, un talent du coach, un adjoint pour le staff), ou null. Rien au 18-0. */
+/** L'événement que la partie attend (un événement de la gestion, un talent du coach, un adjoint offert), ou null. Rien au 18-0. */
 export const enAttente = P => (P.etape === 'split' && P.mode !== 'dixhuit' ? evenementEnAttente(P.L, P.decisions, P.run.n) || talentEnAttente(P) || adjointEnAttente(P) : null);
 
 /*
- * Joue ce qui vient avec ton plan de jeu, ta partie repêchée d'abord (`rp` :
- * tes bannissements et tes choix ; absent, l'automatique). Depuis la
- * version 3, ta série de séries se joue partie par partie, un repêchage
- * avant chacune ; une sauvegarde d'avant garde l'ancienne règle (toute la
- * série d'un repêchage) pour se rejouer pareil.
+ * Joue ce qui vient avec ton plan de match et tes adjoints en poste, ta partie
+ * repêchée d'abord (`rp` : tes bannissements et tes choix ; absent,
+ * l'automatique). Ta série de séries se joue partie par partie, un repêchage
+ * avant chacune.
  */
 function jouerAvecToi(P, ctx, jouer, rp) {
   const L = P.L;
   P.offrePack = null;
   const s = taSerie(L);
   const options = rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {};
-  if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
-  else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
-  // Ton plan contre l'adversaire du soir, dans l'année de leur partie (version 8) ; d'avant, la stratégie à son fit.
-  const adv = s && (s.a === 0 ? s.b : s.a);
-  const plan = P.v >= 8 ? s && effetDuPlan(P.strategie, anneeEntre(L.equipes[0], L.equipes[adv])) : effetAuFit(P.strategie, L.equipes[0].cinq);
-  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), plan, P.staff);
+  if (s && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
+  // Ton plan contre l'adversaire du soir, dans l'année de leur partie ; tes adjoints en poste, pour la série qui vient.
+  const plan = s && effetDuPlan(P.strategie, anneeEntre(L.equipes[0], L.equipes[s.a === 0 ? s.b : s.a]));
+  L.equipes[0].effets = effetsDeToi(liensDe(P.eff.cinq), plan, effetsDesPostes(P.main, P.R.joue.length, coachId(P)));
   L.equipes[0].pouvoirs = pouvoirsDeLaPartie(P);
   jouer(L);
   if (s && s.gagnant !== null) noterJoue(P.R, s.gagnant === 0);
@@ -375,8 +370,8 @@ const ACTIONS = {
     P.L = creerSplit([majToi(P), ...adv], { graine: a.graine, rondes: 2, bo: 1, moteur: P.v >= 6 ? 2 : 1 });
     P.adversaires = a.adversaires;
     P.etape = 'split';
-    // Le cadeau du proprio (un déblocage) : un pack argent au premier split de la run.
-    if (P.run.n === 1 && P.fx.cadeau) P.cadeau = ouvrirPack(P.L, P.R, 'argent', { gratuit: true });
+    // Le cadeau du proprio (un déblocage) : un adjoint de plus offert, au premier split de la run.
+    if (P.run.n === 1 && P.fx.cadeau) P.offres.push(`${P.run.n}-cadeau`);
   },
   journee(P, a, ctx) {
     exiger(P.etape === 'split' && P.L.jour < P.L.journees.length, 'la saison est jouée');
@@ -394,19 +389,18 @@ const ACTIONS = {
   },
   ronde(P, a, ctx) {
     exiger(P.etape === 'split' && P.L.series && P.L.series.champion === null, 'aucune ronde à jouer');
-    // Ta série de séries, partie par partie (version 3) ; d'avant, la ronde entière.
-    jouerAvecToi(P, ctx, L => jouerRonde(L, P.v >= 3 ? 0 : null), a.rp);
+    // Ta série de séries, partie par partie.
+    jouerAvecToi(P, ctx, L => jouerRonde(L, 0), a.rp);
   },
-  pack(P, a) {
+  /* POSTER UN ADJOINT : une carte prête de ta main, sur une case libre ; son séjour commence à la prochaine série. */
+  poster(P, a) {
     pasAuDixHuit(P);
-    exiger(P.etape === 'split', 'la boutique ouvre avec le split');
-    return exiger(ouvrirPack(P.L, P.R, a.id), 'pas assez de jetons');
-  },
-  plan(P, a) { pasAuDixHuit(P); exiger(basculer(P.R, a.carte), 'le plan est plein'); },
-  // Avant la version 4, un coach s'achetait ; depuis, ton coach fait la run.
-  coach(P, a) {
-    exiger(P.v < 4, 'ton coach fait la run');
-    exiger(P.etape === 'split' && engager(P.L, P.R, a.id, prixDuCoach(P)), 'pas assez de jetons');
+    exiger(P.etape === 'split', 'un adjoint se poste pendant le split');
+    const c = exiger(P.main.find(x => x.cle === a.cle), 'cet adjoint n\'est pas dans ta main');
+    const g = P.R.joue.length, co = coachId(P);
+    exiger(etatDe(c, g, co).etat === 'prete', `${ADJOINTS[c.cle].nom} n'est pas prêt`);
+    exiger(casesLibres(P.main, g, co, coachDeLaPartie(P).n) > 0, 'aucune case libre : ton coach n\'en a pas d\'autre à son niveau');
+    P.main = P.main.map(x => (x === c ? { ...x, poses: [...x.poses, g] } : x));
   },
   marche(P, a, ctx) {
     pasAuDixHuit(P);
@@ -453,7 +447,7 @@ const ACTIONS = {
   },
   strategie(P, a) {
     pasAuDixHuit(P);
-    exiger(a.id === null || (P.v >= 8 ? PLANS : STRATEGIES_AU_FIT)[a.id], 'plan inconnu');
+    exiger(a.id === null || PLANS[a.id], 'plan inconnu');
     P.strategie = a.id;
   },
   relacher(P) {
@@ -466,21 +460,17 @@ const ACTIONS = {
     P.decisions[e.cle] = a.choix;
     // Un talent : le pouvoir choisi grandit, ouvert ou pas encore.
     if (e.id === 'talent') { P.talents.push(a.choix); return null; }
-    // Un adjoint : il entre au staff ; un de trop, et « qui part ? » attend. Qui part : le choisi quitte le staff.
+    // Un adjoint : il entre dans ta main, neuf ; une main pleine laisse partir la plus ancienne hors poste.
     if (e.id === 'adjoint') {
-      if (a.choix !== 'aucun') { if (P.staff.length < ADJOINTS_MAX) P.staff.push(a.choix); else P.enTrop = a.choix; }
-      return null;
-    }
-    if (e.id === 'quiPart') {
-      P.staff = [...P.staff, P.enTrop].filter(id => id !== a.choix);
-      P.enTrop = null;
+      if (a.choix !== 'aucun') P.main = [...P.main.filter(c => c.cle !== e.part), { cle: a.choix, poses: [] }];
       return null;
     }
     const fait = EVENEMENTS[e.id].choix[a.choix][2];
     if (fait.commanditaire) P.L.commanditaire = fait.commanditaire;
     if (fait.jetons) P.R.primes.push({ cle: e.cle, jetons: fait.jetons });
     if (fait.bon) P.bons += fait.bon;
-    if (fait.pack) return ouvrirPack(P.L, P.R, fait.pack, { gratuit: true });
+    // Revoir le staff : un adjoint offert, la journée même.
+    if (fait.adjoint) P.offres.push(`${P.run.n}-histoire-${P.L.jour}`);
     return null;
   },
   bilan(P) {
@@ -507,44 +497,15 @@ const ACTIONS = {
     // Le 18-0 : un seul split, gagné par le titre ou fini.
     P.run.fin = champion ? 'gagnee' : P.mode === 'dixhuit' || !(rempli || sursis) ? 'perdue' : null;
     P.etape = P.run.fin ? 'fin' : 'gardes';
-    // Ceux qui restent (version 5) : ton effectif du split fini, d'où les cases du prochain départ tirent leurs lotos.
+    // Ceux qui restent : ton effectif du split fini, d'où les cases du prochain départ tirent leurs lotos.
     if (parCases(P)) P.restes = [...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean).map(x => ({ cle: cleDe(x.ref), niveau: x.niveau }));
   },
-  /* LE SPLIT SUIVANT (Rogue, version 5) : le bilan est lu ; ton effectif se vide, et le prochain départ ouvre ses cases parmi ceux qui restent. */
+  /* LE SPLIT SUIVANT (Rogue) : le bilan est lu ; ton effectif se vide, et le prochain départ ouvre ses cases parmi ceux qui restent. */
   suivant(P) {
     exiger(parCases(P) && P.etape === 'gardes', 'pas le moment');
     P.eff = { cinq: {}, banc: null, plafond: P.eff.plafond };
     P.cases = [];
     P.bouches = false;
-    P.run.n++;
-    P.relances = relancesNeuves();
-    P.tirage = null;
-    P.adversaires = [];
-    P.dernier = null;
-    P.etape = 'bati';
-  },
-  garder(P, a, ctx) {
-    exiger(!parCases(P), 'ceux qui restent se tirent au loto');
-    exiger(P.etape === 'gardes', 'pas le moment');
-    const tous = [...ROLES.map(r => P.eff.cinq[r]), P.eff.banc].filter(Boolean);
-    const gardes = tous.filter(c => a.cles.includes(cleDe(c.ref))).map(c => {
-      // Le joueur qui vieillit : il devient sa version d'un split plus récent (le plus proche, js/gestion.js prochaineVersion).
-      const ref = a.vieux && a.vieux[cleDe(c.ref)];
-      if (!ref) return c;
-      exiger(ref.n === c.n && ref.r === c.r && ctx.splits.get(ref.id).split.annee > ctx.splits.get(c.ref.id).split.annee, `${c.n} ne vieillit pas ainsi`);
-      const v = contratDe(ctx, ref);
-      collectionner(P, v.ref);
-      return v;
-    });
-    exiger(gardes.length === a.cles.length && gardes.length <= gardesDe(P), `${gardesDe(P)} joueurs au plus`);
-    const eff = { cinq: {}, banc: null, plafond: P.eff.plafond };
-    for (const c of gardes) {
-      if (eff.cinq[c.r]) eff.banc = c;
-      else eff.cinq[c.r] = c;
-    }
-    // Ce qui reste du plafond doit encore payer les cases vides, au moins cher.
-    exiger(signable(0, plafondDe(eff) - masseDe(eff), libresDe(eff).length + 1), 'ils coûtent trop : le cinq ne se compléterait pas');
-    P.eff = eff;
     P.run.n++;
     P.relances = relancesNeuves();
     P.tirage = null;
@@ -565,21 +526,34 @@ export function appliquer(P, a, ctx) {
 
 /** Les splits qu'un journal nomme : à charger avant de le rejouer. */
 export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t === 'tirage' ? a.id : null, ...(a.adversaires || []).map(x => x.id), a.ref ? a.ref.id : null,
-  ...(a.refs || []).map(x => x.id), a.t === 'case' && a.cle ? a.cle.split('|')[0] : null, a.t === 'case' && a.vieux ? a.vieux.id : null,
-  ...(a.t === 'garder' ? Object.values(a.vieux || {}).map(x => x.id) : [])]).filter(Boolean))];
+  ...(a.refs || []).map(x => x.id), a.t === 'case' && a.cle ? a.cle.split('|')[0] : null, a.t === 'case' && a.vieux ? a.vieux.id : null]).filter(Boolean))];
 
 /** La sauvegarde : la graine, le mode, les déblocages et le club du départ, ta collection et ta vedette d'alors, et le journal ; rien de compté. */
 export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, col: P.col, vedette: P.vedette, premiere: P.premiere, log: P.log });
 
+/*
+ * Un geste du journal, rejoué. Une décision des règles d'aujourd'hui que la partie d'avant n'a pas connue (un adjoint
+ * offert à une autre journée, un événement qui tombe ailleurs) l'arrêterait : elle se prend d'office — personne pour
+ * un adjoint, le premier choix sinon —, et le geste se rejoue. Faux si le geste ne joue plus.
+ */
+function rejouerUn(P, a, ctx) {
+  for (let k = 0; k < 4; k++) {
+    try { appliquer(P, a, ctx); return true; } catch { /* une décision d'aujourd'hui l'attend peut-être */ }
+    const ev = a.t !== 'evenement' && enAttente(P);
+    if (!ev) return false;
+    try { appliquer(P, { t: 'evenement', choix: ev.id === 'adjoint' ? 'aucun' : ev.choix[0] }, ctx); } catch { return false; }
+  }
+  return false;
+}
+
 /**
- * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
- * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance ; avant la 5, la
- * roulette bâtissait le cinq du Rogue et les gardés se choisissaient ; avant la 6, le moteur d'alors jouait les parties ;
- * avant la 7, le mandat se lisait aux séries et la vedette venait en plus du classeur ; avant la 8, la stratégie jouait à son fit.
+ * Rejoue une sauvegarde, avec les règles d'aujourd'hui (la Q10). Une d'avant le méta (version 1) n'a ni déblocages ni
+ * club. Un geste que le jeu ne connaît plus, ou qu'il refuse maintenant, s'ignore et se compte (`P.ignores`) ; une
+ * partie d'aujourd'hui n'en a aucun, et se rejoue à l'identique. Seule la version de son moteur reste la sienne.
  */
 export function rejouer(sv, ctx) {
   const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null, premiere: !!sv.premiere });
   P.v = sv.v || 1;
-  for (const a of sv.log) appliquer(P, a, ctx);
+  for (const a of sv.log) if (!rejouerUn(P, a, ctx)) P.ignores++;
   return P;
 }

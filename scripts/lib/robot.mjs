@@ -16,9 +16,10 @@
  *     le pack le plus cher qu'il peut payer ; le plan de match qu'il lit au
  *     moteur contre chaque adversaire (`planDeLAttentif`) ; le banc qui joue s'il vaut mieux ;
  *     un entraînement toujours en cours ; le commanditaire qui paie le plus ;
- *     un talent sur le premier pouvoir ; le repêchage automatique ;
+ *     l'adjoint qui rejoint son coach, et ses adjoints prêts postés dès qu'une
+ *     case est libre ; un talent sur le premier pouvoir ; le repêchage automatique ;
  *   - 'distrait' : il clique sans lire — au hasard partout où l'écran offre un
- *     choix (le loto, le plan de match, le marché, les packs, le banc, les
+ *     choix (le loto, le plan de match, le marché, les packs, le banc, sa main, les
  *     décisions, et ses champions au repêchage, parmi les trois plus joués).
  *
  * LES DÉS DU MONDE ET CEUX DES CHOIX. Les adversaires, la graine du split et
@@ -37,12 +38,13 @@ import { hasard, piger, graineDe } from '../../js/hasard.js';
 import { bansAuto, permis, BANS, HORS } from '../../js/repechage.js';
 import { PLANS, effetDuPlan, planJoue, anneeEntre } from '../../js/strategie.js';
 import { jouerPartie } from '../../js/moteur.js';
-import { CARTES, RARETES, PLAN, jetonsDe, effetsDeToi, liensDe } from '../../js/rogue.js';
+import { jetonsDe, effetsDeToi, liensDe } from '../../js/rogue.js';
+import { ADJOINTS } from '../../js/adjoints.js';
 import {
   tirer, tirerAdversaires, tirerBoucheTrous, tirerPackJoueurs, agentsLibres, signables, placements, cleDe, marcheOuvert, aTravailler,
   MARCHE, PACKS_JOUEURS, COMMANDITAIRES, prixPackJoueurs,
 } from '../../js/gestion.js';
-import { nouvellePartie, appliquer, vestiaireDe, enAttente, gardesDe, parCases, caseEnCours, attendPack, contratDe, refDe, taSerie, offreDe } from '../../js/partie.js';
+import { nouvellePartie, appliquer, vestiaireDe, enAttente, parCases, caseEnCours, attendPack, contratDe, refDe, taSerie, offreDe, mainDeLaPartie } from '../../js/partie.js';
 
 const ROOT = path.dirname(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
 
@@ -113,6 +115,8 @@ function trancher(P, ev, clic, politique) {
   if (politique !== 'attentif') return piger(ev.choix, clic);
   if (ev.id === 'commanditaire') return [...ev.choix].sort((a, b) => COMMANDITAIRES[b][3] - COMMANDITAIRES[a][3])[0];
   if (ev.id === 'sequence') return ev.choix.includes('agent') && marcheOuvert(P.L) ? 'agent' : 'cap';
+  // Un adjoint : celui qui rejoint son coach (son séjour dure plus), sinon le premier offert.
+  if (ev.id === 'adjoint') return ev.choix.find(k => k !== 'aucun' && P.R.coach && ADJOINTS[k].voie === P.R.coach.id) || ev.choix[0];
   return ev.choix[0];
 }
 
@@ -160,7 +164,7 @@ function planDeLAttentif(P) {
   if (!lus.has(L)) lus.set(L, new Map());
   const deja = lus.get(L);
   if (!deja.has(i)) {
-    const toi = { ...L.equipes[0], effets: effetsDeToi(P.R, liensDe(P.eff.cinq), null, P.staff) }, eux = L.equipes[i];
+    const toi = { ...L.equipes[0], effets: effetsDeToi(liensDe(P.eff.cinq)) }, eux = L.equipes[i];
     const annee = anneeEntre(toi, eux);
     const victoires = e => {
       let v = 0;
@@ -178,7 +182,14 @@ function planDeLAttentif(P) {
   return deja.get(i);
 }
 
-/* LA JOURNÉE DE L'ATTENTIF, avant de jouer : son plan de match, le banc, le marché, un pack, l'entraînement, le plan de jeu. */
+/* Poster les adjoints prêts tant qu'une case est libre (`tous`), ceux qui rejoignent le coach d'abord ; le distrait, un au hasard. */
+function posterLaMain(P, ctx, tous, clic = null) {
+  const { cartes, libres } = mainDeLaPartie(P);
+  const pretes = cartes.filter(c => c.etat === 'prete').sort((a, b) => Number(ADJOINTS[b.cle].voie === (P.R.coach && P.R.coach.id)) - Number(ADJOINTS[a.cle].voie === (P.R.coach && P.R.coach.id)));
+  for (const c of (clic ? (pretes.length ? [piger(pretes, clic)] : []) : pretes).slice(0, tous ? libres : 1)) tenter(P, { t: 'poster', cle: c.cle }, ctx);
+}
+
+/* LA JOURNÉE DE L'ATTENTIF, avant de jouer : son plan de match, le banc, le marché, un pack, l'entraînement, sa main d'adjoints. */
 async function gererAttentif(P, { ctx, ids, lire }) {
   const L = P.L;
   const voulu = planDeLAttentif(P);
@@ -207,10 +218,7 @@ async function gererAttentif(P, { ctx, ids, lire }) {
       if (champs.length && tenter(P, { t: 'entrainer', r, champion: champs[0] }, ctx)) break;
     }
   }
-  const ordre = Object.keys(RARETES).reverse();
-  const voulues = [...P.R.cartes].sort((x, y) => ordre.indexOf(CARTES[x][2]) - ordre.indexOf(CARTES[y][2])).slice(0, PLAN);
-  for (const c of P.R.plan.filter(x => !voulues.includes(x))) tenter(P, { t: 'plan', carte: c }, ctx);
-  for (const c of voulues.filter(x => !P.R.plan.includes(x))) tenter(P, { t: 'plan', carte: c }, ctx);
+  posterLaMain(P, ctx, true);
 }
 
 /* LA JOURNÉE DU DISTRAIT : il touche à tout, au hasard. */
@@ -224,8 +232,7 @@ async function gererDistrait(P, { ctx, ids, lire }, clic) {
     if (pl && pl.length) tenter(P, { t: 'marche', ref, place: piger(pl, clic).place }, ctx);
   }
   if (P.eff.banc && clic() < 0.15) tenter(P, { t: clic() < 0.7 ? 'permuter' : 'relacher' }, ctx);
-  if (clic() < 0.1) tenter(P, { t: 'pack', id: 'bronze' }, ctx);
-  if (P.R.cartes.length && clic() < 0.1) tenter(P, { t: 'plan', carte: piger(P.R.cartes, clic) }, ctx);
+  if (clic() < 0.15) posterLaMain(P, ctx, false, clic);
   const id = piger(Object.keys(PACKS_JOUEURS), clic);
   if (marcheOuvert(L) && !P.offrePack && clic() < 0.12 && jetonsDe(L, P.R) >= prixPackJoueurs(P.R, id)) {
     const refs = await tirerPackJoueurs(P.R, id, ids, lire, P.eff);
@@ -281,11 +288,7 @@ export async function jouerUneRun(graine, C, options = {}, splitsMax = 5, politi
   while (P.etape !== 'fin' && P.run.n <= splitsMax) {
     await batir(P, C, clic, politique);
     await jouerLeSplit(P, C, clic, politique);
-    if (P.etape === 'gardes' && parCases(P)) agir({ t: 'suivant' });
-    else if (P.etape === 'gardes') {
-      const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).map(c => cleDe(c.ref));
-      try { agir({ t: 'garder', cles: tous.filter(() => clic() < 0.4).slice(0, gardesDe(P)) }); } catch { agir({ t: 'garder', cles: [] }); }
-    }
+    if (P.etape === 'gardes') agir({ t: 'suivant' });
   }
   return P;
 }

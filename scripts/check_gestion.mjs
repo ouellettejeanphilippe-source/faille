@@ -12,10 +12,9 @@
  *                    une journée quand un événement attend, trois gardés ;
  *   le proprio       chaque objectif vise 2 à 5 victoires sur six, et il est
  *                    atteint si et seulement si la fiche y est ; le mandat
- *                    se lit au classement (version 7) : les séries, puis les
- *                    trois, les deux premiers, premier ; le premier split de
- *                    la première run, les huit premiers, séries ou pas ; une
- *                    partie d'avant garde ses mandats aux séries ;
+ *                    se lit au classement : les séries, puis les trois, les
+ *                    deux premiers, premier ; le premier split de la première
+ *                    run, les huit premiers, séries ou pas ;
  *   les packs        un pack de joueurs se tire pareil deux fois, jamais un des
  *                    tiens ; on en signe un seul, sous le plafond, avant la
  *                    journée suivante ; les niveaux sortent selon leurs chances ;
@@ -23,24 +22,29 @@
  *                    son expérience se recompte à la main des résultats ; son
  *                    niveau ne descend jamais ; un talent attend à son niveau, et
  *                    la journée attend le talent ;
- *   le staff         un adjoint parmi trois aux journées 6 et 12, jamais un
- *                    déjà là, les mêmes deux fois ; trois au plus, et « qui
- *                    part ? » quand il en vient un de trop ;
- *   le vieillissement un gardé devient sa version du plus proche split plus
- *                    récent, et le plafond tient avec elle ;
+ *   la main          (version 9, js/adjoints.js) un adjoint parmi trois aux
+ *                    journées JOURNEES_ADJOINTS, au cadeau et dans une
+ *                    histoire, jamais un déjà là, les mêmes deux fois ; une
+ *                    main pleine laisse partir la plus ancienne hors poste ;
+ *                    un adjoint se poste prêt, sur une case libre, joue son
+ *                    séjour, se repose, puis se reposte ; les cases suivent
+ *                    le niveau du coach ;
+ *   le vieillissement un joueur de ceux qui restent devient sa version du plus
+ *                    proche split plus récent, et le plafond tient avec elle ;
  *   la collection    chaque joueur passé chez toi y entre ;
  *   la sauvegarde    le journal, passé par JSON et rejoué, redonne la même
- *                    partie, à la fin comme au milieu ; une sauvegarde de
- *                    la version 5 joue le moteur d'alors (js/moteur-v1.js),
- *                    qui redonne au tirage près les parties gelées par le
- *                    code d'avant (scripts/lib/moteur-v1.json) ; une run de
- *                    la version 5 gelée sur ces shards-ci (scripts/lib/
- *                    partie-v5.json) se rejoue identique ; une partie neuve
- *                    joue le moteur d'aujourd'hui (js/moteur.js) ;
- *   le départ        (version 5) le Rogue part de ses cases — la vedette, le
- *                    classeur tiré de la collection, ceux qui restent au loto —
- *                    puis du pack de départ ; la vedette prend la case du haut
- *                    du classeur (version 7) : chaque loto rejoue, reste à son
+ *                    partie, à la fin comme au milieu, sans un geste ignoré ;
+ *                    une sauvegarde de la version 5 joue le moteur d'alors
+ *                    (js/moteur-v1.js), qui redonne au tirage près les
+ *                    parties gelées par le code d'avant (scripts/lib/
+ *                    moteur-v1.json) ; une partie neuve joue le moteur
+ *                    d'aujourd'hui (js/moteur.js). Les vieilles parties qui
+ *                    se rejouent avec les règles d'aujourd'hui :
+ *                    check_sauvegardes ;
+ *   le départ        le Rogue part de ses cases — la vedette, le classeur tiré
+ *                    de la collection, ceux qui restent au loto — puis du pack
+ *                    de départ ; la vedette prend la case du haut du
+ *                    classeur : chaque loto rejoue, reste à son
  *                    niveau ou en dessous, hors des rôles comblés ; un
  *                    bouche-trou par rôle vide, Régulier au plus ; la roulette
  *                    et les gardés sont refusés ; la première run reste dure ;
@@ -59,12 +63,13 @@ import { tempoDuSplit, equipeReelle, classement } from '../js/sim.js';
 import { jouerPartieV1 } from '../js/moteur-v1.js';
 import { hasard, piger } from '../js/hasard.js';
 import { jetonsDe } from '../js/rogue.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, rangTient, MANDATS, MANDAT_DE_LA_PREMIERE, MANDATS_AUX_SERIES, EN_SERIES, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
-import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, adjointsOfferts, JOURNEES_ADJOINTS, parCases, casesDe, caseEnCours, lotoDe, attendPack, refDe, LOTO } from '../js/partie.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, aTravailler, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, placements, masseDe, plafondDe, cleDe, marcheOuvert, signables, objectifsDe, mandatRempli, rangTient, MANDATS, MANDAT_DE_LA_PREMIERE, EN_SERIES, tirerPackJoueurs, prixPackJoueurs, prochaineVersion, libresDe } from '../js/gestion.js';
+import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegarde, rejouer, gardesDe, relancesMax, offreDe, mandatDuSplit, coachDeLaPartie, mainDeLaPartie, parCases, casesDe, caseEnCours, lotoDe, attendPack, refDe, LOTO } from '../js/partie.js';
 import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
-import { COACHS, XP, SEUILS_NIVEAU, ADJOINTS_MAX, couleurDe } from '../js/rogue.js';
+import { COACHS, XP, SEUILS_NIVEAU } from '../js/rogue.js';
+import { ADJOINTS, MAIN_MAX, SEJOUR, SEJOUR_SYNERGIE, REPOS, JOURNEES_ADJOINTS, CASES_PAR_NIVEAU, adjointsOfferts, etatDe } from '../js/adjoints.js';
 import { confort } from '../js/repechage.js';
-import { PLANS, STRATEGIES_AU_FIT } from '../js/strategie.js';
+import { PLANS } from '../js/strategie.js';
 import { collectionPour } from './lib/robot.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
@@ -85,12 +90,12 @@ exiger('des splits à lire', ids.length > 0, `${ids.length} splits`);
 
 /* L'empreinte d'une partie : ce qu'un joueur verrait. */
 const empreinte = P => JSON.stringify({
-  etape: P.etape, mode: P.mode, cases: P.cases, strategie: P.strategie, run: P.run, jetons: jetonsDe(P.L, P.R), cartes: P.R.cartes, plan: P.R.plan, coach: P.R.coach,
+  etape: P.etape, mode: P.mode, cases: P.cases, strategie: P.strategie, run: P.run, jetons: jetonsDe(P.L, P.R), main: P.main, coach: P.R.coach,
   eff: [...Object.values(P.eff.cinq), P.eff.banc].map(c => c && cleDe(c.ref)), relances: P.relances, bons: P.bons,
   ligue: P.L && [P.L.jour, classement(P.L).map(l => [l.i, l.v, l.d]), P.L.series && P.L.series.champion],
 });
 
-const bilan = { mandats: new Set(), premieres: 0, cases: 0, prises: 0, lotosPleins: 0, bouches: 0, vedettes: 0, premiersTitres: 0, runsRogue: 0, dixhuit: 0, adjoints: 0, quiPart: 0, offres: 0, niveauMax: 0, talents: 0, coachsAchetes: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
+const bilan = { mandats: new Set(), premieres: 0, cases: 0, prises: 0, lotosPleins: 0, bouches: 0, vedettes: 0, premiersTitres: 0, runsRogue: 0, dixhuit: 0, adjoints: 0, partis: 0, offres: 0, poses: 0, sejours: 0, niveauMax: 0, talents: 0, partiesDeSeries: 0, exigences: 0, packs: 0, signesPack: 0, vieillis: 0, entraines: 0, commandite: 0, actions: 0, refusAttendus: 0, splits: 0, gagnees: 0, perdues: 0, marche: 0, banc: 0, evenements: 0, objectifs: 0 };
 const fautes = new Set();
 const faute = msg => fautes.add(msg);
 const refuse = (P, a) => {
@@ -101,7 +106,8 @@ const refuse = (P, a) => {
 const tenter = (P, a) => { try { appliquer(P, a, ctx); return true; } catch { return false; } };
 const surveiller = P => {
   bilan.actions++;
-  if (P.staff && (P.staff.length > ADJOINTS_MAX || new Set(P.staff).size !== P.staff.length)) faute(`le staff : ${P.staff.join(', ')}`);
+  if (P.main.length > MAIN_MAX || new Set(P.main.map(c => c.cle)).size !== P.main.length) faute(`la main : ${P.main.map(c => c.cle).join(', ')}`);
+  if (P.mode !== 'dixhuit' && P.R.coach) { const m = mainDeLaPartie(P); if (m.libres < 0 || m.cases - m.libres > CASES_PAR_NIVEAU[coachDeLaPartie(P).n - 1]) faute(`des cases en poste : ${m.cases - m.libres}/${m.cases}`); }
   if (masseDe(P.eff) > plafondDe(P.eff)) faute(`plafond dépassé : ${masseDe(P.eff)} après ${JSON.stringify(P.log[P.log.length - 1]).slice(0, 80)} (${P.etape})`);
   if (plafondDe(P.eff) !== PLAFOND + P.fx.plafond) faute(`le plafond de la run s'est perdu : ${plafondDe(P.eff)}`);
   if (jetonsDe(P.L, P.R) < 0) faute('jetons sous zéro');
@@ -110,7 +116,7 @@ const surveiller = P => {
 /* Un refus attendu se juge une fois : faux une seule fois, et c'est une faute. */
 const refusVus = new Map();
 const exigerRefus = (nom, ok) => refusVus.set(nom, (refusVus.get(nom) ?? true) && ok);
-/* L'expérience du coach, recomptée à la main : les séries gagnées, les rondes, le titre, les séries gagnées à sa couleur. */
+/* L'expérience du coach, recomptée à la main : les séries gagnées, les rondes, le titre. */
 const xpALaMain = P => {
   const gains = [...P.R.reports, ...(P.L ? [{ ...P.L, _vivant: true }] : [])];
   let xp = P.fx.xp;
@@ -122,13 +128,13 @@ const xpALaMain = P => {
     const titre = L ? (L.series && L.series.champion === 0 ? 1 : 0) : g.titre;
     xp += v * XP.serie + rondes * XP.ronde + titre * XP.titre;
   }
-  return xp + P.R.joue.filter(x => x.gagne && x.plan.some(c => couleurDe(c) === P.R.coach.id)).length * XP.couleur;
+  return xp;
 };
 const niveaux = new Map();
 const agir = (P, a) => {
   const r = appliquer(P, a, ctx);
   surveiller(P);
-  if (P.v >= 4 && P.R.coach) {
+  if (P.R.coach) {
     const c = coachDeLaPartie(P);
     if (c.xp !== xpALaMain(P)) faute(`l'expérience du coach : ${c.xp} contre ${xpALaMain(P)} à la main`);
     if (c.n < (niveaux.get(P) || 1)) faute('le niveau du coach a descendu');
@@ -140,7 +146,7 @@ const agir = (P, a) => {
 };
 
 /*
- * LE DÉPART PAR CASES (Rogue, version 5) : chaque case ouvre son loto — il
+ * LE DÉPART PAR CASES (Rogue) : chaque case ouvre son loto — il
  * rejoue, tient LOTO cartes au plus, de son niveau ou d'en dessous, hors des
  * rôles comblés — et le robot prend ce qui se paie, ou passe ; puis le pack de
  * départ, un bouche-trou par rôle vide, et la roulette est refusée.
@@ -191,7 +197,7 @@ async function unDixHuit(graine) {
     agir(P, { t: 'signer', n: j.n, r: j.r });
   }
   agir(P, { t: 'lancer', adversaires: await tirerAdversaires(de, ids, lire, equipeReelle), graine: Math.floor(de() * 2 ** 32) });
-  exigerRefus('au 18-0, ni carte ni stratégie', refuse(P, { t: 'strategie', id: 'dragons' }) && refuse(P, { t: 'pack', id: 'bronze' }) && refuse(P, { t: 'packJoueurs', id: 'recrues', refs: [] }));
+  exigerRefus('au 18-0, ni plan de match, ni adjoint, ni pack', refuse(P, { t: 'strategie', id: 'dragons' }) && refuse(P, { t: 'poster', cle: 'dragons' }) && refuse(P, { t: 'packJoueurs', id: 'recrues', refs: [] }));
   agir(P, { t: 'jusqua' });
   if (P.L.jour !== P.L.journees.length || enAttente(P)) faute('le 18-0 s\'arrête en chemin');
   if (P.L.commanditaire) faute('un commanditaire au 18-0');
@@ -204,14 +210,14 @@ async function unDixHuit(graine) {
     if (s && s.parties.length !== avant + 1) faute('au 18-0, une série ne se joue pas partie par partie');
     parties += s ? 1 : 0;
   }
-  if (P.R.achats.length || P.R.cartes.length || P.staff.length || P.talents.length) faute('le 18-0 a dépensé ou gagné des cartes');
+  if (P.R.achats.length || P.main.length || P.talents.length) faute('le 18-0 a dépensé ou gagné quelque chose');
   agir(P, { t: 'bilan' });
   if (P.etape !== 'fin' || !P.run.fin || P.run.passes[0].mandat !== 'titre') faute(`le 18-0 ne finit pas en un split : ${P.etape}, ${P.run.fin}`);
   bilan.dixhuit++;
   return { P, parties };
 }
 
-async function unRun(graine, version = null, col = [], vedette = null) {
+async function unRun(graine, col = [], vedette = null) {
   const de = hasard(graine);
   // Une run sur deux avec tous les déblocages du méta, une sur trois au plus haut des exigences : les règles tiennent avec eux.
   const exig = graine % 3 === 0 ? EXIGENCES.length : 0;
@@ -219,46 +225,25 @@ async function unRun(graine, version = null, col = [], vedette = null) {
   const deb = graine % 2 ? [] : Object.keys(DEBLOCAGES);
   // Une run sur quatre est une première run : son premier split laisse bâtir (sauf sous une exigence).
   const premiere = graine % 4 === 1;
-  const P = nouvellePartie(graine, { deb, club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach: version && version < 4 ? null : coach, col, vedette, premiere });
+  const P = nouvellePartie(graine, { deb, club: { nom: 'Les Lynx', code: 'LYX', couleur: '#3fb6c9' }, exig, coach, col, vedette, premiere });
   if (exig && (plafondDe(P.eff) !== PLAFOND - 1 || mandatDuSplit(P)[0] !== 'trois' || jetonsDe(null, P.R) !== (graine % 2 ? 10 : 35))) {
     faute(`les exigences ne se posent pas : plafond ${plafondDe(P.eff)}, mandat ${mandatDuSplit(P)[0]}, jetons ${jetonsDe(null, P.R)}`);
   }
   if (exig) bilan.exigences++;
-  // Une partie d'avant la version 3 garde sa règle : une série de séries se joue d'un bloc, d'un seul repêchage.
-  if (version) P.v = version;
-  // Les cases du premier départ : la vedette, puis le classeur (une case Régulier, celles des déblocages, moins l'exigence) ;
-  // depuis la version 7, la vedette y prend la case du haut (d'avant : elle vient en plus).
+  // Les cases du premier départ : la vedette, qui prend la case du haut du classeur, puis le classeur (une case Régulier,
+  // celles des déblocages, moins l'exigence).
   const classeur = Math.max(0, 1 + P.fx.pilier + P.fx.etoile + P.fx.cases);
-  const prend = vedette && P.v >= 7 ? 1 : 0;
-  if (parCases(P) && casesDe(P).length !== (vedette ? 1 : 0) + Math.max(0, classeur - prend)) faute(`${casesDe(P).length} cases au classeur pour ${classeur}${vedette ? ' et une vedette' : ''}`);
-  if (parCases(P) && prend && casesDe(P).slice(1).map(c => c.niveau).join() !== casesDe({ ...P, vedette: null }).slice(1).map(c => c.niveau).join()) faute('la vedette ne prend pas la case du haut du classeur');
-  // Le mandat du premier split : les huit premiers à la première run sans exigence ; d'avant la version 7, ceux aux séries.
-  const mandats = P.v < 7 ? MANDATS_AUX_SERIES : MANDATS;
-  const voulu = P.v >= 7 && premiere && !exig ? MANDAT_DE_LA_PREMIERE[0] : mandats[Math.min(mandats.length, 1 + P.fx.mandat) - 1][0];
-  if (parCases(P) && mandatDuSplit(P)[0] !== voulu) faute(`le mandat du premier split : ${mandatDuSplit(P)[0]} au lieu de ${voulu}`);
-  if (parCases(P) && premiere && !exig && P.v >= 7 && mandatDuSplit(P, 2)[0] !== MANDATS[1][0]) faute('la première run ne reprend pas les mandats de toujours au deuxième split');
-  if (P.v >= 7 && premiere && !exig) bilan.premieres++;
-  if (parCases(P)) bilan.runsRogue++;
+  if (casesDe(P).length !== (vedette ? 1 : 0) + Math.max(0, classeur - (vedette ? 1 : 0))) faute(`${casesDe(P).length} cases au classeur pour ${classeur}${vedette ? ' et une vedette' : ''}`);
+  if (vedette && casesDe(P).slice(1).map(c => c.niveau).join() !== casesDe({ ...P, vedette: null }).slice(1).map(c => c.niveau).join()) faute('la vedette ne prend pas la case du haut du classeur');
+  // Le mandat du premier split : les huit premiers à la première run sans exigence.
+  const voulu = premiere && !exig ? MANDAT_DE_LA_PREMIERE[0] : MANDATS[Math.min(MANDATS.length, 1 + P.fx.mandat) - 1][0];
+  if (mandatDuSplit(P)[0] !== voulu) faute(`le mandat du premier split : ${mandatDuSplit(P)[0]} au lieu de ${voulu}`);
+  if (premiere && !exig && mandatDuSplit(P, 2)[0] !== MANDATS[1][0]) faute('la première run ne reprend pas les mandats de toujours au deuxième split');
+  if (premiere && !exig) bilan.premieres++;
+  bilan.runsRogue++;
   let milieu = null;
   while (P.etape !== 'fin' && P.run.n <= SPLITS_MAX) {
-    if (parCases(P)) await departParCases(P, de, graine);
-    // LE REPÊCHAGE (le 18-0, une vieille partie) : un tour par case, parfois une relance.
-    while (P.etape === 'bati' && Object.keys(P.eff.cinq).length < 5) {
-      if (!P.tirage) {
-        const t = await tirer(de, ids, lire, P.eff, 'tour');
-        if (!t) { faute('la roulette ne trouve rien'); return P; }
-        agir(P, { t: 'tirage', mode: 'tour', ...t });
-      }
-      const dispo = Object.keys(RELANCES).filter(k => P.relances[k] < relancesMax(P, k));
-      if (de() < 0.25 && dispo.length) {
-        const mode = piger(dispo, de);
-        const t = await tirer(de, ids, lire, P.eff, mode, P.tirage);
-        if (t) agir(P, { t: 'tirage', mode, ...t });
-      }
-      const v = vestiaireDe(P, ctx);
-      const j = piger(signables(P.eff, v.equipe, v.profils.joueurs), de);
-      agir(P, { t: 'signer', n: j.n, r: j.r });
-    }
+    await departParCases(P, de, graine);
     // Une relance de trop est refusée.
     if (P.run.n === 1 && graine === 1) {
       const Q = nouvellePartie(9, { mode: 'dixhuit' });
@@ -277,21 +262,44 @@ async function unRun(graine, version = null, col = [], vedette = null) {
         exigerRefus('une journée attend la décision', refuse(P, { t: 'journee' }));
         if (ev.id === 'adjoint') {
           bilan.offres++;
-          if (!JOURNEES_ADJOINTS.some(j => ev.cle.endsWith(`-${j}`)) || ev.choix.length !== 4 || ev.choix.some(id => P.staff.includes(id))) faute(`une offre d'adjoints : ${ev.cle} ${ev.choix}`);
-          if (JSON.stringify(adjointsOfferts(P, ev.cle)) !== JSON.stringify(ev.choix.slice(0, 3))) faute('une offre d\'adjoints ne rejoue pas');
+          const moment = JOURNEES_ADJOINTS.some(j => ev.cle === `${P.run.n}-adjoint-${j}`) || ev.cle === '1-cadeau' || ev.cle.startsWith(`${P.run.n}-histoire-`);
+          if (!moment || ev.choix.length !== 4 || ev.choix.some(id => P.main.some(c => c.cle === id))) faute(`une offre d'adjoints : ${ev.cle} ${ev.choix}`);
+          if (JSON.stringify(adjointsOfferts(P.main, P.graine, ev.cle)) !== JSON.stringify(ev.choix.slice(0, 3))) faute('une offre d\'adjoints ne rejoue pas');
+          // Une main pleine laisse partir la plus ancienne hors poste ; l'offre le dit d'avance.
+          const g = P.R.joue.length, co = P.R.coach.id;
+          const attendu = P.main.length >= MAIN_MAX ? (P.main.find(c => etatDe(c, g, co).etat !== 'poste') || {}).cle || null : null;
+          if (ev.part !== attendu) faute(`qui part de la main : ${ev.part} au lieu de ${attendu}`);
         }
-        // Le robot prend un adjoint quatre fois sur cinq : le staff se remplit, puis déborde.
+        // Le robot prend un adjoint quatre fois sur cinq : la main se remplit, puis déborde.
         const choix = ev.id === 'adjoint' && de() < 0.8 ? ev.choix[0] : piger(ev.choix, de);
+        const part = ev.part;
         agir(P, { t: 'evenement', choix });
         if (ev.id === 'talent') bilan.talents++;
-        else if (ev.id === 'adjoint') bilan.adjoints += choix !== 'aucun' ? 1 : 0;
-        else if (ev.id === 'quiPart') bilan.quiPart++;
-        else bilan.evenements++;
+        else if (ev.id === 'adjoint' && choix !== 'aucun') {
+          bilan.adjoints++;
+          if (part) { bilan.partis++; if (P.main.some(c => c.cle === part)) faute(`${part} n'est pas parti d'une main pleine`); }
+          if (!P.main.some(c => c.cle === choix && !c.poses.length)) faute('un adjoint pris n\'entre pas neuf dans la main');
+        } else if (ev.id !== 'adjoint') bilan.evenements++;
         continue;
       }
-      // Avant la version 4, un coach s'achète ; depuis, il fait la run.
-      if (P.v < 4 && !P.R.coach && jetonsDe(P.L, P.R) >= 12 && de() < 0.3 && tenter(P, { t: 'coach', id: piger(Object.keys(COACHS), de) })) bilan.coachsAchetes++;
-      if (P.v >= 4 && P.run.n === 1 && P.L.jour === 1) exigerRefus('un coach ne s\'achète plus', refuse(P, { t: 'coach', id: Object.keys(COACHS).find(k => k !== P.R.coach.id) }));
+      // Les gestes d'avant la version 9 ne se jouent plus : acheter un coach, une carte au plan, un pack de cartes, un gardé au choix.
+      if (P.run.n === 1 && P.L.jour === 1) exigerRefus('les gestes d\'avant (un coach, une carte, un pack de cartes, un gardé) sont refusés', ['coach', 'plan', 'pack', 'garder'].every(t => refuse(P, { t, id: 'bronze', carte: 'meta', cles: [] })));
+      // LA MAIN : poster un adjoint prêt sur une case libre ; il joue son séjour, se repose, puis se reposte.
+      if (P.main.length) {
+        const g = P.R.joue.length, co = P.R.coach.id;
+        const m = mainDeLaPartie(P);
+        const prete = m.cartes.find(c => c.etat === 'prete'), occupee = m.cartes.find(c => c.etat !== 'prete');
+        if (occupee) exigerRefus('un adjoint en poste ou au repos ne se poste pas', refuse(P, { t: 'poster', cle: occupee.cle }));
+        if (prete && !m.libres) exigerRefus('sans case libre, un adjoint ne se poste pas', refuse(P, { t: 'poster', cle: prete.cle }));
+        if (prete && m.libres && de() < 0.6) {
+          agir(P, { t: 'poster', cle: prete.cle });
+          bilan.poses++;
+          const c = P.main.find(x => x.cle === prete.cle);
+          const sej = ADJOINTS[c.cle].voie === co ? SEJOUR_SYNERGIE : SEJOUR;
+          const etats = [0, sej - 1, sej, sej + REPOS - 1, sej + REPOS].map(k => etatDe(c, g + k, co).etat).join();
+          if (etats !== 'poste,poste,repos,repos,prete') faute(`un séjour de ${sej} journées, ${REPOS} de repos : ${etats}`);
+        }
+      }
       if (marcheOuvert(P.L) && de() < 0.35) {
         const offre = await agentsLibres(P.L, ids, lire, P.eff, P.adversaires, offreDe(P));
         const encore = await agentsLibres(P.L, ids, lire, P.eff, P.adversaires, offreDe(P));
@@ -307,9 +315,9 @@ async function unRun(graine, version = null, col = [], vedette = null) {
         const pl = ref && placements(P.eff, contratDe(ctx, ref));
         if (pl && pl.length && (P.bons || jetonsDe(P.L, P.R) >= MARCHE.prix)) { agir(P, { t: 'marche', ref, place: piger(pl, de).place }); bilan.marche++; }
       }
-      // Un plan de match (version 8) ; d'avant, une stratégie au fit. Le Nashor n'a plus son plan : il est refusé.
-      if (de() < 0.15) agir(P, { t: 'strategie', id: piger([null, ...Object.keys(P.v >= 8 ? PLANS : STRATEGIES_AU_FIT)], de) });
-      if (P.v >= 8) exigerRefus('un plan que le jeu ne connaît plus est refusé', refuse(P, { t: 'strategie', id: 'nashor' }));
+      // Un plan de match. Le Nashor n'a plus son plan : il est refusé.
+      if (de() < 0.15) agir(P, { t: 'strategie', id: piger([null, ...Object.keys(PLANS)], de) });
+      exigerRefus('un plan que le jeu ne connaît plus est refusé', refuse(P, { t: 'strategie', id: 'nashor' }));
       if (!P.entrainement && de() < 0.3) {
         const r = piger(Object.keys(P.eff.cinq), de);
         const c = P.eff.cinq[r];
@@ -320,7 +328,6 @@ async function unRun(graine, version = null, col = [], vedette = null) {
         }
       }
       if (P.eff.banc && de() < 0.15) { agir(P, { t: de() < 0.7 ? 'permuter' : 'relacher' }); bilan.banc++; }
-      if (de() < 0.1 && tenter(P, { t: 'pack', id: 'bronze' })) surveiller(P);
       // UN PACK DE JOUEURS : le même tirage deux fois, aucun des tiens, un seul signé, sous le plafond.
       const idPack = piger(Object.keys(PACKS_JOUEURS), de);
       if (marcheOuvert(P.L) && de() < 0.12 && jetonsDe(P.L, P.R) >= prixPackJoueurs(P.R, idPack)) {
@@ -345,8 +352,8 @@ async function unRun(graine, version = null, col = [], vedette = null) {
           continue;
         }
       }
-      if (P.R.cartes.length && de() < 0.2) tenter(P, { t: 'plan', carte: piger(P.R.cartes, de) });
       const E = P.entrainement;
+      if (mainDeLaPartie(P).cartes.some(c => c.etat === 'poste')) bilan.sejours++;
       agir(P, { t: de() < 0.1 ? 'jusqua' : 'journee' });
       // L'entraînement fini : le champion est au bassin, marqué, et coûte moins de confort qu'hors du bassin.
       if (E && !P.entrainement) {
@@ -376,27 +383,24 @@ async function unRun(graine, version = null, col = [], vedette = null) {
       agir(P, { t: 'ronde' });
       if (!s) continue;
       bilan.partiesDeSeries += s.parties.length - avant;
-      // Version 3 : une partie à la fois, chacune avec son repêchage ; d'avant : la série entière, un repêchage.
-      if (P.v >= 3 && (s.parties.length !== avant + 1 || !s.repechages || s.repechages.length !== s.parties.length)) faute('une partie de séries sans son repêchage');
-      if (P.v < 3 && (s.gagnant === null || !s.repechage || s.repechages)) faute('une vieille partie ne joue plus sa série d\'un bloc');
+      // Une partie à la fois, chacune avec son repêchage.
+      if (s.parties.length !== avant + 1 || !s.repechages || s.repechages.length !== s.parties.length) faute('une partie de séries sans son repêchage');
     }
     const L = P.L;
     agir(P, { t: 'bilan' });
-    if (parCases(P) && P.run.n === 1 && P.run.passes[0].champion) bilan.premiersTitres++;
+    if (P.run.n === 1 && P.run.passes[0].champion) bilan.premiersTitres++;
     // Le commanditaire a été choisi avant la première journée, et il a payé ses parties réussies.
     if (!L.commanditaire) faute('un split sans commanditaire');
     bilan.commandite += P.R.reports[P.R.reports.length - 1].commandite;
     const pass = P.run.passes[P.run.passes.length - 1];
     if (pass.rempli !== mandatRempli(L, pass.mandat)) faute('le bilan ne suit pas le mandat');
-    // Le mandat se lit au classement (version 7) : le rang du bilan le dit ; d'avant, il se lit aux séries.
-    const table = P.v >= 7 ? [...MANDATS, MANDAT_DE_LA_PREMIERE] : MANDATS_AUX_SERIES;
-    if (!table.some(([k]) => k === pass.mandat)) faute(`un mandat ${pass.mandat} sous la version ${P.v}`);
-    if (P.v >= 7 && pass.rempli !== rangTient(pass.rang, pass.mandat)) faute(`le mandat ${pass.mandat} au ${pass.rang}e rang : ${pass.rempli}`);
-    if (P.v >= 7) bilan.mandats.add(pass.mandat);
-    if (P.etape === 'gardes' && parCases(P)) {
-      // Ceux qui restent (version 5) : les gardés sont refusés, le prochain départ les tire au loto, et un gardé peut y vieillir.
+    // Le mandat se lit au classement : le rang du bilan le dit.
+    if (![...MANDATS, MANDAT_DE_LA_PREMIERE].some(([k]) => k === pass.mandat)) faute(`un mandat ${pass.mandat}`);
+    if (pass.rempli !== rangTient(pass.rang, pass.mandat)) faute(`le mandat ${pass.mandat} au ${pass.rang}e rang : ${pass.rempli}`);
+    bilan.mandats.add(pass.mandat);
+    if (P.etape === 'gardes') {
+      // Ceux qui restent : le prochain départ les tire au loto, et l'un d'eux peut y vieillir.
       const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean);
-      if (P.run.n === 1) exigerRefus('les gardés sont refusés au Rogue', refuse(P, { t: 'garder', cles: [cleDe(tous[0].ref)] }));
       agir(P, { t: 'suivant' });
       if (P.restes.length !== tous.length || casesDe(P).length !== gardesDe(P) || casesDe(P).some(c => c.source !== 'restes')) faute('ceux qui restent ne font pas les cases du prochain départ');
       const c = caseEnCours(P);
@@ -410,30 +414,6 @@ async function unRun(graine, version = null, col = [], vedette = null) {
           if (!Object.values(P.eff.cinq).some(y => cleDe(y.ref) === cleDe(v))) faute('un gardé du loto n\'a pas vieilli');
         }
       }
-    } else if (P.etape === 'gardes') {
-      const tous = [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean).map(c => cleDe(c.ref));
-      if (P.run.n === 1 && tous.length > gardesDe(P)) exigerRefus('un gardé de trop est refusé', refuse(P, { t: 'garder', cles: tous.slice(0, gardesDe(P) + 1) }));
-      const choix = tous.filter(() => de() < 0.4).slice(0, gardesDe(P));
-      // Le joueur qui vieillit : sa version du plus proche split plus récent, s'il en a une.
-      const vieux = {};
-      for (const c of [...Object.values(P.eff.cinq), P.eff.banc].filter(x => x && choix.includes(cleDe(x.ref)))) {
-        const v = await prochaineVersion(index, lire, c);
-        if (!v) continue;
-        vieux[cleDe(c.ref)] = v;
-        const an = id => splits.get(id).split.annee;
-        const sautes = index.filter(x => an(x.id) > an(c.ref.id) && an(x.id) < an(v.id)).some(x => splits.get(x.id).split.equipes.some(e => e.joueurs.some(j => j.n === c.n && j.r === c.r)));
-        if (sautes) faute(`${c.n} vieillit trop loin`);
-      }
-      if (P.run.n === 1 && Object.keys(vieux).length) {
-        const [k, v] = Object.entries(vieux)[0];
-        exigerRefus('on ne vieillit pas en quelqu\'un d\'autre', refuse(P, { t: 'garder', cles: [k], vieux: { [k]: { ...v, n: 'personne' } } }));
-      }
-      if (!tenter(P, { t: 'garder', cles: choix, vieux })) agir(P, { t: 'garder', cles: [] });
-      else {
-        surveiller(P);
-        bilan.vieillis += Object.keys(vieux).length;
-        for (const v of Object.values(vieux)) if (![...Object.values(P.eff.cinq), P.eff.banc].some(c => c && cleDe(c.ref) === cleDe(v))) faute('un gardé n\'a pas vieilli');
-      }
     }
   }
   if (P.run.fin === 'gagnee') bilan.gagnees++;
@@ -443,18 +423,14 @@ async function unRun(graine, version = null, col = [], vedette = null) {
 
 const pasRejouees = [];
 let col = [];
-for (let g = 1; g <= RUNS + 4; g++) {
-  // Les quatre dernières runs se jouent sous les versions 2, 3, 4 et 6 : une vieille sauvegarde se rejoue pareil (la roulette,
-  // les gardés ; les mandats aux séries et la vedette en plus du classeur).
-  const version = g > RUNS ? [2, 3, 4, 6][g - RUNS - 1] : null;
+for (let g = 1; g <= RUNS; g++) {
   // Une run sur deux avec une vedette ; la collection de la run d'avant nourrit le classeur de la suivante.
   const vedette = g % 2 === 0 ? cleDe((await tirerEtoiles(hasard(g), ids, lire, 1))[0]) : null;
-  const { P, milieu } = await unRun(g, version, col, vedette);
+  const { P, milieu } = await unRun(g, col, vedette);
   col = collectionPour(ctx, [...new Set([...col.map(x => x.cle), ...P.cartes])]);
-  if (version && (P.v !== version || sauvegarde(P).v !== version)) pasRejouees.push(`la version ${version} ne se garde pas`);
   const fin = empreinte(P);
   const relu = rejouer(JSON.parse(JSON.stringify(sauvegarde(P))), ctx);
-  if (empreinte(relu) !== fin) pasRejouees.push(`${g} au bout`);
+  if (empreinte(relu) !== fin || relu.ignores) pasRejouees.push(`${g} au bout${relu.ignores ? `, ${relu.ignores} gestes ignorés` : ''}`);
   if (milieu && empreinte(rejouer(milieu.sv, ctx)) !== milieu.e) pasRejouees.push(`${g} à mi-split`);
 }
 
@@ -479,11 +455,10 @@ exiger('les événements ont servi', bilan.evenements > 0, `${bilan.evenements} 
 exiger('les commanditaires ont payé', bilan.commandite > 0, `${bilan.commandite} 🪙 sur ${bilan.splits} splits`);
 exiger('des entraînements sont entrés au bassin', bilan.entraines > 0, `${bilan.entraines} champions entraînés`);
 exiger('des packs de joueurs ouverts et signés', bilan.packs > 0 && bilan.signesPack > 0, `${bilan.packs} packs, ${bilan.signesPack} signatures`);
-exiger('des adjoints offerts, pris, et un staff qui déborde', bilan.offres > 0 && bilan.adjoints > 0 && bilan.quiPart > 0, `${bilan.offres} offres, ${bilan.adjoints} pris, ${bilan.quiPart} « qui part ? »`);
+exiger('des adjoints offerts, pris, une main qui déborde, des séjours joués', bilan.offres > 0 && bilan.adjoints > 0 && bilan.partis > 0 && bilan.poses > 0 && bilan.sejours > 0, `${bilan.offres} offres, ${bilan.adjoints} pris, ${bilan.partis} partis d'une main pleine, ${bilan.poses} poses, ${bilan.sejours} journées avec un adjoint en poste`);
 exiger('le coach monte de niveau et prend ses talents', bilan.niveauMax >= 3 && bilan.talents > 0, `niveau ${bilan.niveauMax} au plus, ${bilan.talents} talents`);
-exiger('une vieille partie achète encore son coach', bilan.coachsAchetes > 0, `${bilan.coachsAchetes} coachs achetés sous la version 3`);
 exiger('tes séries de séries se jouent partie par partie, chacune repêchée', bilan.partiesDeSeries > 0, `${bilan.partiesDeSeries} parties de séries`);
-exiger('des gardés ont vieilli', bilan.vieillis > 0, `${bilan.vieillis} joueurs`);
+exiger('des joueurs de ceux qui restent ont vieilli', bilan.vieillis > 0, `${bilan.vieillis} joueurs`);
 exiger('des runs au plus haut des exigences', bilan.exigences > 0, `${bilan.exigences} runs à 🔺 ${EXIGENCES.length}`);
 
 /* LES CHANCES D'UN PACK : 300 cartes de chaque pack, leurs niveaux contre leurs chances. */
@@ -532,27 +507,6 @@ const relue5 = relire(sv5);
 exiger('une sauvegarde de la version 5 joue le moteur d\'alors', !relue5.refus && relue5.L.moteur === 1 && relue5.L.journees.flat().every(s => s.parties.every(p => p.feuille.moteur === undefined)),
   relue5.refus || `${relue5.L.journees.flat().length} séries`);
 
-/*
- * UNE RUN DE LA VERSION 5, gelée le 30 octobre 2026 avec l'empreinte de ses
- * parties (le robot de scripts/lib/robot.mjs, deux splits, tous les
- * déblocages, l'agresseur) : rejouée aujourd'hui, elle redonne chaque partie
- * au tirage près. Elle tire ses joueurs des shards : rebâtis (une donnée
- * corrigée à Leaguepedia), la run part ailleurs. Elle ne se juge donc que sur
- * les shards où elle a été gelée (leur empreinte, `shards`) ; ailleurs, les
- * parties gelées du moteur d'avant, plus haut, en répondent.
- */
-const empreinteDesParties = P => {
-  const L = P.L || P.dernier;
-  const parties = [...L.journees.flat(), ...(L.series ? L.series.rondes.flat() : [])].flatMap(s => s.parties.map(p => [p.feuille.duree, p.feuille.gagnant, p.feuille.equipes.map(e => [e.k, Math.round(e.or), e.tours, e.dragons])]));
-  return JSON.stringify({ etape: P.etape, run: P.run, jetons: jetonsDe(P.L, P.R), parties });
-};
-const gelee = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/lib/partie-v5.json'), 'utf8'));
-const shards = hacher(Buffer.concat(fs.readdirSync(DOSSIER).filter(f => f.endsWith('.json')).sort().map(f => fs.readFileSync(path.join(DOSSIER, f)))));
-if (shards === gelee.shards) {
-  const relue = relire(JSON.parse(JSON.stringify(gelee.sauvegarde)));
-  exiger('une run de la version 5 se rejoue identique, partie pour partie', !relue.refus && relue.v === 5 && (relue.L || relue.dernier).moteur === 1 && empreinteDesParties(relue) === gelee.empreinte,
-    relue.refus ? `refusée en chemin : ${relue.refus}` : `${relue.run.passes.length} splits, ${JSON.parse(gelee.empreinte).parties.length} parties du dernier`);
-} else informer('une run de la version 5 : gelée sur d\'autres shards', `les leurs ${gelee.shards}, ceux-ci ${shards} ; le moteur d'avant répond par ses parties gelées`);
 const neuve = nouvellePartie(1, {});
 exiger('une partie neuve joue le moteur d\'aujourd\'hui', neuve.v >= 6 && dixhuits.every(({ P }) => P.dernier && P.dernier.moteur === 2 && P.dernier.journees[0][0].parties[0].feuille.moteur === 2),
   `version ${neuve.v}`);

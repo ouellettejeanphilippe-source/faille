@@ -131,7 +131,7 @@ Les réglages, et rien d'autre ne se règle (`REGLAGES`, js/moteur.js) : `force`
 
 ## 6. Les canaux (jalon 3)
 
-Ce qui change une partie (le repêchage des champions, les cartes du plan de jeu, le coach) passe par **les canaux** (`js/canaux.js`, partagés par les deux moteurs), et par rien d'autre. Une source d'effets est un objet dont chaque clé est un canal ; les sources se somment en un seul endroit (`sommerEffets`), puis chaque canal reste dans sa borne (`BORNES`).
+Ce qui change une partie (le repêchage des champions, le plan de match, les adjoints en poste, les liens, le coach) passe par **les canaux** (`js/canaux.js`, partagés par les deux moteurs), et par rien d'autre. Une source d'effets est un objet dont chaque clé est un canal ; les sources se somment en un seul endroit (`sommerEffets`), puis chaque canal reste dans sa borne (`BORNES`).
 
 | Canal | Ce qu'il fait | Borne |
 |---|---|---|
@@ -168,27 +168,15 @@ Les trois multiplicatifs touchent la partie entière : chacune des deux équipes
 
 ## 8. Le rogue, mesuré en paires
 
-`js/rogue.js`, repris de Cap 82-0. Les **jetons** ne se gardent pas : ils se recomptent des résultats (20 au départ, 4 par série gagnée, 1 par série perdue, 20 par ronde de séries gagnée) moins les achats. La **boutique** vend trois packs (bronze 10 jetons, argent 18, or 30 ; chaque pack hausse le suivant de 10 %), tirés du dé de la ligue et du numéro de l'achat ; une carte ne sort qu'une fois. Le **plan de jeu** : trois cartes actives au plus, changées entre deux journées. Le **coach** (12 jetons, un seul en poste) monte de palier à 3, 6 et 9 séries jouées avec une carte de sa couleur au plan ; la couleur d'une carte se lit sur ses canaux (`couleurDe`), jamais à la main. Chaque palier ouvre un de ses trois **pouvoirs** (§ 11).
+`js/rogue.js`, repris de Cap 82-0. Les **jetons** ne se gardent pas : ils se recomptent des résultats (20 au départ, 4 par série gagnée, 1 par série perdue, 20 par ronde de séries gagnée) moins les achats. Le plan de jeu de quinze cartes et ses packs sont partis à la version 9 (Cap 82-0, la V13-2 ; la Q1) : ses meilleures idées sont des styles d'adjoint.
 
-**La mesure en paires** (`check_rogue`) : la même ligue de dix vraies équipes jouée sous la même graine, l'effet donné aux équipes paires puis aux impaires ; pour chaque équipe, ses victoires avec l'effet moins ses victoires sans. Douze ligues, 120 paires par mesure. La forme se lit sur les parties d'une équipe traitée contre une qui ne l'est pas, comparées aux mêmes parties sans aucun effet. Sans effet, les deux passes sont identiques (le témoin).
+**La mesure en paires** (`check_rogue`) : la même ligue de dix vraies équipes jouée sous la même graine, l'effet donné aux équipes paires puis aux impaires ; pour chaque équipe, ses victoires avec l'effet moins ses victoires sans. Douze ligues, 120 paires par mesure. La forme se lit sur les parties d'une équipe traitée contre une qui ne l'est pas, comparées aux mêmes parties sans aucun effet.
 
-**Les bornes**, par saison de 18 parties : une carte rapporte au plus 0,6 victoire (commune), 1 (peu commune), 1,5 (rare), 2,5 (légendaire, et un coach au palier III) ; une rare, une légendaire et un coach au palier III **se voient** sur la feuille (± 1 min, ± 2 éliminations, ± 0,6 tour, ± 0,3 objectif par partie, ou ± 0,3 objectif de plus pour elle). Le repêchage automatique des deux côtés ne penche pas (± 0,6).
+**La main de ton coach** (`js/adjoints.js`, la V22 de Cap 82-0). Un adjoint est un style : un canal qui donne, un qui coûte, jamais en héraut (une époque ne le connaît pas, § 10). Deux par coach. Posté, il joue un séjour de 3 journées (4 s'il rejoint son coach), puis se repose 4 : il ne joue jamais plus de la moitié des parties. Ses canaux s'ajoutent à ceux de ton cinq le temps de son séjour.
 
-**Mesuré** le 30 octobre 2026, sur le moteur d'aujourd'hui (victoires de plus par saison ; la forme contre une équipe sans effet, par partie) :
+**Les bornes**, par split de 18 parties. Un adjoint, posté à chaque partie puis ramené à la part des parties qu'il peut jouer, reste sous la borne d'une peu commune de Cap 82-0 ramenée à un split (± 0,33 victoire), cadeau comme piège, et se voit sur sa signature. Mesuré le 3 novembre 2026 : de 0 à +0,16 victoire à sa part des parties. Les signatures, par partie où il est en poste : la plongée +3,7 éliminations dans la partie, les escarmouches +2,2, le maître des dragons +0,5 dragon de plus que l'adversaire, la vision −1,3 élimination, le gardien du tardif +1,3 min, la ferme −1,8 élimination, l'ingénieur +0,65 tour de plus, le finisseur −0,6 min. Un lien d'origine reste sous la borne de sa rareté (0,6 victoire pour une commune, 1 pour une peu commune). Le repêchage automatique des deux côtés ne penche pas (± 0,6) ; trois bannissements valent quelque chose sans tout décider (de 0,2 à 1,5).
 
-| | Victoires | Durée | Éliminations | Tours | Ses objectifs |
-|---|---|---|---|---|---|
-| ⚡ Escarmouches au niveau 3 (rare) | +0,37 | −2,10 min | +5,39 | −0,31 | +0,32 |
-| 🦀 Le héraut au milieu (rare) | +0,20 | −1,89 | −2,03 | +0,27 | +0,16 |
-| 🟣 Le coup de Nashor (rare) | +0,35 | +0,40 | −5,40 | +0,01 | +0,04 |
-| 🏆 La méta du tournoi (légendaire) | +1,35 | −0,46 | +4,55 | −0,05 | +0,55 |
-| 🌀 Le 4-1 (légendaire) | +0,13 | −2,31 | −2,25 | +0,12 | +0,04 |
-| Trois bannissements (l'adversaire n'en fait pas) | +0,68 | +0,23 | −0,27 | +0,07 | +0,26 |
-| Le repêchage automatique, des deux côtés | +0,03 | +0,67 | +0,25 | +0,14 | −0,03 |
-
-Le reste (les communes, les peu communes, une classe de plus au repêchage) est dans la sortie de `check_rogue`. Une lecture a un bruit d'environ ± 0,1 victoire : on ne retouche pas une carte sur une seule lecture.
-
-**Ce que ça dit.** Une carte change la forme de la partie bien plus que sa force : les rares rapportent de 0,2 à 0,4 victoire par saison et changent la partie de deux à cinq éliminations ou de deux minutes. La méta du tournoi, la plus forte, monte à 1,35 victoire (au moteur d'avant : 0,6), sous sa borne de légendaire : un combat se joue maintenant échange par échange, et une équipe meilleure à la ligne, au combat et aux objectifs en tire plus. Les bannissements pèsent 0,7, à jeu égal avec l'adversaire. Le tardif coûte encore un peu (−0,10 et −0,33 pour ses deux cartes), même avec son pivot ramené à 0,65 de la durée (`PIVOT_V2`) : la ligne du temps des parties (Oracle's Elixir) le calibrera.
+**Avant la version 9** (gardé ici pour l'histoire) : quinze cartes de partie, trois au plan, des packs de cartes. Mesuré le 30 octobre 2026, les rares rapportaient de 0,2 à 0,4 victoire par saison et changeaient la partie de deux à cinq éliminations ; la méta du tournoi montait à 1,35 victoire. Le robot attentif les mettait toutes au plan, et elles lui donnaient de la force.
 
 ## 9. Les liens d'origine et l'entraînement (jalon 4)
 
@@ -213,7 +201,7 @@ L'**entraînement** (js/gestion.js) ne crée aucun canal : un champion entraîn�
 
 ### Avant la version 8 : la stratégie au fit (jalon 5)
 
-Une partie d'avant la version 8 la rejoue telle quelle (`STRATEGIES_AU_FIT`, `effetAuFit`). Mesuré au jalon 8 (`check_profondeur`) : elle donnait de la force à qui avait les bons joueurs, de +0,7 à +2,1 victoires par split au tiers le mieux ajusté, et le robot attentif la jouait toujours.
+Partie à la version 9 : une partie d'avant se rejoue avec les plans d'aujourd'hui (la Q10). Mesuré au jalon 8 (`check_profondeur`) : elle donnait de la force à qui avait les bons joueurs, de +0,7 à +2,1 victoires par split au tiers le mieux ajusté, et le robot attentif la jouait toujours.
 
 `js/strategie.js`. Le plan de match de ton cinq, au centre du split : sept stratégies — le contrôle des dragons, jouer autour du Nashor, le héraut et les tours, pousser en solitaire, les combats à cinq, l'agression précoce, jouer pour le tardif. Chacune **demande** des joueurs (trois rôles et un axe chacun : un jungler d'objectifs, un haut qui gagne sa ligne…), et son **fit** est la moyenne de ces sous-cotes, jugées dans le split de chaque joueur. Comme les systèmes de Cap 82-0 :
 
@@ -229,7 +217,7 @@ Le fit se dit en mots, comme un badge (Sur mesure, Bon fit, Fit moyen, À contre
 
 Repris du coach-personnage de Cap 82-0 (sa V21) : un pouvoir **lit ce qui est déjà joué** et **frappe une phase**. Une partie a trois phases : la phase de lignes (jusqu'à `LIGNES_FIN`, 14 min), le milieu de partie (jusqu'à `MILIEU_FIN`, 25 min), la fin de partie. Au début d'une phase, chaque pouvoir de l'équipe lit son état — son côté, son avance d'or, ses tours et ses dragons de plus que l'autre — et, si sa condition tient, ajoute ses effets aux canaux de l'équipe le temps de la phase ; les puissances et les débits se refont. Un pouvoir ne tire aucun dé : celui qui ne joue pas laisse la partie telle quelle, et une équipe sans pouvoir joue la partie calibrée. La feuille garde ceux qui ont joué (`feuille.pouvoirs`) ; le direct les dit.
 
-Chaque coach en a trois, ouverts aux niveaux 1, 3 et 5 du coach-personnage (avant la version 4 de la sauvegarde, un par palier de confiance) ; chacun joue à peu près une partie sur deux, et fort quand il joue :
+Chaque coach en a trois, ouverts aux niveaux 1, 3 et 5 du coach-personnage ; chacun joue à peu près une partie sur deux, et fort quand il joue :
 
 | Coach | I | II | III |
 |---|---|---|---|
@@ -240,7 +228,7 @@ Chaque coach en a trois, ouverts aux niveaux 1, 3 et 5 du coach-personnage (avan
 
 **Mesuré en paires** (`check_rogue`, le 30 octobre 2026, sur le moteur d'aujourd'hui) : chaque pouvoir seul reste sous 1,5 victoire par saison (de +0,02 à +0,43), joue dans 25 à 75 % des parties (de 26 à 66 %), et se voit sur sa signature les parties où il joue — la traque +1,36 élimination, la curée −1,58 min, le carnage +2,56 éliminations, le contrôle du fleuve +0,27 dragon de plus que l'adversaire, la vision du héraut +0,20 héraut, l'appel du Nashor +0,20 Nashor, la ferme −1,19 élimination, l'endurance +3,32 min, le dernier mot +2,40 éliminations, le siège +0,34 tour, le héraut au front +0,16 héraut, la percée −2,35 min. Les trois ensemble (le palier III) restent sous 2,5 victoires : de +0,53 (le stratège) à +0,82 (le patient).
 
-**Le personnage** (version 4) : le coach, choisi au départ, gagne de l'expérience — 1 par série gagnée, 2 par ronde de séries gagnée, 3 pour un titre, 1 de plus par série gagnée avec une carte de sa couleur au plan — recomptée des résultats comme les jetons. Ses niveaux (à 0, 8, 20, 36 et 56 points) ouvrent ses pouvoirs aux niveaux 1, 3 et 5 ; aux niveaux 2 et 4, un **talent** fait grandir un pouvoir de moitié (chaque canal de moitié plus loin du neutre, toujours dans sa borne). Mesuré en paires : un pouvoir grandi reste sous 2,5 victoires (de −0,03 à +0,78) et se voit encore sur sa signature ; le personnage complet (niveau 5, deux talents) reste sous 4 victoires, de +0,58 (le stratège) à +1,02 (l'agresseur) — un coach change la forme d'une partie bien plus que sa force.
+**Le personnage** (version 4) : le coach, choisi au départ, gagne de l'expérience — 1 par série gagnée, 2 par ronde de séries gagnée, 3 pour un titre — recomptée des résultats comme les jetons (la couleur des cartes est partie avec le plan de jeu, à la version 9). Ses niveaux (à 0, 8, 20, 36 et 56 points) ouvrent ses pouvoirs aux niveaux 1, 3 et 5 ; aux niveaux 2 et 4, un **talent** fait grandir un pouvoir de moitié (chaque canal de moitié plus loin du neutre, toujours dans sa borne). Mesuré en paires : un pouvoir grandi reste sous 2,5 victoires (de −0,03 à +0,78) et se voit encore sur sa signature ; le personnage complet (niveau 5, deux talents) reste sous 4 victoires, de +0,58 (le stratège) à +1,02 (l'agresseur) — un coach change la forme d'une partie bien plus que sa force.
 
 ## 12. Le direct et le sommaire
 

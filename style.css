@@ -82,10 +82,6 @@
   /* Les éditions d'une carte de ta collection (js/fiche.js) : l'or et le prisme de la holo. */
   --ed-or: #ffd23a;
   --ed-holo: linear-gradient(120deg, #9fe3ea, #c99bff 35%, #ffd23a 65%, #7cf0b0);
-  /* Les raretés d'une carte de plan de jeu. */
-  --peu-commune: #5fb760;
-  --rare: #4f8fe0;
-  --legendaire: #e5a52a;
   /* Les sept tailles. */
   --t-1: 12px; --t-2: 13px; --t-3: 15px; --t-4: 18px; --t-5: 24px; --t-6: 34px; --t-7: 54px;
   /* Les trois rayons. */
@@ -1237,34 +1233,9 @@ button:disabled { opacity: 0.45; cursor: default; }
 .afaire-etat { flex: none; font: 800 var(--t-1)/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--or); }
 
 /* =====================================================================
-   17. LES CARTES EN RANGÉES — la carte de plan de jeu (un carton 5:7 aux couleurs de sa rareté), ta main
-       de cartes, ton cinq en cartons de front (Cap 82-0 : *une ligne de trois cartes, même sur mobile*)
+   17. LES CARTES EN RANGÉES — ton cinq en cartons de front (Cap 82-0 : *une ligne de trois cartes, même
+       sur mobile*)
    ===================================================================== */
-.cj {
-  --cj-c: #8b97a6; --cj-f: #1a2029;
-  position: relative; display: grid; grid-template-rows: auto 1fr auto auto auto; justify-items: center; gap: 2cqw; width: 100%; aspect-ratio: 5 / 7;
-  container-type: inline-size; overflow: hidden; padding: 6cqw 6cqw 4cqw; border-radius: 4.5% / 3.2%; text-align: center; color: var(--encre);
-  background: radial-gradient(90% 55% at 50% 30%, color-mix(in srgb, var(--cj-c) 38%, transparent), transparent 70%), linear-gradient(170deg, color-mix(in srgb, var(--cj-c) 22%, var(--cj-f)), #07090c);
-  box-shadow: inset 0 0 0 1.6cqw color-mix(in srgb, var(--cj-c) 70%, #000), inset 0 0 0 2.2cqw color-mix(in srgb, white 20%, transparent), 0 10px 18px -8px rgba(0, 0, 0, 0.7);
-}
-.cj-peu { --cj-c: var(--peu-commune); }
-.cj-rare { --cj-c: var(--rare); }
-.cj-legendaire { --cj-c: var(--legendaire); }
-.cj-legendaire::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 190, 0.35) 45%, transparent 60%); background-size: 250% 100%; animation: cj-reflet 3.4s ease-in-out infinite; }
-@keyframes cj-reflet { 0%, 40% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
-.cj-rarete { padding: 1cqw 4cqw; border-radius: 1.6cqw; background: color-mix(in srgb, var(--cj-c) 80%, #000); font: 800 5.4cqw/1.1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
-.cj-coach { position: absolute; top: 4.5cqw; right: 5cqw; font-size: 9cqw; line-height: 1; }
-.cj-ico { align-self: center; font-size: 34cqw; line-height: 1; filter: drop-shadow(0 2cqw 3cqw rgba(0, 0, 0, 0.6)); }
-.cj-nom { font: 800 10cqw/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; overflow-wrap: anywhere; }
-.cj-texte { font: 600 6.2cqw/1.25 var(--corps); color: var(--encre-2); }
-.cj-pied { font: 700 4cqw/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--encre-3); }
-/* Ta main : les cartes en grille de trois ; celles du plan se lèvent, à l'or. */
-.main-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2); }
-.cj-bouton { display: block; width: 100%; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; transition: transform var(--t-lent) var(--e-ressort), filter var(--t-lent); }
-.cj-bouton:hover:not(:disabled) { background: none; box-shadow: none; }
-.cj-bouton:not(.au-plan) { filter: saturate(0.6) brightness(0.8); }
-.cj-bouton.au-plan { transform: translateY(-6px); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--or) 70%, transparent)); }
-.cj-bouton.au-plan .cj::before { content: "Au plan"; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 1.4cqw; background: var(--or); color: #241800; font: 800 5cqw/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; }
 /* Ton cinq en cartons : trois de front, puis deux et le banc ; le rôle au-dessus, ses stats chez toi dessous. */
 .cinq-cartes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--esp-2) var(--esp-2); --carte-l: min(30vw, calc((100dvh - 430px) * 5 / 14), 150px); justify-content: center; grid-template-columns: repeat(3, var(--carte-l)); }
 .cinq-case { display: grid; gap: 2px; min-width: 0; cursor: pointer; -webkit-touch-callout: none; }
