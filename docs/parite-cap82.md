@@ -44,12 +44,12 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 - **le robot à trois politiques** (fait, P1) : il juge la courbe d'une run ;
 - **`essai_rogue`** (fait, P1) : il mesure chaque écran.
 
-**Les comptes.** L'index (§ 3) a 138 lignes ; 7 sont bloquantes : B4, C2, C3, D7, F9, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel ; le mandat de P3, F18 et E3 à jumeau.
+**Les comptes.** L'index (§ 3) a 138 lignes ; 7 sont bloquantes : B4, C2, C3, D7, F9, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel ; le mandat de P3, F18 et E3 à jumeau ; le plan de match de P4, B6 à jumeau.
 
 | État | Lignes |
 |---|---|
-| = jumeau | 17 |
-| ≈ transposé d'une version périmée | 29 |
+| = jumeau | 18 |
+| ≈ transposé d'une version périmée | 28 |
 | ◐ partiel | 37 |
 | ✗ absent | 49 |
 | ∅ sans objet | 4 |
@@ -133,7 +133,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | B3 | La lancée et le doute | `lanceeDe` ; `check_lancee` | absent ; les nouvelles 🔥 et 🧊 (js/soir.js) ne jouent rien | ✗ | les éliminations récentes contre le rythme de son vrai split ; jamais au 18-0 | B4 | Moyen |
 | B4 | **Un effet sur un joueur nommé, daté** | `pariDeDecision`, `lui`, effets datés en matchs | `confort` seul (borné à [−1, 0], js/canaux.js `BORNES`) ; les effets sont refaits à chaque journée (`jouerAvecToi`) | ✗ | un canal par joueur, signé, daté en parties, mesuré en paires | moteur, `check_rogue` | **Bloquant** |
 | B5 | Les situations du vestiaire | `SITUATIONS` ; `check_situations` | absent | ✗ | une paire, l'un porté, l'autre pesé, net nul | B4 | Bas |
-| B6 | Le plan du soir (V17), sans systèmes (V18) | `PLANS` : « un plan change la FORME du match, pas sa force » ; `check_plan_de_match` | `js/strategie.js` `STRATEGIES` (7, pour le split, gain au fit) | ≈ | ce sont les systèmes d'avant la V18 ; Faille dit même « comme les systèmes de Cap 82-0 » | Q2, tranché | Haut |
+| B6 | Le plan du soir (V17), sans systèmes (V18) | `PLANS` : « un plan change la FORME du match, pas sa force » ; `check_plan_de_match` | `js/strategie.js` `PLANS` (6, par partie, sans fit ; le Nashor dans le tardif) ; `check_plan_de_match` (P4) ; la stratégie au fit gardée pour les parties d'avant la v8 | = | la borne d'une commune ramenée à un split (±0,22 V) ; le héraut seulement dans une partie qui en a un ; ce que le plan dit vient de la table mesurée, pas d'une lecture contre l'adversaire du soir (`planEnChiffres` de Cap 82-0, que seul le robot fait) | — | — |
 | B7 | La version du moteur | `VERSION_MOTEUR` : la saison en cours **se rejoue** ; `check_empreinte` | `js/partie.js` `VERSION` 6, `js/moteur-v1.js` **gelé** | ≈ | une politique contraire | Q10, tranché | Moyen |
 | B8 | Les parts des joueurs | `check_parts` | `check_feuilles` (des repères d'équipe seulement) | ◐ | la part de chacun (éliminations, aides, or) simulée contre la vraie | moteur | Moyen |
 | B9 | Les unités spéciales, la prolongation, le gardien, les blessures, les jambes, le ballottage | `speciales`, `fusillade`, js/ballottage.js… | — | ∅ | LIVRAISON.md, « Ce qui ne se transpose pas » ; une absence passe par une histoire | — | — |
@@ -283,7 +283,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
 | J1 | Le juge, le code mort, la coquille | `verdict.mjs`, `lib/mort.mjs`, `check_mort`, `check_coquille` | identiques (le diff est vide) | = | — | — | — |
-| J2 | `tout.mjs` | 36 scripts rapides | 14 scripts, `check_rogue` (32 s), `check_robot`, `check_impact` et `check_chiffres` (26 s) compris | ≈ | — | — | Bas |
+| J2 | `tout.mjs` | 36 scripts rapides | 15 scripts, `check_rogue` (32 s), `check_plan_de_match` (21 s), `check_robot`, `check_impact` et `check_chiffres` (26 s) compris | ≈ | — | — | Bas |
 | J3 | `verifier.yml` | 27 étapes | 3 étapes (`tout.mjs`, le smoke, `essai_rogue`) | ◐ | une étape par juge, à mesure qu'ils arrivent | — | Moyen |
 | J4 | Les vieilles parties, jugées en Node | `check_sauvegardes` | le smoke et `check_gestion` | ◐ | `check_sauvegardes` | — | Bas |
 | J5 | La mise à jour, la version | `js/mise-a-jour.js`, `js/version.js` = `VERSION` de sw.js ; `check_maj` | `VERSION` de sw.js seul | ✗ | `version.js` et le rechargement au titre | — | Bas |

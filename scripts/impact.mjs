@@ -3,8 +3,8 @@
  * effet se dit en ce que le joueur lit dans la feuille*). Chaque effet de scripts/lib/effets.mjs, sur le banc de
  * scripts/lib/paires.mjs (ses propres ligues, d'autres graines que check_rogue et check_chiffres) : ce qu'il change
  * par partie à l'équipe qui le porte — ses éliminations, ses morts, ses dragons, ses Nashor, ses hérauts, ses tours,
- * la durée —, avec l'erreur type de chaque chiffre. Un pouvoir se lit les parties où il joue ; une stratégie, par une
- * droite qui suit le fit de l'équipe.
+ * la durée —, avec l'erreur type de chaque chiffre. Un pouvoir se lit les parties où il joue ; un plan de match, les
+ * parties où il se joue.
  *
  * Ce script ne juge rien : check_impact dit si la table est à jour, check_chiffres si elle égale ce que le moteur joue.
  * À relancer quand un effet ou le moteur change (check_impact le demande) :
@@ -14,9 +14,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fitDe } from '../js/strategie.js';
 import { lireSplits } from './lib/vestiaires.mjs';
-import { banc, impactDe, droiteDe, STATS_DE_LA_FEUILLE } from './lib/paires.mjs';
+import { banc, impactDe, STATS_DE_LA_FEUILLE } from './lib/paires.mjs';
 import { effetsAChiffrer, empreinteDuMoteur } from './lib/effets.mjs';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -34,13 +33,8 @@ for (const e of effetsAChiffrer()) {
   const m = mesurer(e.opts);
   const n = m.ecarts.elim.length;
   parties += n;
-  if (e.genre === 'strategie') {
-    const d = droiteDe(m, eq => fitDe(e.id, eq.cinq));
-    table[e.cle] = { sig: e.sig, n, a: Object.fromEntries(STATS_DE_LA_FEUILLE.map(c => [c, r3(d.a[c])])), b: Object.fromEntries(STATS_DE_LA_FEUILLE.map(c => [c, r3(d.b[c])])), se: Object.fromEntries(STATS_DE_LA_FEUILLE.map(c => [c, r3(d.se[c])])) };
-  } else {
-    const d = impactDe(m);
-    table[e.cle] = { sig: e.sig, n, ...(e.genre === 'pouvoir' ? { joue: r3(m.joue) } : {}), d: Object.fromEntries(STATS_DE_LA_FEUILLE.map(c => [c, d[c].map(r3)])) };
-  }
+  const d = impactDe(m);
+  table[e.cle] = { sig: e.sig, n, ...(e.genre === 'pouvoir' ? { joue: r3(m.joue) } : {}), d: Object.fromEntries(STATS_DE_LA_FEUILLE.map(c => [c, d[c].map(r3)])) };
   process.stdout.write('.');
 }
 
@@ -50,7 +44,7 @@ const texte = `/*
  *
  * Par partie, à l'équipe qui porte l'effet : ses éliminations (elim), ses morts, ses dragons, ses Nashor, ses hérauts,
  * ses tours, la durée en minutes ; chaque chiffre [moyenne, erreur type]. Un pouvoir se lit les parties où il joue
- * (joue : leur part) ; une stratégie suit le fit de l'équipe : a + b × fit, et son erreur type (se).
+ * (joue : leur part) ; un plan de match, les parties où il se joue.
  * ${LIGUES} ligues d'essai, ${parties} parties mesurées. js/impact.js le dit à l'écran ; check_impact juge que la table
  * est à jour (MOTEUR_MESURE, les signatures), check_chiffres qu'elle égale ce que le moteur joue.
  */

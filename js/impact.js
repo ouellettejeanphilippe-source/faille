@@ -23,13 +23,8 @@ export const PAS = { elim: 0.3, morts: 0.3, dragons: 0.08, nashor: 0.05, herauts
 /* Combien d'erreurs types une ligne doit dépasser pour se dire. */
 export const BRUIT = 2;
 
-/** L'impact mesuré d'un effet, par partie : { stat : [moyenne, erreur type] } ; une stratégie, au fit `fit`. null : jamais mesuré. */
-export function impactDe(cle, fit = 0) {
-  const x = IMPACTS[cle];
-  if (!x) return null;
-  if (!x.a) return x.d;
-  return Object.fromEntries(Object.keys(MOTS).map(c => [c, [x.a[c] + x.b[c] * fit, x.se[c]]]));
-}
+/** L'impact mesuré d'un effet, par partie : { stat : [moyenne, erreur type] }. null : jamais mesuré. */
+export const impactDe = cle => (IMPACTS[cle] ? IMPACTS[cle].d : null);
 
 /**
  * Un impact en puces, le plus fort d'abord : [{ cle, txt, bon }] — « +1,1 élimination », « −0,7 min ». `bon` : vrai
@@ -62,8 +57,8 @@ export function impactCompose(parts) {
   return out;
 }
 
-/** Ce qu'un effet change, en puces (motsDeStats) ; `fit` pour une stratégie. */
-export const chiffresDe = (cle, { fit = 0, max = 3 } = {}) => motsDeStats(impactDe(cle, fit), max);
+/** Ce qu'un effet change, en puces (motsDeStats). */
+export const chiffresDe = (cle, { max = 3 } = {}) => motsDeStats(impactDe(cle), max);
 
 /**
  * Ce qu'un effet change, en une phrase : « ≈ +1,1 élimination · −0,7 min par partie », ou « rien de net sur la

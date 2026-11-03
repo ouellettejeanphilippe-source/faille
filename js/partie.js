@@ -38,11 +38,16 @@
  * première run laisse bâtir (`premiere`, posé au départ) ; ta vedette prend
  * la case du haut du classeur. Une partie d'avant la version 7 garde ses
  * mandats aux séries et sa vedette en plus.
+ *
+ * LE PLAN DE MATCH (version 8, Cap 82-0 V17) : la stratégie devient le plan
+ * de la partie, qui change sa forme, pas sa force (js/strategie.js PLANS) ;
+ * il se joue contre l'adversaire du soir, dans l'année de leur partie. Une
+ * partie d'avant la version 8 garde sa stratégie au fit.
  */
 import { melangerTempos } from './canaux.js';
 import { joueurDuMoteur, equipeReelle, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
 import { repecher, repecherPartie, attendRepechage } from './repechage.js';
-import { STRATEGIES, effetDeStrategie } from './strategie.js';
+import { PLANS, STRATEGIES_AU_FIT, effetDuPlan, effetAuFit, anneeEntre } from './strategie.js';
 import { PLAFOND, TARIFS, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
 import { hasard, graineDe } from './hasard.js';
@@ -51,7 +56,7 @@ import { effetDe, MODES } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 7;
+export const VERSION = 8;
 /** Un loto : trois cartes, tu en gardes une ou aucune. */
 export const LOTO = 3;
 /* Les niveaux des cases de ceux qui restent, dans l'ordre où elles s'ouvrent (GARDES, plus le noyau). */
@@ -258,7 +263,10 @@ function jouerAvecToi(P, ctx, jouer, rp) {
   const options = rp ? { mesBans: rp.bans, mesChoix: rp.choix } : {};
   if (s && P.v < 3 && !s.repechage) repecher(L, s, ctx.classes, options);
   else if (s && P.v >= 3 && attendRepechage(s)) repecherPartie(L, s, ctx.classes, options);
-  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), effetDeStrategie(P.strategie, L.equipes[0].cinq), P.staff);
+  // Ton plan contre l'adversaire du soir, dans l'année de leur partie (version 8) ; d'avant, la stratégie à son fit.
+  const adv = s && (s.a === 0 ? s.b : s.a);
+  const plan = P.v >= 8 ? s && effetDuPlan(P.strategie, anneeEntre(L.equipes[0], L.equipes[adv])) : effetAuFit(P.strategie, L.equipes[0].cinq);
+  L.equipes[0].effets = effetsDeToi(P.R, liensDe(P.eff.cinq), plan, P.staff);
   L.equipes[0].pouvoirs = pouvoirsDeLaPartie(P);
   jouer(L);
   if (s && s.gagnant !== null) noterJoue(P.R, s.gagnant === 0);
@@ -445,7 +453,7 @@ const ACTIONS = {
   },
   strategie(P, a) {
     pasAuDixHuit(P);
-    exiger(a.id === null || STRATEGIES[a.id], 'stratégie inconnue');
+    exiger(a.id === null || (P.v >= 8 ? PLANS : STRATEGIES_AU_FIT)[a.id], 'plan inconnu');
     P.strategie = a.id;
   },
   relacher(P) {
@@ -567,7 +575,7 @@ export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P
  * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
  * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance ; avant la 5, la
  * roulette bâtissait le cinq du Rogue et les gardés se choisissaient ; avant la 6, le moteur d'alors jouait les parties ;
- * avant la 7, le mandat se lisait aux séries et la vedette venait en plus du classeur.
+ * avant la 7, le mandat se lisait aux séries et la vedette venait en plus du classeur ; avant la 8, la stratégie jouait à son fit.
  */
 export function rejouer(sv, ctx) {
   const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null, premiere: !!sv.premiere });

@@ -10,7 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ICI = path.dirname(fileURLToPath(import.meta.url));
-const RAPIDES = ['check_graine', 'check_coquille', 'check_mort', 'check_cotes', 'check_plafond', 'check_gestion', 'check_meta', 'check_feuilles', 'check_commentaire', 'check_terrain', 'check_rogue', 'check_robot', 'check_impact', 'check_chiffres'];
+const RAPIDES = ['check_graine', 'check_coquille', 'check_mort', 'check_cotes', 'check_plafond', 'check_gestion', 'check_meta', 'check_feuilles', 'check_commentaire', 'check_terrain', 'check_rogue', 'check_plan_de_match', 'check_robot', 'check_impact', 'check_chiffres'];
 const liste = process.argv.slice(2).length ? process.argv.slice(2) : RAPIDES;
 let echecs = 0;
 for (const nom of liste) {

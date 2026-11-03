@@ -4,7 +4,7 @@
  * La table js/impacts.js a été mesurée sur ses ligues à elle (scripts/impact.mjs). Ce script remesure chaque effet en
  * paires sur d'autres ligues — celles de check_rogue — et juge chaque ligne que l'écran dit (js/impact.js `chiffresDe`) :
  * la remesure tombe à `Z` erreurs types de la table (les deux erreurs, sommées, chacune comptée par ligue), et
- * jamais nettement de l'autre côté de zéro. Une stratégie se juge au fit moyen de la remesure, sur sa droite.
+ * jamais nettement de l'autre côté de zéro.
  *
  * POURQUOI QUATRE ERREURS TYPES. Le juge pose environ deux cents questions d'un coup (une par ligne dite) : à trois
  * erreurs types chacune, il crierait par hasard quatre fois sur dix. Quatre, c'est la correction de Bonferroni pour
@@ -14,9 +14,8 @@
  */
 import { IMPACTS } from '../js/impacts.js';
 import { impactDe, chiffresDe } from '../js/impact.js';
-import { fitDe } from '../js/strategie.js';
 import { lireSplits } from './lib/vestiaires.mjs';
-import { banc, impactDe as mesureDe, droiteDe } from './lib/paires.mjs';
+import { banc, impactDe as mesureDe } from './lib/paires.mjs';
 import { effetsAChiffrer } from './lib/effets.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
@@ -26,22 +25,14 @@ const t0 = Date.now();
 const splits = lireSplits();
 exiger('des splits à lire', splits.length > 0, `${splits.length} splits`);
 const { mesurer } = banc(splits, LIGUES, 500);
-const moyenne = xs => xs.reduce((s, x) => s + x, 0) / (xs.length || 1);
 
 const fautes = [];
 let jugees = 0;
 for (const e of effetsAChiffrer()) {
   if (!IMPACTS[e.cle]) continue;
-  const m = mesurer(e.opts);
-  let fit = 0, ici;
-  if (e.genre === 'strategie') {
-    const f = eq => fitDe(e.id, eq.cinq);
-    fit = moyenne(m.parties.map(f));
-    const d = droiteDe(m, f);
-    ici = Object.fromEntries(Object.keys(d.a).map(c => [c, [d.a[c] + d.b[c] * fit, d.se[c]]]));
-  } else ici = mesureDe(m);
-  const table = impactDe(e.cle, fit);
-  for (const l of chiffresDe(e.cle, { fit, max: 7 })) {
+  const ici = mesureDe(mesurer(e.opts));
+  const table = impactDe(e.cle);
+  for (const l of chiffresDe(e.cle, { max: 7 })) {
     jugees++;
     const [t, set] = table[l.cle], [r, ser] = ici[l.cle];
     const tolerance = Z * Math.hypot(set, ser);

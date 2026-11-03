@@ -40,7 +40,7 @@ import { liensDe, LIENS, COACHS, PACKS, CARTES } from './rogue.js';
 import { vuePacksJoueurs, vuePlanDeJeu, carteDeJeu } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion, PACKS_JOUEURS } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION, parCases, caseEnCours, attendPack, refDe, mandatDuSplit } from './partie.js';
-import { aTraiter, feuilleDuChoix, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi } from './bureau.js';
+import { aTraiter, feuilleDuChoix, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi, lignePlan } from './bureau.js';
 import { ecranCeSoir, ecranSommaire, autourDeLaLigue } from './soir.js';
 import { terrainDe } from './terrain.js';
 import { ecussonHtml } from './fiche.js';
@@ -252,6 +252,7 @@ const RENDUS = {
   '#depart': () => { $('#depart').innerHTML = ecranDepart(G.meta, { etoiles: G.etoiles, vedette: G.vedette }); },
   '#exhibition': () => { $('#exhibition').innerHTML = ecranExhibition(G.exhib); },
   '#strategie': () => { if (G.P && G.P.L) $('#strategie').innerHTML = ecranStrategie(G.P, ctx()); },
+  '#soir': () => { const s = G.P && G.P.L && taSerie(G.P.L); if (s) rendreCeSoir(s); },
   // Le choix en plein écran : réglé, il se ferme ; le suivant, s'il y en a un, attend sa ligne dans la Boîte.
   '#choix': () => { const h = G.P && G.P.etape === 'split' ? feuilleDuChoix(G.P) : ''; if (h) $('#choix').innerHTML = h; else fermer('#choix'); },
 };
@@ -694,12 +695,15 @@ function jouer(a) {
   G.regarderApres = false;
 }
 
+/* Ce soir, dessiné : l'affiche, ce qu'ils priorisent, ton plan (qui se change d'ici, et Ce soir se redessine). */
+const rendreCeSoir = s => { $('#soir').innerHTML = ecranCeSoir(G.P, ctx(), s, planAdverse(G.P, ctx(), s.a === 0 ? s.b : s.a), lignePlan(G.P, 'soir-plan')); };
+
 /* « CE SOIR » : l'avant-match de ta prochaine partie. */
 function ouvrirCeSoir() {
   const L = G.P.L;
   const s = taSerie(L);
   if (!s) return;
-  $('#soir').innerHTML = ecranCeSoir(G.P, ctx(), s, planAdverse(G.P, ctx(), s.a === 0 ? s.b : s.a));
+  rendreCeSoir(s);
   montrer('#soir');
 }
 
@@ -732,7 +736,7 @@ function toucherRepechage(ev) {
   jouer(b.id === 'repe-jouer' ? { t, rp: { bans: d.bans, choix: d.choix } } : { t });
 }
 
-/* Les gestes des sections et de la stratégie. */
+/* Les gestes des sections et du plan de match. */
 async function toucherVue(ev) {
   const P = G.P;
   const li = ev.target.closest('[data-contrat]');
@@ -741,7 +745,7 @@ async function toucherVue(ev) {
   const serie = ev.target.closest('[data-serie]');
   if (serie && (!b || b === serie) && (ev.type === 'click' || ev.key === 'Enter')) { ouvrirFeuille(serie.dataset.serie); return; }
   if (!b || b.disabled || ev.type !== 'click') return;
-  if (b.id === 'ouvrir-strategie') ouvrir('strategie');
+  if (b.id === 'ouvrir-strategie' || b.id === 'soir-plan') ouvrir('strategie');
   else if (b.dataset.album) ouvrirAlbum(b.dataset.album);
   else if (b.dataset.sous) { G.sous[G.section] = b.dataset.sous; rendreSplit(); }
   else if (b.dataset.soir !== undefined) ouvrirCeSoir();

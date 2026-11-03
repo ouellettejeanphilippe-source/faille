@@ -11,7 +11,7 @@ import { BANS } from './repechage.js';
 import { MEDAILLES, RANGS, DEBLOCAGES, EDITIONS, EXIGENCES, PRIME_EXIGENCE, MODES } from './meta.js';
 import { TROPHEES, GALONS } from './palmares.js';
 import { SERIES, TIRAGE_HOLO } from './fiche.js';
-import { STRATEGIES } from './strategie.js';
+import { PLANS } from './strategie.js';
 
 const liste = items => `<ul class="regles-liste">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
 
@@ -40,7 +40,7 @@ export function ecranRegles() {
     ${liste([
     'Ton cinq contre neuf vrais vestiaires de toutes les époques, chacun deux fois, en une partie. Puis les six premiers en séries de cinq parties ; les deux premiers attendent en demi-finale.',
     `Avant chacune de tes séries, le repêchage des champions : ${BANS} bannissements de chaque côté, puis un champion pour chacun de tes joueurs dans son vrai bassin. Loin de son plus joué, un joueur est moins à l'aise.`,
-    `Ta stratégie (${Object.values(STRATEGIES).map(s => s[0]).join(' ')}) : son gain suit ce que tes joueurs savent faire, son prix se paie toujours.`,
+    `Ton plan de match (${Object.values(PLANS).map(x => x[0]).join(' ')}), partie par partie : il change la partie, pas ta force. Chaque plan paie ce qu'il donne, et selon l'adversaire, l'un rend plus que l'autre. Le héraut ne se joue que dans une partie qui en a un (2016 →).`,
     `L'entraînement : un joueur à la fois travaille un champion de son rôle ; ${ENTRAINEMENT.journees} journées plus tard, il entre à son bassin, « entraîné ».`,
   ])}
     <h3>Le marché</h3>

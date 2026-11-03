@@ -13,12 +13,12 @@
  *   - 'attentif' : il lit ses joueurs. Au loto, la carte de la plus haute
  *     valeur qui se paie ; au marché et dans un pack, le joueur qui monte le
  *     plus son cinq (sa valeur contre celle du titulaire, `MARGE` au moins) ;
- *     le pack le plus cher qu'il peut payer ; la stratégie du meilleur fit
- *     (« Bon fit » ou mieux, sinon aucune) ; le banc qui joue s'il vaut mieux ;
+ *     le pack le plus cher qu'il peut payer ; le plan de match qu'il lit au
+ *     moteur contre chaque adversaire (`planDeLAttentif`) ; le banc qui joue s'il vaut mieux ;
  *     un entraînement toujours en cours ; le commanditaire qui paie le plus ;
  *     un talent sur le premier pouvoir ; le repêchage automatique ;
  *   - 'distrait' : il clique sans lire — au hasard partout où l'écran offre un
- *     choix (le loto, la stratégie, le marché, les packs, le banc, les
+ *     choix (le loto, le plan de match, le marché, les packs, le banc, les
  *     décisions, et ses champions au repêchage, parmi les trois plus joués).
  *
  * LES DÉS DU MONDE ET CEUX DES CHOIX. Les adversaires, la graine du split et
@@ -35,8 +35,9 @@ import { ROLES } from '../../js/canaux.js';
 import { tempoDuSplit, equipeReelle } from '../../js/sim.js';
 import { hasard, piger, graineDe } from '../../js/hasard.js';
 import { bansAuto, permis, BANS, HORS } from '../../js/repechage.js';
-import { STRATEGIES, fitDe } from '../../js/strategie.js';
-import { CARTES, RARETES, PLAN, jetonsDe } from '../../js/rogue.js';
+import { PLANS, effetDuPlan, planJoue, anneeEntre } from '../../js/strategie.js';
+import { jouerPartie } from '../../js/moteur.js';
+import { CARTES, RARETES, PLAN, jetonsDe, effetsDeToi, liensDe } from '../../js/rogue.js';
 import {
   tirer, tirerAdversaires, tirerBoucheTrous, tirerPackJoueurs, agentsLibres, signables, placements, cleDe, marcheOuvert, aTravailler,
   MARCHE, PACKS_JOUEURS, COMMANDITAIRES, prixPackJoueurs,
@@ -49,8 +50,6 @@ export const POLITIQUES = ['defaut', 'attentif', 'distrait'];
 
 /* L'attentif ne change un titulaire que pour mieux d'au moins ça, en écarts types de valeur (js/cotes.js). */
 const MARGE = 0.1;
-/* La stratégie que l'attentif joue : son fit au moins à « Bon fit » (js/strategie.js FITS). */
-const FIT_MIN = 0.15;
 
 /** Le contexte de js/partie.js, avec tous les splits de data/splits/ : { ctx, ids, lire }. */
 export function contexte() {
@@ -146,13 +145,44 @@ function meilleurGain(P, contrats) {
   return best;
 }
 
-/* LA JOURNÉE DE L'ATTENTIF, avant de jouer : la stratégie, le banc, le marché, un pack, l'entraînement, le plan de jeu. */
+/*
+ * LE PLAN DE L'ATTENTIF (Cap 82-0, scripts/lib/rogue_sim.mjs `planDuRobot`). À la première rencontre d'un adversaire
+ * dans le split, il lit le moteur : chaque plan contre sa partie, LECTURE parties en paires, de chaque côté, avec son
+ * cinq et ses effets d'aujourd'hui. Il garde celui qui rend le plus de victoires, sa partie si aucun ne rend.
+ */
+const LECTURE = 40;
+const lus = new WeakMap();
+function planDeLAttentif(P) {
+  const L = P.L;
+  const s = taSerie(L);
+  if (!s) return P.strategie;
+  const i = s.a === 0 ? s.b : s.a;
+  if (!lus.has(L)) lus.set(L, new Map());
+  const deja = lus.get(L);
+  if (!deja.has(i)) {
+    const toi = { ...L.equipes[0], effets: effetsDeToi(P.R, liensDe(P.eff.cinq), null, P.staff) }, eux = L.equipes[i];
+    const annee = anneeEntre(toi, eux);
+    const victoires = e => {
+      let v = 0;
+      for (let g = 0; g < LECTURE; g++) {
+        const graine = graineDe(L.graine, `lecture-${i}-${g}`);
+        const f = g % 2 ? jouerPartie(eux, toi, graine, [null, e]) : jouerPartie(toi, eux, graine, [e, null]);
+        if (f.gagnant === g % 2) v++;
+      }
+      return v;
+    };
+    const sans = victoires(null);
+    const [id, gain] = Object.keys(PLANS).filter(x => planJoue(x, annee)).map(x => [x, victoires(effetDuPlan(x, annee)) - sans]).sort((a, b) => b[1] - a[1])[0];
+    deja.set(i, gain > 0 ? id : null);
+  }
+  return deja.get(i);
+}
+
+/* LA JOURNÉE DE L'ATTENTIF, avant de jouer : son plan de match, le banc, le marché, un pack, l'entraînement, le plan de jeu. */
 async function gererAttentif(P, { ctx, ids, lire }) {
   const L = P.L;
-  const cinq = L.equipes[0].cinq;
-  const fits = Object.keys(STRATEGIES).map(id => [id, fitDe(id, cinq)]).sort((a, b) => b[1] - a[1]);
-  const voulue = fits[0][1] >= FIT_MIN ? fits[0][0] : null;
-  if (voulue !== P.strategie) tenter(P, { t: 'strategie', id: voulue }, ctx);
+  const voulu = planDeLAttentif(P);
+  if (voulu !== P.strategie) tenter(P, { t: 'strategie', id: voulu }, ctx);
   const b = P.eff.banc;
   if (b && valeur(b) > valeur(P.eff.cinq[b.r]) + MARGE) tenter(P, { t: 'permuter' }, ctx);
   if (marcheOuvert(L) && (P.bons || jetonsDe(L, P.R) >= MARCHE.prix)) {
@@ -186,7 +216,7 @@ async function gererAttentif(P, { ctx, ids, lire }) {
 /* LA JOURNÉE DU DISTRAIT : il touche à tout, au hasard. */
 async function gererDistrait(P, { ctx, ids, lire }, clic) {
   const L = P.L;
-  if (clic() < 0.15) tenter(P, { t: 'strategie', id: piger([null, ...Object.keys(STRATEGIES)], clic) }, ctx);
+  if (clic() < 0.15) tenter(P, { t: 'strategie', id: piger([null, ...Object.keys(PLANS)], clic) }, ctx);
   if (marcheOuvert(L) && clic() < 0.35) {
     const offre = await agentsLibres(L, ids, lire, P.eff, P.adversaires, offreDe(P));
     const ref = offre.length && piger(offre, clic);
@@ -231,7 +261,11 @@ export async function jouerLeSplit(P, C, clic, politique = 'defaut') {
     agir({ t: 'journee', ...rp() });
   }
   agir({ t: 'series' });
-  while (P.L.series.champion === null) agir({ t: 'ronde', ...rp() });
+  while (P.L.series.champion === null) {
+    // Aux séries aussi, l'attentif pose son plan contre l'adversaire de la ronde.
+    if (P.mode !== 'dixhuit' && politique === 'attentif' && planDeLAttentif(P) !== P.strategie) tenter(P, { t: 'strategie', id: planDeLAttentif(P) }, ctx);
+    agir({ t: 'ronde', ...rp() });
+  }
   agir({ t: 'bilan' });
 }
 

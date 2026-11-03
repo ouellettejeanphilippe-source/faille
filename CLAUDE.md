@@ -55,7 +55,7 @@ docs/gabarits/devis.md le gabarit d'un devis, jugé par /revue-design avant le c
 js/main.js            le contrôleur : chaque geste passe par faire() (une action du journal), la sauvegarde, le méta, les écrans
 js/partie.js          la run en journal d'actions : appliquer, rejouer, la sauvegarde (la graine, le mode, les déblocages, le club, la collection du départ, le journal) ; les deux modes (le 18-0, le Rogue), les cases du départ (la vedette, le classeur, ceux qui restent) et le pack de départ
 js/gestion.js         les règles du DG : relances, marché et banc, packs de joueurs, le joueur qui vieillit, mandats, objectifs, événements, commanditaires, entraînement
-js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), les Joueurs (le tableau), le Cinq (ton cinq, ton plan), les agents libres ; la stratégie ; le bilan d'un split
+js/bureau.js          le Bureau (Boîte, Proprio, Coach, Vestiaire), les Joueurs (le tableau), le Cinq (ton cinq, ton plan), les agents libres ; le plan de match ; le bilan d'un split
 js/soir.js            « Ce soir » avant une partie (l'affiche, la forme, le face-à-face, leur cinq), le sommaire d'une partie jouée ; la une, les nouvelles, autour de la ligue
 js/meta.js            le méta entre les runs, rien de compté : médailles, rang, déblocages, ton club, la collection, le panthéon
 js/palmares.js        le palmarès d'un split, lu dans ses feuilles : stats, meneurs, trophées, galons, records
@@ -77,7 +77,7 @@ js/sim.js             le split au jour le jour, les séries, le tempo et les vra
 js/moteur.js          le moteur v2 : une partie comme une vraie — les sorts d'invocateur, les niveaux et l'ultime, les sbires, les combats, les monstres et les tours de chaque époque (MOTEUR.md)
 js/moteur-v1.js       le moteur d'avant, gelé : il rejoue les sauvegardes v ≤ 5
 js/canaux.js          les canaux d'une partie (`sommerEffets`) et les horaires des phases, partagés par les deux moteurs
-js/strategie.js       la stratégie : sept plans de match, leur fit sur les joueurs, l'identité des vraies équipes (MOTEUR.md §10)
+js/strategie.js       le plan de match : six plans par partie, qui changent la forme et pas la force ; la stratégie au fit des parties d'avant la v8 ; l'identité des vraies équipes (MOTEUR.md §10)
 js/split.js           la Ligue (classement, calendrier, meneurs, séries), hier soir, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
@@ -103,7 +103,7 @@ scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du m
 scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
 scripts/impact.mjs         mesure chaque effet en paires et écrit js/impacts.js ; ne juge rien
 scripts/lib/paires.mjs     le banc de mesure en paires (check_rogue, impact.mjs, check_chiffres) ; scripts/lib/effets.mjs, le registre des effets chiffrés
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, robot, impact, chiffres)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, plan de match, robot, impact, chiffres)
 scripts/check_profondeur.mjs trois robots sur les mêmes dés : mener compte-t-il ? la première run est-elle dure ? (hors du CI : le juge de la courbe d'une run)
 scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise ; tout est atteignable, aucune cible sous 44 px
 scripts/essai_rogue.mjs    un robot joue le premier split à 390 × 844 : chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord
@@ -120,7 +120,6 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 | La règle | Ce qu'elle devient | Tranche |
 |---|---|---|
 | « aucune cote dans le DOM » | les cotes sur 20 | P15 |
-| la stratégie au fit | des plans par partie | P4 |
 | le staff d'adjoints et le plan de jeu | les adjoints de la V22 | P5 |
 | les commanditaires | la règle du coach | P12 |
 | « une édition ou un galon ne change rien au jeu » | ils jouent | P16 |
@@ -151,7 +150,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
 - Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
 - Ce qu'un effet change se dit en vraies stats de partie — éliminations, morts, dragons, Nashor, hérauts, tours, minutes —, jamais en cote, en victoires ni en « % » : mesuré en paires (`scripts/impact.mjs` écrit `js/impacts.js`, `js/impact.js` le dit), une ligne sous le bruit ne se dit pas — `check_impact`, `check_chiffres`. Un effet ou un moteur qui change fait refaire la table (`node scripts/impact.mjs`, une minute et demie) : `check_impact` le demande.
-- Une stratégie : son gain suit le fit des joueurs, son prix se paie toujours ; le tiers le mieux ajusté y gagne, le moins bien ajusté y perd — `check_rogue`. Le fit se dit en mots, comme un badge.
+- Un plan de match change la forme d'une partie, pas sa force (Cap 82-0, la V17) : chaque plan paie ce qu'il donne, et joué à chaque partie, il reste sous la borne d'une commune ramenée à un split (±0,22 V) ; il se voit sur sa signature ; aucun ne domine (chacun est le meilleur contre au moins un adversaire, aucun contre tous) ; aucun prix ne se paie dans un canal qu'une époque ne connaît pas, et le héraut ne se joue que dans une partie qui en a un — `check_plan_de_match`. Une partie d'avant la version 8 garde sa stratégie au fit.
 
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
@@ -214,7 +213,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - **marché** : les agents libres d'une journée, jusqu'à la **date limite** ; le **banc**, le sixième joueur ; les **relances** de la roulette.
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
-- **stratégie** (le plan de match) : ce que ton cinq priorise ; son **fit**, ce que tes joueurs savent en faire ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split.
+- **plan de match** (la stratégie) : ce que ton cinq priorise, partie par partie ; **ta partie**, aucun plan ; ce qu'il **donne** et ce qu'il **coûte** ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split. Le **fit** : la règle d'avant la version 8.
 - **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack** : comme dans Cap 82-0. Le **coach** : un personnage choisi au départ, son **expérience**, son **niveau** (1 à 5) ; un **pouvoir** s'ouvre à un niveau et joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient ; un **talent** fait grandir un pouvoir ; son **staff**, ses **adjoints** (chacun un échange). Le **palier** de confiance : la règle d'avant la version 4.
 - **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
 - **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run), qui font son **édition** ; un **album** par split.
@@ -224,4 +223,4 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 
 ## Tester
 
-`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px (Playwright, installé à part ; `CHROMIUM=<chemin>` pour un Chromium déjà là) ; `node scripts/essai_rogue.mjs http://localhost:8000` joue un premier split et mesure chaque écran (une minute). L'Action `verifier.yml` fait les trois à chaque PR. `node scripts/check_profondeur.mjs` (sept secondes) juge la courbe d'une run avec trois robots : il n'est pas au CI, il est rouge tant que la première run n'est pas dure (le jalon 8, P3, P5, P11).
+`python3 -m http.server 8000` puis `localhost:8000`. `node scripts/tout.mjs` enchaîne les vérifications rapides ; `node scripts/smoke.mjs http://localhost:8000` joue le parcours entier à 390 px (Playwright, installé à part ; `CHROMIUM=<chemin>` pour un Chromium déjà là) ; `node scripts/essai_rogue.mjs http://localhost:8000` joue un premier split et mesure chaque écran (une minute). L'Action `verifier.yml` fait les trois à chaque PR. `node scripts/check_profondeur.mjs` (trois quarts de minute) juge la courbe d'une run avec trois robots : il n'est pas au CI, il est rouge tant que la première run n'est pas dure (le jalon 8, P3, P5, P11).

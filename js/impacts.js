@@ -3,11 +3,11 @@
  *
  * Par partie, à l'équipe qui porte l'effet : ses éliminations (elim), ses morts, ses dragons, ses Nashor, ses hérauts,
  * ses tours, la durée en minutes ; chaque chiffre [moyenne, erreur type]. Un pouvoir se lit les parties où il joue
- * (joue : leur part) ; une stratégie suit le fit de l'équipe : a + b × fit, et son erreur type (se).
- * 40 ligues d'essai, 102672 parties mesurées. js/impact.js le dit à l'écran ; check_impact juge que la table
+ * (joue : leur part) ; un plan de match, les parties où il se joue.
+ * 40 ligues d'essai, 100466 parties mesurées. js/impact.js le dit à l'écran ; check_impact juge que la table
  * est à jour (MOTEUR_MESURE, les signatures), check_chiffres qu'elle égale ce que le moteur joue.
  */
-export const MOTEUR_MESURE = 1810239633;
+export const MOTEUR_MESURE = 302349083;
 export const IMPACTS = {
   "carte:invasion": {"sig":1416189910,"n":2000,"d":{"elim":[1.075,0.1],"morts":[0.858,0.114],"dragons":[-0.035,0.02],"nashor":[-0.003,0.017],"herauts":[-0.001,0.008],"tours":[0.015,0.054],"duree":[-0.689,0.118]}},
   "carte:pousser": {"sig":1733645025,"n":2000,"d":{"elim":[-0.255,0.078],"morts":[-0.399,0.102],"dragons":[-0.046,0.019],"nashor":[-0.012,0.014],"herauts":[0.002,0.008],"tours":[0.072,0.045],"duree":[-0.698,0.088]}},
@@ -66,11 +66,10 @@ export const IMPACTS = {
   "classe:mage": {"sig":3614175076,"n":2000,"d":{"elim":[-0.085,0.059],"morts":[-0.083,0.068],"dragons":[-0.012,0.018],"nashor":[-0.008,0.012],"herauts":[-0.002,0.006],"tours":[0.028,0.034],"duree":[-0.315,0.078]}},
   "classe:combattant": {"sig":2216583945,"n":2000,"d":{"elim":[0.227,0.051],"morts":[-0.102,0.046],"dragons":[0.054,0.012],"nashor":[0.016,0.008],"herauts":[0.012,0.004],"tours":[0.129,0.031],"duree":[0.15,0.066]}},
   "classe:soutien": {"sig":3004614046,"n":2000,"d":{"elim":[-0.263,0.053],"morts":[-0.307,0.086],"dragons":[0.029,0.016],"nashor":[0.025,0.01],"herauts":[0.001,0.005],"tours":[0.036,0.038],"duree":[0.227,0.098]}},
-  "strategie:dragons": {"sig":4219246313,"n":2000,"a":{"elim":0.005,"morts":-0.214,"dragons":0.204,"nashor":-0.011,"herauts":-0.058,"tours":-0.043,"duree":-0.152},"b":{"elim":1.004,"morts":-0.762,"dragons":0.38,"nashor":0.08,"herauts":0.019,"tours":0.56,"duree":0.202},"se":{"elim":0.067,"morts":0.06,"dragons":0.022,"nashor":0.008,"herauts":0.006,"tours":0.033,"duree":0.083}},
-  "strategie:nashor": {"sig":322587279,"n":2000,"a":{"elim":-0.128,"morts":0.031,"dragons":-0.121,"nashor":0.047,"herauts":-0.025,"tours":-0.028,"duree":-0.122},"b":{"elim":0.853,"morts":-0.83,"dragons":0.027,"nashor":0.157,"herauts":0.014,"tours":0.552,"duree":-0.13},"se":{"elim":0.058,"morts":0.053,"dragons":0.011,"nashor":0.01,"herauts":0.004,"tours":0.033,"duree":0.065}},
-  "strategie:heraut": {"sig":2876481356,"n":2000,"a":{"elim":-0.201,"morts":-0.549,"dragons":-0.174,"nashor":-0.01,"herauts":0.07,"tours":0.086,"duree":-0.806},"b":{"elim":0.343,"morts":-1.028,"dragons":0.004,"nashor":0.019,"herauts":0.101,"tours":0.47,"duree":-0.833},"se":{"elim":0.078,"morts":0.111,"dragons":0.022,"nashor":0.012,"herauts":0.01,"tours":0.044,"duree":0.118}},
-  "strategie:split": {"sig":2776877694,"n":2000,"a":{"elim":-0.194,"morts":-0.391,"dragons":-0.026,"nashor":0.001,"herauts":0.015,"tours":0.293,"duree":-0.657},"b":{"elim":0.362,"morts":-1.146,"dragons":0.066,"nashor":-0.002,"herauts":0.024,"tours":0.693,"duree":-0.787},"se":{"elim":0.077,"morts":0.097,"dragons":0.017,"nashor":0.011,"herauts":0.006,"tours":0.053,"duree":0.13}},
-  "strategie:combats": {"sig":687857648,"n":2000,"a":{"elim":0.551,"morts":-0.063,"dragons":0.058,"nashor":0.026,"herauts":0.017,"tours":0.136,"duree":-0.28},"b":{"elim":1.482,"morts":-0.62,"dragons":0.147,"nashor":0.145,"herauts":0.061,"tours":0.612,"duree":-0.306},"se":{"elim":0.097,"morts":0.077,"dragons":0.017,"nashor":0.015,"herauts":0.007,"tours":0.053,"duree":0.104}},
-  "strategie:agression": {"sig":2458796827,"n":2000,"a":{"elim":-0.006,"morts":-0.867,"dragons":0.047,"nashor":0.004,"herauts":0.041,"tours":0.278,"duree":-0.812},"b":{"elim":0.241,"morts":-1.844,"dragons":0.069,"nashor":0.035,"herauts":0.057,"tours":0.695,"duree":-1.586},"se":{"elim":0.088,"morts":0.11,"dragons":0.018,"nashor":0.014,"herauts":0.008,"tours":0.053,"duree":0.139}},
-  "strategie:tardif": {"sig":2563051325,"n":2000,"a":{"elim":0.682,"morts":0.4,"dragons":0.192,"nashor":0.141,"herauts":-0.042,"tours":0.121,"duree":1.227},"b":{"elim":2.308,"morts":-0.024,"dragons":0.467,"nashor":0.292,"herauts":0.03,"tours":0.846,"duree":2.508},"se":{"elim":0.089,"morts":0.106,"dragons":0.022,"nashor":0.014,"herauts":0.006,"tours":0.047,"duree":0.143}},
+  "plan:dragons": {"sig":1865512739,"n":2000,"d":{"elim":[0.256,0.068],"morts":[-0.086,0.072],"dragons":[0.312,0.024],"nashor":[0.018,0.011],"herauts":[0.001,0.004],"tours":[-0.033,0.032],"duree":[0.172,0.099]}},
+  "plan:heraut": {"sig":97488523,"n":1794,"d":{"elim":[-0.165,0.097],"morts":[-0.37,0.115],"dragons":[-0.172,0.02],"nashor":[-0.051,0.017],"herauts":[0.117,0.011],"tours":[0.104,0.058],"duree":[-0.573,0.1]}},
+  "plan:split": {"sig":859386027,"n":2000,"d":{"elim":[-0.314,0.077],"morts":[0.045,0.083],"dragons":[-0.036,0.02],"nashor":[-0.021,0.011],"herauts":[-0.013,0.007],"tours":[0.215,0.043],"duree":[-0.22,0.102]}},
+  "plan:combats": {"sig":3928066944,"n":2000,"d":{"elim":[0.338,0.095],"morts":[0.3,0.098],"dragons":[-0.003,0.02],"nashor":[0.026,0.014],"herauts":[-0.006,0.008],"tours":[-0.155,0.051],"duree":[-0.387,0.147]}},
+  "plan:agression": {"sig":4206847713,"n":2000,"d":{"elim":[-0.073,0.084],"morts":[-0.418,0.073],"dragons":[-0.078,0.021],"nashor":[-0.043,0.013],"herauts":[0.014,0.006],"tours":[0.12,0.043],"duree":[-0.579,0.097]}},
+  "plan:tardif": {"sig":1881757823,"n":2000,"d":{"elim":[0.684,0.093],"morts":[1.063,0.097],"dragons":[0.251,0.021],"nashor":[0.168,0.012],"herauts":[-0.016,0.007],"tours":[-0.022,0.051],"duree":[1.954,0.145]}},
 };

@@ -64,7 +64,7 @@ import { nouvellePartie, appliquer, contratDe, vestiaireDe, enAttente, sauvegard
 import { DEBLOCAGES, EXIGENCES } from '../js/meta.js';
 import { COACHS, XP, SEUILS_NIVEAU, ADJOINTS_MAX, couleurDe } from '../js/rogue.js';
 import { confort } from '../js/repechage.js';
-import { STRATEGIES } from '../js/strategie.js';
+import { PLANS, STRATEGIES_AU_FIT } from '../js/strategie.js';
 import { collectionPour } from './lib/robot.mjs';
 import { exiger, informer, verdict } from './verdict.mjs';
 
@@ -307,7 +307,9 @@ async function unRun(graine, version = null, col = [], vedette = null) {
         const pl = ref && placements(P.eff, contratDe(ctx, ref));
         if (pl && pl.length && (P.bons || jetonsDe(P.L, P.R) >= MARCHE.prix)) { agir(P, { t: 'marche', ref, place: piger(pl, de).place }); bilan.marche++; }
       }
-      if (de() < 0.15) agir(P, { t: 'strategie', id: piger([null, ...Object.keys(STRATEGIES)], de) });
+      // Un plan de match (version 8) ; d'avant, une stratégie au fit. Le Nashor n'a plus son plan : il est refusé.
+      if (de() < 0.15) agir(P, { t: 'strategie', id: piger([null, ...Object.keys(P.v >= 8 ? PLANS : STRATEGIES_AU_FIT)], de) });
+      if (P.v >= 8) exigerRefus('un plan que le jeu ne connaît plus est refusé', refuse(P, { t: 'strategie', id: 'nashor' }));
       if (!P.entrainement && de() < 0.3) {
         const r = piger(Object.keys(P.eff.cinq), de);
         const c = P.eff.cinq[r];
