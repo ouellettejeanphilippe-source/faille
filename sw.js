@@ -3,7 +3,7 @@
  * tout le reste de la même origine (les splits) passe réseau d'abord et se
  * garde au passage. Changer VERSION jette l'ancien cache à l'activation.
  */
-const VERSION = 'faille-0.15.0';  // 0.15.0 : l'impact en chiffres de partie (js/impact.js, la table mesurée js/impacts.js). 0.14.2 : la journée comptée de 1 au Proprio, le toast au-dessus de la barre d'action (Cap 82-0, V23 G1). 0.14.1 : les cibles de 44 px (le retour, les sous-onglets, les puces, les petits boutons). 0.14.0 : le moteur v2, une partie comme une vraie (sorts, niveaux, combats, monstres et tours de leur époque)
+const VERSION = 'faille-0.16.0';  // 0.16.0 : le mandat au classement, la première run qui laisse bâtir, la vedette dans le classeur (sauvegarde v7). 0.15.0 : l'impact en chiffres de partie (js/impact.js, la table mesurée js/impacts.js). 0.14.2 : la journée comptée de 1 au Proprio, le toast au-dessus de la barre d'action (Cap 82-0, V23 G1). 0.14.1 : les cibles de 44 px (le retour, les sous-onglets, les puces, les petits boutons). 0.14.0 : le moteur v2, une partie comme une vraie (sorts, niveaux, combats, monstres et tours de leur époque)
 
 const FICHIERS = [
   './', 'index.html', 'style.css',

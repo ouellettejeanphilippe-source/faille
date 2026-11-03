@@ -44,14 +44,14 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 - **le robot à trois politiques** (fait, P1) : il juge la courbe d'une run ;
 - **`essai_rogue`** (fait, P1) : il mesure chaque écran.
 
-**Les comptes.** L'index (§ 3) a 138 lignes ; 8 sont bloquantes : B4, C2, C3, D7, F9, F18, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel.
+**Les comptes.** L'index (§ 3) a 138 lignes ; 7 sont bloquantes : B4, C2, C3, D7, F9, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel ; le mandat de P3, F18 et E3 à jumeau.
 
 | État | Lignes |
 |---|---|
-| = jumeau | 15 |
-| ≈ transposé d'une version périmée | 30 |
+| = jumeau | 17 |
+| ≈ transposé d'une version périmée | 29 |
 | ◐ partiel | 37 |
-| ✗ absent | 50 |
+| ✗ absent | 49 |
 | ∅ sans objet | 4 |
 | — Faille en plus | 2 |
 
@@ -62,6 +62,8 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 - **Le robot d'avant.** Une run dure 1,4 split, et il gagne un titre en 40 runs (`check_robot`).
 
 Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès la run 1 (F10), la stratégie qui paie au fit (B6) et le mandat aux séries (F18) en sont les suspects, et leurs tranches (P3, P4, P11) se jugent sur `check_profondeur`.
+
+**Après P3 (le mandat au classement), le 3 nov.** Le mandat n'était pas la cause : l'attentif gagne toujours le titre au premier split de sa première run (cinq campagnes sur cinq). Le mandat au classement le rend même plus sûr après : sa run ne s'arrête plus sur un mandat « le titre », elle dure tant qu'il finit premier, et il regagne le titre dans 93 % de ses runs, contre 75 % (cinq campagnes). Le robot d'avant, lui, gagne moins (4 titres en 60 runs, contre 7). Restent le marché (F34), les packs (F10) et la stratégie au fit (B6), à P4 et P11.
 
 ## 2. La méthode
 
@@ -172,7 +174,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 |---|---|---|---|---|---|---|---|
 | E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | `js/rogue.js` `CARTES` (15 cartes de partie), `PLAN` 3, des packs de cartes | ≈ | le modèle d'avant la V13-2 | Q1, tranché | Haut |
 | E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 (jugé) ; celles de Cap 82-0 ramenées à 18 (0,22 à 0,88), dites par `check_rogue` (P2) ; ce qui se voit, dit par `check_impact` | ◐ | jugées à P5, avec les styles d'adjoint | B1 | Moyen |
-| E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDATS[0]` : faire les séries (6 sur 10) | ✗ | finir dans les huit premiers sur dix (Q9) | F18 | Haut |
+| E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDAT_DE_LA_PREMIERE` : les huit premiers sur dix, séries ou pas ; `premiereRun` (aucune run de Rogue n'a joué un split), posé au départ (P3) | = | huit sur dix (Q9) | — | — |
 | E4 | La ligue qui monte, la deuxième run plus dure | `niveauDeLigue`, `habillerLaLigue`, `ETAPE_APRES_LA_PREMIERE` ; `check_profondeur` | absent ; `tirerAdversaires` tire au hasard ; l'édition ne joue pas | ✗ | des vestiaires plus forts, ou l'édition qui joue (Q8) | F35 | Haut |
 | E5 | Le robot à trois politiques et la profondeur | `scripts/lib/rogue_sim.mjs` (défaut, attentif, distrait), `ROBOT_SAUF`, `ROBOT_COACH` ; `check_profondeur`, `check_robot` | `scripts/lib/robot.mjs` `POLITIQUES` (P1) ; `check_profondeur` (rouge : le juge de P3, P5, P11), `check_robot` | = | sans `ROBOT_SAUF` ni `ROBOT_COACH` pour l'instant | — | — |
 
@@ -197,7 +199,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | F15 | Le pack d'une ronde gagnée | `PACKS_DE_SERIE` (Argent, Or, Étoiles, Légendes), à la collection | 20 🪙, rien d'autre | ✗ | un pack par ronde gagnée | — | Moyen |
 | F16 | La date limite | `DATE_LIMITE_MATCH` 62 (76 % de la saison) | `dateLimite` : la mi-split | ≈ | la journée 13 ou 14 | — | Bas |
 | F17 | Les primes des fils | `PRIMES_DES_FILS` (5 à 10 🪙), `PRIME_FILS_MAX` 30 | absent | ✗ | le pentakill, la recrue qui éclate, le carry en feu | G7 | Bas |
-| F18 | **Le mandat au classement** | `MANDATS` : faire les séries, puis les 10, les 6, les 3 premiers (V5 : « gagner une ronde » tuait 46 à 67 % des runs) | `MANDATS` aux séries (les séries, la demie, la finale, le titre) | ≈ | d'avant la V5 ; transposé sur 10 équipes (non mesuré) | — | **Bloquant** |
+| F18 | Le mandat au classement | `MANDATS` : faire les séries, puis les 10, les 6, les 3 premiers (V5 : « gagner une ronde » tuait 46 à 67 % des runs) | `MANDATS` : faire les séries (6 sur 10), puis les 3, les 2 premiers, premier ; `rangTient` ; ceux d'avant la version 7 gardés aux séries (P3) | = | les mêmes parts de la ligue sur 10 équipes ; mesuré, `check_profondeur` : le robot d'avant gagne moins (4 titres en 60 runs contre 7), l'attentif regagne plus souvent après son premier titre (93 % contre 75 %) — sa run dure tant qu'il finit premier ; la cause est sa force (F34, F10, B6) | — | — |
 | F19 | Les médailles par résultat | les points ÷ 2, 10 par ronde, +20 à la Coupe, ×(1 + 0,15 k) | `MEDAILLES` (1, 2, 1, 3, 5), ×(1 + 0,25 k) | ≈ | l'échelle à trancher (Q14) | — | Moyen |
 | F20 | Les jalons | `JALONS` (13) : payés une fois, ils offrent un déblocage ou des médailles, et ouvrent des packs | absent | ✗ | les séries, une ronde, dix de suite, la première place, la finale, le titre, 100 cartes, le coach au sommet… | — | Haut |
 | F21 | Les missions, la découverte | `js/cartable.js` `MISSIONS` (6), `PRIME_DECOUVERTE` | absent | ✗ | cinq cartes d'un même vestiaire, une carte par ère… | collection | Bas |
@@ -205,7 +207,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | F23 | Le prestige : des médailles **et** un exploit | `rangDePrestige` ; il ouvre aussi des coachs (`coachsOuverts`, 3 à 8), le budget du classeur, le niveau de la ligue | `rangDe` : les médailles seules, et il ferme des déblocages | ◐ | les exploits (séries, ronde, finale) | F20 | Haut |
 | F24 | Ton club : un nom et SON écusson | `js/club.js` : 20 clubs, chacun un nom et son écusson dessiné, 49 couleurs, **en jetons** à la boutique | `CLUBS` (10), `COULEURS` (8), **en médailles** ; un blason générique (js/fiche.js `ecussonHtml`) | ≈ | d'avant la 1.0 de Cap 82-0 | Q13, tranché | Moyen |
 | F25 | Les exigences 🔺 | `EXIGENCES` : 8 crans, `PRIME_EXIGENCE` 0,15 | `EXIGENCES` : 6 crans, 0,25 ; elles commencent par le mandat (le 6e cran de Cap) | ≈ | les huit crans, dans l'ordre de Cap 82-0 | F2 | Moyen |
-| F26 | Le classeur | `departDuClasseur` : une case Régulier et quatre pages, le tri à cinq cartes ; **la vedette prend la case du haut** (sinon l'attentif gagnait sa première Coupe dès la run 2) | `casesDe`, `lotoDe` : Régulier, Pilier, Étoile ; **la vedette en plus** | ◐ | la vedette dans le classeur, le tri | — | Haut |
+| F26 | Le classeur | `departDuClasseur` : une case Régulier et quatre pages, le tri à cinq cartes ; **la vedette prend la case du haut** (sinon l'attentif gagnait sa première Coupe dès la run 2) | `casesDe`, `lotoDe` : Régulier, Pilier, Étoile ; la vedette prend la case du haut (P3 ; en plus avant la version 7) | ◐ | le tri à cinq cartes | — | Bas |
 | F27 | Les lotos entre deux saisons | `lotosDeSaison` (trois Régulier et un par page) | absent | ✗ | un loto Régulier et un par page | F26 | Moyen |
 | F28 | Ceux qui restent | `gardesDeLaRun` [Pilier, Régulier] | `NIVEAUX_RESTES` (le noyau ouvre une case ★ Étoile) | ≈ | — | — | Bas |
 | F29 | Ceux de la dernière run | `gardesDeLaDerniere` (garder1-3) | absent (la collection et le classeur en tiennent lieu) | ✗ | le même | F22 | Moyen |
@@ -281,7 +283,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
 | J1 | Le juge, le code mort, la coquille | `verdict.mjs`, `lib/mort.mjs`, `check_mort`, `check_coquille` | identiques (le diff est vide) | = | — | — | — |
-| J2 | `tout.mjs` | 36 scripts rapides | 12 scripts, `check_rogue` (45 s) et `check_robot` compris | ≈ | — | — | Bas |
+| J2 | `tout.mjs` | 36 scripts rapides | 14 scripts, `check_rogue` (32 s), `check_robot`, `check_impact` et `check_chiffres` (26 s) compris | ≈ | — | — | Bas |
 | J3 | `verifier.yml` | 27 étapes | 3 étapes (`tout.mjs`, le smoke, `essai_rogue`) | ◐ | une étape par juge, à mesure qu'ils arrivent | — | Moyen |
 | J4 | Les vieilles parties, jugées en Node | `check_sauvegardes` | le smoke et `check_gestion` | ◐ | `check_sauvegardes` | — | Bas |
 | J5 | La mise à jour, la version | `js/mise-a-jour.js`, `js/version.js` = `VERSION` de sw.js ; `check_maj` | `VERSION` de sw.js seul | ✗ | `version.js` et le rechargement au titre | — | Bas |

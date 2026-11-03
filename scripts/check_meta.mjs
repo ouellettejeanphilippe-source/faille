@@ -9,6 +9,8 @@
  *                       pas, et les médailles ne passent jamais sous zéro ;
  *   la collection       chaque joueur passé chez toi y est, une copie par
  *                       partie ; la finition suit les copies ;
+ *   la première run     seule la première run de Rogue laisse bâtir son
+ *                       premier split ; un 18-0 n'en est pas une ;
  *   le palmarès         les trophées se recomptent dans les feuilles ; chaque
  *                       galon nomme une carte de la partie ; les galons sortent
  *                       dans une part des splits, pas à chaque fois (mesuré
@@ -17,7 +19,7 @@
  *   node scripts/check_meta.mjs
  */
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
-import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, editionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence, choisirVedette, vedetteDe, MODES, modeDe } from '../js/meta.js';
+import { nouveauMeta, noter, medailles, medaillesDeLaPartie, MEDAILLES, acheter, refusAchat, rangDe, DEBLOCAGES, RANGS, collectionDe, editionDe, pantheonDe, porter, clubDe, deblocagesDe, effetDe, EXIGENCES, PRIME_EXIGENCE, exigenceMax, exigenceDe, choisirExigence, choisirVedette, vedetteDe, MODES, modeDe, premiereRun } from '../js/meta.js';
 import { tirerEtoiles, cleDe } from '../js/gestion.js';
 import { hasard } from '../js/hasard.js';
 import { statsDuSplit, tropheesDuSplit, galonsDuSplit, recordsDuSplit, meneurs, MENEURS, GALONS } from '../js/palmares.js';
@@ -37,16 +39,21 @@ exiger('la vedette se choisit une fois', !choisirVedette(m, 'pas une clé') && c
 const parties = [];
 for (let g = 1; g <= 6; g++) {
   // Le classeur de chaque run tire de la collection d'alors ; la vedette revient à chaque départ.
-  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m), coach: 'stratege', col: collectionPour(C.ctx, [...collectionDe(m).keys()]), vedette: vedetteDe(m) });
+  const P = await jouerUneRun(100 + g, C, { deb: g > 3 ? deblocagesDe(m) : [], club: clubDe(m), coach: 'stratege', col: collectionPour(C.ctx, [...collectionDe(m).keys()]), vedette: vedetteDe(m), premiere: premiereRun(m) });
   parties.push(P);
   noter(m, `p${g}`, P, g);
   if (g === 3) for (const id of Object.keys(DEBLOCAGES)) acheter(m, `deb:${id}`);
 }
 exiger('la vedette ouvre chaque run', parties.every(P => P.cartes[0] === etoile), etoile);
+exiger('seule la première run laisse bâtir son premier split', parties[0].premiere && parties[0].run.passes[0].mandat === 'huit' && parties.slice(1).every(P => !P.premiere && P.run.passes[0].mandat === 'series'),
+  parties.map(P => P.run.passes[0].mandat).join(', '));
 // Le 18-0 compte à la collection, pas aux médailles.
 const D = await jouerUneRun(150, C, { mode: 'dixhuit', club: clubDe(m) });
 noter(m, 'd1', D, 7);
 exiger('le 18-0 ne paie aucune médaille et compte à la collection', medaillesDeLaPartie(m.parties.d1) === 0 && m.parties.d1.mode === 'dixhuit' && D.cartes.length >= 5 && D.cartes.every(c => collectionDe(m).has(c)), `${D.cartes.length} cartes`);
+const seul18 = nouveauMeta();
+noter(seul18, 'd1', D, 7);
+exiger('un 18-0 ne compte pas comme une première run', premiereRun(seul18) && !premiereRun(m));
 delete m.parties.d1;
 const avant = JSON.stringify(m);
 const rechange = parties.map((P, k) => noter(m, `p${k + 1}`, P, 999));

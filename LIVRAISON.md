@@ -274,11 +274,16 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - **`check_chiffres`** (dans `tout.mjs`, 28 s) : chaque ligne que l'écran dit se remesure sur d'autres ligues, celles de `check_rogue`. 188 lignes, à quatre erreurs types : c'est la correction de Bonferroni pour environ deux cents questions, à 1 % de fausse alerte pour tout le juge.
   - **Les bornes de Cap 82-0 ramenées à un split** (±0,22, 0,33, 0,55, 0,88 V) : `check_rogue` dit les cartes au-delà (une sur quinze, la méta du tournoi, +1,1 V). Elles se jugent à P5, comme « chaque effet se voit » : le plan de jeu y devient des styles d'adjoint, qui se mesurent neufs.
 
-- [ ] **P3 · Le mandat au classement, la première run qui laisse bâtir** (F18, E3, F26 ; Q9)
-  - Les mandats se lisent au classement, comme la V5 de Cap 82-0.
-  - Le premier split de la première run demande les huit premiers, séries ou pas.
-  - La vedette prend la case du haut du classeur.
-  - Les fichiers : js/gestion.js `MANDATS`, js/partie.js `casesDe` ; `check_gestion`, `check_profondeur`.
+- [x] **P3 · Le mandat au classement, la première run qui laisse bâtir** (F18, E3, F26 ; Q9)
+  - **Les mandats se lisent au classement**, comme la V5 de Cap 82-0 : faire les séries (les six premiers), puis finir dans les trois premiers, les deux premiers, et premier (js/gestion.js `MANDATS`, `rangTient`). Ce sont les parts de la ligue de Cap 82-0 (16, 10, 6 et 3 sur 32) ramenées à dix équipes. Le titre gagne toujours la run.
+  - **Le premier split de la première run** demande les huit premiers, séries ou pas (`MANDAT_DE_LA_PREMIERE`). La première run, c'est quand aucune run de Rogue n'a encore joué un split (js/meta.js `premiereRun`) ; elle se pose au départ et la sauvegarde la garde. Sous une exigence, les mandats de toujours. Au deuxième split, comme chez Cap 82-0, les trois premiers.
+  - **La vedette prend la case du haut du classeur** (js/partie.js `casesDe`).
+  - **La sauvegarde passe à la version 7.** Une partie d'avant garde ses mandats aux séries (`MANDATS_AUX_SERIES`) et sa vedette en plus, et se rejoue pareil.
+  - **À l'écran** : le Proprio dit ton rang, les séries et le mandat (« Tu es 4e, dans les séries : il te faut finir dans les trois premiers. ») ; la page des règles dit les mandats et la première run.
+  - **Les juges.**
+    - `check_gestion` : onze rangs lus à la main ; chaque mandat vécu en run ; le rang du bilan tient le mandat ; la vedette prend la case du haut ; une run de la version 6 garde ses mandats aux séries.
+    - `check_meta` : seule la première run laisse bâtir ; un 18-0 n'en est pas une.
+    - `check_profondeur` reste rouge (cinq campagnes, contre main). Le robot d'avant gagne moins : 4 titres en 60 runs, contre 7. L'attentif gagne toujours son titre au premier split de sa première run. Après ce titre, il le regagne dans 93 % de ses runs, contre 75 % : sa run ne s'arrête plus sur un mandat « le titre », elle dure tant qu'il finit premier. Le mandat n'était pas la cause, sa force l'est (F34, F10, B6 : P4 et P11).
 - [ ] **P4 · Des plans par partie** (B6 ; Q2)
   - Les sept stratégies deviennent les plans de la partie (la V17 de Cap 82-0) : ils changent la forme, pas la force, et se disent en vraies stats.
   - Le gain au fit part.
@@ -290,7 +295,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - Les cases suivent le niveau du coach.
   - Un parmi trois est offert aux journées 2, 7, 11 et 15.
   - Le staff de la V21 part. Le plan de jeu de 15 cartes et ses packs partent aussi ; leurs meilleures idées deviennent des styles.
-  - La sauvegarde passe à la v7 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore.
+  - La sauvegarde passe à la version 8 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore.
   - Les bornes de Cap 82-0 ramenées à un split se jugent (dites depuis P2), et chaque style se voit sur la feuille, au-dessus du bruit de la table d'impact (`check_impact`).
   - Les fichiers : `js/adjoints.js` (neuf), js/rogue.js, js/partie.js, js/bureau.js ; `check_gestion` (le séjour rejoué), `check_rogue` (chaque style sous sa borne, visible), `check_sauvegardes` (neuf : une run v6 se recharge).
 - [ ] **P6 · Le coach juste** (D1, D2, D3)
@@ -419,4 +424,6 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - `scripts/impact.mjs` écrit `js/impacts.js` (64 effets, 102 672 parties) ; `js/impact.js` le dit.
   - `check_impact` juge que la table est à jour et ses mots ; `check_chiffres` la remesure sur d'autres ligues (188 lignes).
   - `check_rogue` partage son banc (`scripts/lib/paires.mjs`), avec une sortie identique. sw.js 0.15.0.
-
+- 2026-11-03 — **Le mandat au classement (jalon 8, P3)**. Le proprio juge le rang du split, pas une série : les séries, puis les trois, les deux premiers, premier. Le premier split de ta première run laisse bâtir (les huit premiers, séries ou pas), et ta vedette prend la case du haut du classeur. La sauvegarde passe à la version 7 ; une partie d'avant garde ses mandats aux séries.
+  - `check_gestion` et `check_meta` le prouvent. `check_profondeur` reste rouge : le mandat n'était pas la cause, l'attentif gagne toujours au premier split.
+  - sw.js 0.16.0.

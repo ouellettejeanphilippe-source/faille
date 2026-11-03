@@ -156,6 +156,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
 - Le plafond tient après chaque action, le marché ferme à la date limite, les relances restent dans leur nombre — `check_gestion`.
+- Le mandat se lit au classement du split, jamais à une série (les séries, puis les trois, les deux premiers, premier) ; le premier split de la première run laisse bâtir (les huit premiers, séries ou pas) ; ta vedette prend la case du haut du classeur ; une partie d'avant la version 7 garde ses mandats aux séries — `check_gestion`, `check_meta`.
 - Deux modes (`MODES`, js/meta.js) : le 18-0 (la roulette, le split d'un coup, les séries partie par partie, aucune carte ni décision ni jeton ; la collection, pas les médailles) et le Rogue, qui part faible — ses cases au loto (la vedette, le classeur tiré de la collection, ceux qui restent ; jamais au choix), puis le pack de départ de bouche-trous ; la roulette et les gardés y sont refusés — `check_gestion`, `check_meta`, smoke.
 - Un lien d'origine passe par les canaux et se mesure en paires, comme une carte — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
 - La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.

@@ -51,7 +51,7 @@ export const DEBLOCAGES = {
  * valent PRIME_EXIGENCE de plus par cran. Gagner au plus haut ouvre le suivant.
  */
 export const EXIGENCES = [
-  { nom: 'Le proprio pressé', mot: 'chaque mandat monte d\'un cran : la demi-finale dès le premier split', effet: { mandat: 1 } },
+  { nom: 'Le proprio pressé', mot: 'chaque mandat monte d\'un cran : les trois premiers dès le premier split', effet: { mandat: 1 } },
   { nom: 'La bourse serrée', mot: '10 jetons de moins au départ', effet: { jetons: -10 } },
   { nom: 'Le plafond serré', mot: 'un point de moins sous le plafond', effet: { plafond: -1 } },
   { nom: 'Le classeur mince', mot: 'une case de moins au classeur, la meilleure', effet: { cases: -1 } },
@@ -253,6 +253,8 @@ export function collectionDe(m) {
 
 /** Tes runs, de la plus récente à la plus ancienne : [{ pid, ...résumé, medailles }]. */
 export const runsDe = m => Object.entries(m.parties).map(([pid, r]) => ({ pid, ...r, medailles: medaillesDeLaPartie(r) })).sort((a, b) => b.debut - a.debut);
+/** Ta première run de Rogue : aucune n'a encore joué un split (son premier split laisse bâtir, js/gestion.js MANDAT_DE_LA_PREMIERE). */
+export const premiereRun = m => !runsDe(m).some(r => r.mode !== 'dixhuit' && r.passes.length);
 
 /*
  * LE PANTHÉON : le meilleur de toutes tes runs, record par record

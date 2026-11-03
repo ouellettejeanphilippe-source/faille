@@ -32,6 +32,12 @@
  * de son époque. Une partie d'avant la version 6 garde le moteur d'alors
  * (js/moteur-v1.js, gelé) : rejouée sous sa graine, elle redonne les mêmes
  * parties (check_gestion le prouve sur une run de la version 5).
+ *
+ * LE MANDAT AU CLASSEMENT (version 7, Cap 82-0 V5) : le proprio juge le rang
+ * du split, pas une série (js/gestion.js MANDATS) ; le premier split de ta
+ * première run laisse bâtir (`premiere`, posé au départ) ; ta vedette prend
+ * la case du haut du classeur. Une partie d'avant la version 7 garde ses
+ * mandats aux séries et sa vedette en plus.
  */
 import { melangerTempos } from './canaux.js';
 import { joueurDuMoteur, equipeReelle, creerSplit, jouerJournee, creerSeries, jouerRonde, classement } from './sim.js';
@@ -40,12 +46,12 @@ import { STRATEGIES, effetDeStrategie } from './strategie.js';
 import { PLAFOND, TARIFS, signable } from './cotes.js';
 import { nouveauRogue, ouvrirPack, basculer, engager, effetsDeToi, pouvoirsDeToi, pouvoirsDuPersonnage, xpDe, niveauDe, liensDe, noterJoue, jetonsDe, PRIX_COACH, COACHS, NIVEAU_DES_TALENTS, ADJOINTS, ADJOINTS_MAX } from './rogue.js';
 import { hasard, graineDe } from './hasard.js';
-import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
+import { RELANCES, MARCHE, ENTRAINEMENT, PACKS_JOUEURS, NIVEAUX_BOUCHE_TROUS, libresDe, masseDe, plafondDe, signables, placements, cleDe, marcheOuvert, mandatDe, mandatRempli, MANDATS_AUX_SERIES, MANDAT_DU_DIXHUIT, gainsDe, EVENEMENTS, evenementEnAttente, aTravailler, entraine, prixPackJoueurs } from './gestion.js';
 import { effetDe, MODES } from './meta.js';
 import { tropheesDuSplit, galonsDuSplit, recordsDuSplit } from './palmares.js';
 
 export const GARDES = 2;
-export const VERSION = 6;
+export const VERSION = 7;
 /** Un loto : trois cartes, tu en gardes une ou aucune. */
 export const LOTO = 3;
 /* Les niveaux des cases de ceux qui restent, dans l'ordre où elles s'ouvrent (GARDES, plus le noyau). */
@@ -65,15 +71,16 @@ const relancesNeuves = () => Object.fromEntries(Object.keys(RELANCES).map(k => [
  * exigences (0 : aucune) ; `coach` : le coach-personnage qui fait la run (un
  * id de COACHS, js/rogue.js) ; `col` : ta collection au départ, [{ cle,
  * niveau }], d'où le classeur tire ses lotos ; `vedette` : la clé de ton
- * joueur de concession, qui ouvre la première case de la run.
+ * joueur de concession, qui ouvre la première case de la run ; `premiere` :
+ * ta première run de Rogue, dont le premier split laisse bâtir.
  */
-export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null, mode = 'rogue', col = [], vedette = null } = {}) {
+export function nouvellePartie(graine, { deb = [], club = null, exig = 0, coach = null, mode = 'rogue', col = [], vedette = null, premiere = false } = {}) {
   const rogue = mode !== 'dixhuit';
   const fx = effetDe(rogue ? deb : [], rogue ? exig : 0);
   const P = {
     v: VERSION, graine, mode: MODES[mode] ? mode : 'rogue', log: [], etape: 'bati', deb: rogue ? [...deb] : [], club: club || CLUB_DEPART, exig: rogue ? exig : 0, fx,
     coach: rogue ? coach : null, talents: [], staff: [], enTrop: null,
-    col: rogue ? col.map(({ cle, niveau }) => ({ cle, niveau })) : [], vedette: rogue ? vedette : null, cases: [], bouches: false, restes: [],
+    col: rogue ? col.map(({ cle, niveau }) => ({ cle, niveau })) : [], vedette: rogue ? vedette : null, premiere: rogue && !!premiere, cases: [], bouches: false, restes: [],
     run: { n: 1, passes: [], fin: null, sursis: 0 },
     R: { ...nouveauRogue(graine), cherte: fx.cherte },
     eff: { cinq: {}, banc: null, plafond: PLAFOND + fx.plafond },
@@ -95,7 +102,9 @@ export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id,
  * LES CASES d'un départ, dans l'ordre : au premier split de la run, ton joueur
  * de concession (s'il y en a un), puis le classeur — une case ★ Étoile et une
  * case Pilier par déblocage, une case Régulier toujours ; l'exigence « Le
- * classeur mince » retire la meilleure. Entre deux splits, ceux qui restent :
+ * classeur mince » retire la meilleure. Depuis la version 7, ta vedette prend
+ * la case du haut (Cap 82-0, `departDuClasseur` : en plus d'elle, l'attentif
+ * gagnait son premier titre dès la deuxième run). Entre deux splits, ceux qui restent :
  * GARDES cases (le noyau en ajoute une, le vestiaire mince en retire une),
  * Pilier puis Régulier puis ★ Étoile, tirées de ton effectif du split fini.
  * Chaque case : { id, niveau, source } — source : 'vedette', 'col', 'restes'.
@@ -103,7 +112,8 @@ export const refDe = cle => { const [id, e, n, r] = cle.split('|'); return { id,
 export function casesDe(P) {
   if (!parCases(P)) return [];
   if (P.run.n === 1) {
-    const classeur = [...Array(Math.max(0, P.fx.etoile)).fill('★ Étoile'), ...Array(Math.max(0, P.fx.pilier)).fill('Pilier'), 'Régulier'].slice(Math.max(0, -P.fx.cases));
+    const prend = P.vedette && P.v >= 7 ? 1 : 0;
+    const classeur = [...Array(Math.max(0, P.fx.etoile)).fill('★ Étoile'), ...Array(Math.max(0, P.fx.pilier)).fill('Pilier'), 'Régulier'].slice(Math.max(0, -P.fx.cases) + prend);
     return [...(P.vedette ? [{ id: 'vedette', niveau: null, source: 'vedette' }] : []), ...classeur.map((niveau, k) => ({ id: `classeur-${k}`, niveau, source: 'col' }))];
   }
   return NIVEAUX_RESTES.slice(0, Math.max(0, GARDES + P.fx.gardes)).map((niveau, k) => ({ id: `restes-${k}`, niveau, source: 'restes' }));
@@ -144,8 +154,9 @@ export const attendPack = P => parCases(P) && P.etape === 'bati' && !caseEnCours
 export const relancesMax = (P, k) => RELANCES[k][1];
 /** Combien de joueurs restent d'un split à l'autre (avant la version 5 : les gardés ; depuis : les cases de ceux qui restent). */
 export const gardesDe = P => GARDES + P.fx.gardes;
-/** Le mandat du split n de la run, monté par les exigences : [clé, en mots]. Au 18-0, le titre. */
-export const mandatDuSplit = (P, n = P.run.n) => (P.mode === 'dixhuit' ? mandatDe(4) : mandatDe(n, P.fx.mandat));
+/** Le mandat du split n de la run, monté par les exigences : [clé, en mots, …]. Au 18-0, le titre ; avant la version 7, aux séries. */
+export const mandatDuSplit = (P, n = P.run.n) => (P.mode === 'dixhuit' ? MANDAT_DU_DIXHUIT
+  : mandatDe(n, P.fx.mandat, P.v >= 7 ? { premiere: P.premiere } : { table: MANDATS_AUX_SERIES }));
 /** Combien d'agents libres le dépisteur trouve par journée. */
 export const offreDe = P => MARCHE.offre + P.fx.offre;
 
@@ -550,15 +561,16 @@ export const refsDuJournal = log => [...new Set(log.flatMap(a => [a.id && a.t ==
   ...(a.t === 'garder' ? Object.values(a.vieux || {}).map(x => x.id) : [])]).filter(Boolean))];
 
 /** La sauvegarde : la graine, le mode, les déblocages et le club du départ, ta collection et ta vedette d'alors, et le journal ; rien de compté. */
-export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, col: P.col, vedette: P.vedette, log: P.log });
+export const sauvegarde = P => ({ v: P.v, graine: P.graine, mode: P.mode, deb: P.deb, club: P.club, exig: P.exig, coach: P.coach, col: P.col, vedette: P.vedette, premiere: P.premiere, log: P.log });
 
 /**
  * Rejoue une sauvegarde. Une d'avant le méta (version 1) n'a ni déblocages ni club ; avant la 3, une série de
  * séries se jouait d'un bloc ; avant la 4, le coach s'achetait et montait par sa confiance ; avant la 5, la
- * roulette bâtissait le cinq du Rogue et les gardés se choisissaient ; avant la 6, le moteur d'alors jouait les parties.
+ * roulette bâtissait le cinq du Rogue et les gardés se choisissaient ; avant la 6, le moteur d'alors jouait les parties ;
+ * avant la 7, le mandat se lisait aux séries et la vedette venait en plus du classeur.
  */
 export function rejouer(sv, ctx) {
-  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null });
+  const P = nouvellePartie(sv.graine, { deb: sv.deb || [], club: sv.club || null, exig: sv.exig || 0, coach: sv.coach || null, mode: sv.mode || 'rogue', col: sv.col || [], vedette: sv.vedette || null, premiere: !!sv.premiere });
   P.v = sv.v || 1;
   for (const a of sv.log) appliquer(P, a, ctx);
   return P;
