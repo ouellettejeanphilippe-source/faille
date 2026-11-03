@@ -21,7 +21,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { PLANS, effetDuPlan, planJoue, anneeEntre } from '../js/strategie.js';
 import { jouerPartie } from '../js/moteur.js';
-import { nouveauRogue, effetsDeToi } from '../js/rogue.js';
+import { effetsDeToi } from '../js/rogue.js';
 import { lireSplits } from './lib/vestiaires.mjs';
 import { banc } from './lib/paires.mjs';
 import { planSurLeBanc } from './lib/effets.mjs';
@@ -84,8 +84,7 @@ if (manquent.length) verdict('Le plan de match');
 
 /* ---------- 1 : Ta partie ne change rien, et un plan ne laisse rien derrière lui ---------- */
 {
-  const R = nouveauRogue(1);
-  exiger('Ta partie : les effets d\'un cinq sans plan', JSON.stringify(effetsDeToi(R, [], effetDuPlan(null, 2020), [])) === JSON.stringify(effetsDeToi(R, [], null, [])));
+  exiger('Ta partie : les effets d\'un cinq sans plan', JSON.stringify(effetsDeToi([], effetDuPlan(null, 2020), [])) === JSON.stringify(effetsDeToi([], null, [])));
   const toi = equipe(TOI), eux = equipe(ADVERSAIRES[0][1]);
   const sig = f => JSON.stringify([f.duree, f.gagnant, f.equipes.map(e => [e.k, e.tours, e.dragons, e.barons, e.herauts]), f.fil.length]);
   const photo = () => JSON.stringify([toi, eux]);

@@ -34,8 +34,8 @@ export const RANGS = [[0, 'Club de quartier'], [8, 'Académie'], [25, 'Équipe d
 export const DEBLOCAGES = {
   bourse: { ico: '🪙', nom: 'La bourse de départ', mot: '10 jetons de plus au départ de chaque run', prix: 6, rang: 0, effet: { jetons: 10 } },
   bouchetrous: { ico: '🧰', nom: 'Des bouche-trous moins pires', mot: 'les bouche-trous de ton pack de départ sortent un cran plus haut', prix: 8, rang: 0, effet: { bouchetrous: 1 } },
-  coach: { ico: '🧑‍🏫', nom: 'Le coach d\'expérience', mot: 'ton coach commence la run au niveau 2', prix: 8, rang: 0, effet: { xp: 8, coachGratuit: 1 } },
-  cadeau: { ico: '🎁', nom: 'Le cadeau du proprio', mot: 'un pack argent de cartes offert au premier split', prix: 8, rang: 1, effet: { cadeau: 1 } },
+  coach: { ico: '🧑‍🏫', nom: 'Le coach d\'expérience', mot: 'ton coach commence la run au niveau 2', prix: 8, rang: 0, effet: { xp: 8 } },
+  cadeau: { ico: '🎁', nom: 'Le cadeau du proprio', mot: 'un adjoint de plus offert au premier split, un parmi trois', prix: 8, rang: 1, effet: { cadeau: 1 } },
   classeur: { ico: '📒', nom: 'Une page de plus au classeur', mot: 'une case Pilier au départ de chaque run, tirée de ta collection', prix: 10, rang: 1, effet: { pilier: 1 } },
   depisteur: { ico: '🔎', nom: 'Le dépisteur chevronné', mot: 'un agent libre de plus à chaque journée', prix: 12, rang: 2, effet: { offre: 1 } },
   noyau: { ico: '🤝', nom: 'Le noyau', mot: 'une case de plus parmi ceux qui restent, entre deux splits', prix: 14, rang: 2, effet: { gardes: 1 } },
@@ -61,14 +61,13 @@ export const EXIGENCES = [
 export const PRIME_EXIGENCE = 0.25;
 
 /*
- * Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, xp, coachGratuit, cadeau,
- * offre, gardes, sursis, mandat, plafond, cherte, bouchetrous, pilier, etoile, cases }. `coachGratuit` ne
- * sert qu'aux parties d'avant la version 4, où le coach s'achetait ; `xp`, l'expérience de départ du
- * coach-personnage ; `bouchetrous`, le cran du pack de départ ; `pilier`, `etoile`, `cases`, les cases du
+ * Ce que posent des déblocages et `exig` crans d'exigences, sommés : { jetons, xp, cadeau, offre,
+ * gardes, sursis, mandat, plafond, cherte, bouchetrous, pilier, etoile, cases }. `xp`, l'expérience de
+ * départ du coach-personnage ; `cadeau`, un adjoint de plus offert au premier split ; `bouchetrous`, le cran du pack de départ ; `pilier`, `etoile`, `cases`, les cases du
  * classeur (js/partie.js casesDe) ; `gardes`, celles de ceux qui restent.
  */
 export function effetDe(deb, exig = 0) {
-  const e = { jetons: 0, xp: 0, coachGratuit: 0, cadeau: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0, bouchetrous: 0, pilier: 0, etoile: 0, cases: 0 };
+  const e = { jetons: 0, xp: 0, cadeau: 0, offre: 0, gardes: 0, sursis: 0, mandat: 0, plafond: 0, cherte: 0, bouchetrous: 0, pilier: 0, etoile: 0, cases: 0 };
   const sources = [...deb.filter(id => DEBLOCAGES[id]).map(id => DEBLOCAGES[id].effet), ...EXIGENCES.slice(0, exig).map(x => x.effet)];
   for (const src of sources) for (const [k, v] of Object.entries(src)) e[k] += v;
   return e;
@@ -212,11 +211,16 @@ export const resumeDe = (P, debut) => ({
   passes: P.run.passes, cartes: P.cartes,
 });
 
-/** Note une partie (idempotent : la même partie se note pareil). Vrai si le résumé a changé. */
+/*
+ * Note une partie (idempotent : la même partie se note pareil). Vrai si le résumé a changé. Le méta ne se réécrit
+ * jamais (la Q10) : un split déjà noté reste tel qu'il a été joué, une fin notée reste notée, une carte entrée à ta
+ * collection y reste — même quand une vieille partie se rejoue autrement avec les règles d'aujourd'hui.
+ */
 export function noter(m, pid, P, debut = Date.now()) {
   if (!P.run.passes.length && !P.cartes.length) return false;
   const avant = m.parties[pid];
   const r = resumeDe(P, avant ? avant.debut : debut);
+  if (avant) Object.assign(r, { passes: [...avant.passes, ...r.passes.slice(avant.passes.length)], fin: avant.fin || r.fin, cartes: [...new Set([...avant.cartes, ...r.cartes])] });
   const change = !avant || JSON.stringify(avant) !== JSON.stringify(r);
   m.parties[pid] = r;
   return change;

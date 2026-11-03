@@ -302,37 +302,29 @@ export const MANDATS = [
 export const MANDAT_DE_LA_PREMIERE = ['huit', 'finir dans les huit premiers, séries ou pas', 8, true];
 /* Le mandat du 18-0 : le titre ou rien. */
 export const MANDAT_DU_DIXHUIT = ['titre', 'gagner le split', null];
-/* Les mandats d'avant la version 7, aux séries : une partie d'avant les rejoue tels quels (js/partie.js `mandatDuSplit`). */
-export const MANDATS_AUX_SERIES = [
-  ['series', 'faire les séries', null],
-  ['demie', 'atteindre les demi-finales', null],
-  ['finale', 'atteindre la finale', null],
-  MANDAT_DU_DIXHUIT,
-];
 /* Combien d'équipes font les séries (js/sim.js : les deux premières attendent en demie, les quatre suivantes jouent les quarts). */
 export const EN_SERIES = 6;
 /**
  * Le mandat du split n de la run (1, 2…) : plus haut à chaque split ; `cran` le monte d'autant (les exigences) ;
- * `premiere` : la première run, dont le premier split laisse bâtir (sans exigence) ; `table` : les mandats d'une version.
+ * `premiere` : la première run, dont le premier split laisse bâtir (sans exigence).
  */
-export const mandatDe = (n, cran = 0, { premiere = false, table = MANDATS } = {}) => (premiere && n === 1 && !cran ? MANDAT_DE_LA_PREMIERE
-  : table[Math.max(0, Math.min(n + cran, table.length) - 1)]);
-const TOUS_LES_MANDATS = [...MANDATS, MANDAT_DE_LA_PREMIERE, ...MANDATS_AUX_SERIES];
-/** Un mandat en mots, de sa clé (ceux d'une partie d'avant compris). */
-export const motDuMandat = cle => TOUS_LES_MANDATS.find(([k]) => k === cle)[1];
+export const mandatDe = (n, cran = 0, premiere = false) => (premiere && n === 1 && !cran ? MANDAT_DE_LA_PREMIERE
+  : MANDATS[Math.max(0, Math.min(n + cran, MANDATS.length) - 1)]);
+const TOUS_LES_MANDATS = [...MANDATS, MANDAT_DE_LA_PREMIERE, MANDAT_DU_DIXHUIT];
+/* Les mots des mandats d'avant la version 7, aux séries : une run déjà notée les garde. */
+const MOTS_D_AVANT = { demie: 'atteindre les demi-finales', finale: 'atteindre la finale' };
+/** Un mandat en mots, de sa clé (ceux d'une run d'avant compris). */
+export const motDuMandat = cle => (TOUS_LES_MANDATS.find(([k]) => k === cle) || [cle, MOTS_D_AVANT[cle]])[1];
 
 /** Ce rang au classement tient-il le mandat `cle` ? Les séries, sauf « séries ou pas », et le rang qu'il veut. */
 export function rangTient(rang, cle) {
   const [, , top, sansSeries] = TOUS_LES_MANDATS.find(([k]) => k === cle);
   return (sansSeries || rang <= EN_SERIES) && rang <= (top ?? EN_SERIES);
 }
-/** Le mandat est-il rempli ? Au classement du split ; ceux d'avant la version 7, aux séries (les deux premiers attendent en demie : ils l'atteignent d'office). */
+/** Le mandat est-il rempli ? Au classement du split ; au 18-0, le titre. */
 export function mandatRempli(L, cle) {
   const S = L.series;
   if (!S) return false;
-  const dans = k => (S.rondes[k] || []).some(s => s.a === 0 || s.b === 0);
-  if (cle === 'demie') return dans(1);
-  if (cle === 'finale') return dans(2);
   if (cle === 'titre') return S.champion === 0;
   return rangTient(S.rang.indexOf(0) + 1, cle);
 }
@@ -469,7 +461,7 @@ export const EVENEMENTS = {
     choix: {
       cap: ['Garder le cap', 'Le proprio apprécie le calme : +5 🪙.', { jetons: 5 }],
       agent: ['Un agent libre aux frais du club', 'Ta prochaine signature au marché est gratuite.', { bon: 1 }],
-      plan: ['Revoir le plan de jeu', 'Un pack bronze offert.', { pack: 'bronze' }],
+      staff: ['Revoir le staff', 'Un adjoint offert : un parmi trois, dans ta main.', { adjoint: true }],
     },
   },
 };

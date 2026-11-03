@@ -1,6 +1,6 @@
 /*
- * LE ROGUE, MESURÉ EN PAIRES (la règle de Cap 82-0). Une carte, un palier de
- * coach, un repêchage se mesurent ainsi : la même ligue de dix vraies équipes
+ * LE ROGUE, MESURÉ EN PAIRES (la règle de Cap 82-0). Un adjoint, un pouvoir du
+ * coach, un lien, un repêchage se mesurent ainsi : la même ligue de dix vraies équipes
  * jouée sous la même graine, l'effet donné aux équipes paires (passe A) puis
  * aux impaires (passe B). Pour chaque équipe, ses victoires avec l'effet moins
  * ses victoires sans : la force des équipes s'annule, il reste l'effet.
@@ -10,16 +10,17 @@
  * comparées aux mêmes parties dans une troisième passe où personne n'a rien.
  *
  * Les bornes, par saison de 18 parties :
- *   une carte rapporte au plus MAX_V[rareté] victoires, dans un sens ou l'autre ;
+ *   un lien rapporte au plus MAX_V[rareté] victoires, dans un sens ou l'autre ;
  *   un pouvoir de coach, MAX_V.rare (grandi d'un talent, MAX_V.legendaire), et le coach
  *   entier (ses trois), MAX_V.legendaire ; le personnage complet (niveau 5, deux
  *   talents) a le droit de peser plus, jusqu'à PERSONNAGE_MAX : c'est la récompense
  *   d'une run qui a duré (Cap 82-0) ;
  *   un pouvoir joue dans 25 à 75 % des parties, et se VOIT dans celles où il joue ;
- *   un adjoint (un échange) n'est ni un cadeau ni un piège : MAX_V.peu, et il se voit sur sa signature ;
- *   une rare, une légendaire se VOIENT sur la feuille :
- *     ±1 min de durée, ou ±2 éliminations, ou ±0,6 tour, ou ±0,3 objectif par
- *     partie, ou ±0,3 objectif de plus pour elle que pour l'adversaire ;
+ *   un adjoint (js/adjoints.js, la V22 de Cap 82-0) est un style : un gain et un prix,
+ *     deux par coach ; posté à chaque partie, puis ramené à la part des parties qu'une
+ *     carte peut jouer (son séjour en synergie, puis son repos), il reste sous la borne
+ *     d'une peu commune de Cap 82-0 ramenée à un split (ADJOINT_V), cadeau comme piège,
+ *     et il se voit sur sa signature ;
  *   le repêchage automatique (les bannissements des deux côtés) ne penche pas :
  *     ±MAX_V.commune.
  *
@@ -35,7 +36,8 @@ import { fileURLToPath } from 'node:url';
 import { creerSplit, jouerJournee, creerSeries, jouerRonde } from '../js/sim.js';
 import { banc } from './lib/paires.mjs';
 import { REFERENCE, choixParDefaut, classesDe, effetsDuRepechage, effetsDeComposition, repecher } from '../js/repechage.js';
-import { CARTES, COACHS, PACKS, JETONS, LIENS, ADJOINTS, liensDe, couleurDe, nouveauRogue, ouvrirPack, prixDuPack, jetonsDe, effetsDeToi, effetDeLAdjoint, pouvoirsDeToi, pouvoirsDuPersonnage, basculer, engager, noterJoue, confiance } from '../js/rogue.js';
+import { COACHS, JETONS, LIENS, liensDe, nouveauRogue, jetonsDe, effetsDeToi, pouvoirsDuPersonnage, noterJoue } from '../js/rogue.js';
+import { ADJOINTS, SEJOUR_SYNERGIE, REPOS } from '../js/adjoints.js';
 import { objectifsDe, OBJECTIF, ELAN } from '../js/gestion.js';
 import { lireSplits } from './lib/vestiaires.mjs';
 import { exiger, borne, informer, verdict } from './verdict.mjs';
@@ -47,10 +49,10 @@ const splits = lireSplits();
 const LIGUES = 12, EQUIPES = 10;
 const MAX_V = { commune: 0.6, peu: 1, rare: 1.5, legendaire: 2.5 };
 const PERSONNAGE_MAX = 4;
-const VISIBLE = { duree: 1, k: 2, tours: 0.6, objectifs: 0.3, nosObjectifs: 0.3 };
+/* Un adjoint : la borne d'une peu commune de Cap 82-0 (±1,5 V sur 82), ramenée à un split, et la part des parties qu'il peut jouer. */
+const ADJOINT_V = (1.5 * 18) / 82, PART = SEJOUR_SYNERGIE / (SEJOUR_SYNERGIE + REPOS);
 // Le banc de mesure (scripts/lib/paires.mjs) : les mêmes ligues et les mêmes graines qu'avant, la passe neutre jouée une fois.
 const { ligues, mesurer } = splits.length ? banc(splits, LIGUES) : { ligues: [], mesurer: null };
-const voit = f => Object.entries(VISIBLE).some(([c, s]) => Math.abs(f[c]) >= s);
 const ecrire = f => `durée ${f.duree.toFixed(2)} min, élim. ${f.k.toFixed(2)}, tours ${f.tours.toFixed(2)}, objectifs ${f.objectifs.toFixed(2)} (les siens ${f.nosObjectifs.toFixed(2)})`;
 
 if (splits.length) {
@@ -58,31 +60,24 @@ if (splits.length) {
   const temoin = mesurer({ effet: null });
   exiger('sans effet, les deux passes sont identiques', temoin.dv === 0 && Object.values(temoin.forme).every(x => x === 0), `ΔV ${temoin.dv}`);
 
-  /* Les cartes. */
-  // Les bornes de Cap 82-0 (±1, 1,5, 2,5, 4 V sur 82 matchs), ramenées à un split de 18 : dites ici, jugées quand le plan de
-  // jeu se refait en styles d'adjoint (le jalon 8, P5). Celles de Faille, plus larges, restent le juge d'aujourd'hui.
-  const CAP_V = Object.fromEntries(Object.entries({ commune: 1, peu: 1.5, rare: 2.5, legendaire: 4 }).map(([r, v]) => [r, (v * 18) / 82]));
-  const auDessusDeCap = [];
-  for (const [id, [ico, nom, rarete, eff]] of Object.entries(CARTES)) {
-    const m = mesurer({ effet: eff });
-    if (Math.abs(m.dv) > CAP_V[rarete]) auDessusDeCap.push(`${ico} ${nom} ${m.dv.toFixed(2)}`);
-    borne(`${ico} ${nom} (${rarete}) : victoires de plus par saison`, m.dv, -MAX_V[rarete], MAX_V[rarete]);
-    if (rarete === 'rare' || rarete === 'legendaire') exiger(`${ico} ${nom} se voit sur la feuille`, voit(m.forme), ecrire(m.forme));
-    else informer(`${ico} ${nom} : la forme`, `${ecrire(m.forme)} · coach : ${couleurDe(id) || 'neutre'}`);
-  }
-
-  informer('les cartes au-delà des bornes de Cap 82-0 ramenées à un split (±0,22, 0,33, 0,55, 0,88 V ; jugées à P5)', `${auDessusDeCap.length} sur ${Object.keys(CARTES).length}${auDessusDeCap.length ? ` : ${auDessusDeCap.join(' · ')}` : ''}`);
-
-  /* Les adjoints, des échanges : ni cadeau ni piège sur une équipe ordinaire, et chacun se voit sur sa signature. */
+  /*
+   * LES ADJOINTS : chacun un style — un canal qui donne, un qui coûte —, deux par coach ; posté à chaque partie,
+   * puis ramené à la part des parties qu'une carte peut jouer, sous ADJOINT_V ; et chacun se voit sur sa signature.
+   */
+  const RELATIFS = new Set(['ligne', 'combat', 'objectifs', 'dragons', 'heraut', 'nashor', 'split', 'tardif']);
+  const pasStyle = Object.entries(ADJOINTS).filter(([, A]) => !A.ico || !A.nom || !A.style || !A.dit || /\d/.test(A.dit) || !COACHS[A.voie]
+    || !Object.entries(A.effet).some(([c, v]) => RELATIFS.has(c) && v > 0) || !Object.entries(A.effet).some(([c, v]) => RELATIFS.has(c) && v < 0) || 'heraut' in A.effet).map(([k]) => k);
+  const parCoach = Object.keys(COACHS).map(co => Object.values(ADJOINTS).filter(A => A.voie === co).length);
+  exiger('chaque adjoint est un style : un gain, un prix (jamais en héraut), une réplique sans chiffre ; deux par coach', !pasStyle.length && parCoach.every(n => n === 2), pasStyle.join(', ') || `${Object.keys(ADJOINTS).length} adjoints, ${parCoach.join('/')} par coach`);
   const SIGNE_ADJOINT = {
-    fermier: ['nos_tours', 0.1], escarmoucheur: ['k', 0.5], dragons: ['nos_dragons', 0.3], nashor: ['nos_barons', 0.1],
-    ingenieur: ['nos_tours', 0.5], tardif: ['duree', 0.15], debut: ['duree', -0.15], vision: ['k', -0.8],
+    plongee: ['k', 1], escarmouches: ['k', 0.8], dragons: ['nos_dragons', 0.25], vision: ['k', -0.8],
+    tardif: ['duree', 0.4], ferme: ['k', -0.8], ingenieur: ['nos_tours', 0.4], finisseur: ['duree', -0.4],
   };
-  for (const [id, [ico, nom]] of Object.entries(ADJOINTS)) {
-    const m = mesurer({ effet: effetDeLAdjoint(id) });
-    borne(`${ico} ${nom} (un adjoint) : victoires de plus`, m.dv, -MAX_V.peu, MAX_V.peu);
+  for (const [id, A] of Object.entries(ADJOINTS)) {
+    const m = mesurer({ effet: A.effet });
+    borne(`${A.ico} ${A.nom} : victoires de plus par split, à la part des parties qu'il peut jouer`, m.dv * PART, -ADJOINT_V, ADJOINT_V);
     const [cle, seuil] = SIGNE_ADJOINT[id];
-    exiger(`${ico} ${nom} se voit : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie (au moins ${seuil})`);
+    exiger(`${A.ico} ${A.nom} se voit : ${cle}`, Math.sign(m.forme[cle]) === Math.sign(seuil) && Math.abs(m.forme[cle]) >= Math.abs(seuil), `${m.forme[cle].toFixed(2)} par partie où il est en poste (au moins ${seuil})`);
   }
 
   /* Les liens d'origine, comme des cartes de leur rareté. */
@@ -123,8 +118,6 @@ if (splits.length) {
     // Le personnage complet : niveau 5, deux talents (sur les deux premiers pouvoirs).
     const plein = mesurer({ pouvoirs: pouvoirsDuPersonnage(id, 5, co.pouvoirs.slice(0, 2).map(p => p.id)) });
     borne(`${co.ico} ${co.nom}, le personnage complet : victoires de plus`, plein.dv, -MAX_V.legendaire, PERSONNAGE_MAX);
-    const cartes = Object.keys(CARTES).filter(c => couleurDe(c) === id);
-    exiger(`${co.ico} ${co.nom} a au moins deux cartes de sa couleur`, cartes.length >= 2, cartes.join(', '));
   }
 
   /* Le repêchage. */
@@ -176,35 +169,14 @@ if (splits.length) {
   exiger('un cinq de cinq vestiaires n\'a aucun lien', !liensDe(epars).length);
 }
 
-/* Les packs et les jetons. */
-const ids = Object.keys(CARTES);
-exiger('chaque carte a sa rareté et ses canaux', ids.every(id => CARTES[id][2] in MAX_V && Object.keys(CARTES[id][3]).length));
-exiger('les chances de chaque pack font 100', Object.values(PACKS).every(p => Object.values(p.cotes).reduce((s, x) => s + x, 0) === 100));
-const ouvrir = graine => {
-  const R = nouveauRogue(graine);
-  R.achats.push({ quoi: 'don', prix: -1000 });
-  const sorties = [];
-  for (let k = 0; k < 12; k++) sorties.push(ouvrirPack(null, R, ['bronze', 'argent', 'or'][k % 3]));
-  return { R, sorties };
-};
-const o1 = ouvrir(42), o2 = ouvrir(42), o3 = ouvrir(43);
-exiger('la même graine ouvre les mêmes packs', JSON.stringify(o1.sorties) === JSON.stringify(o2.sorties));
-exiger('une autre graine, d\'autres packs', JSON.stringify(o1.sorties) !== JSON.stringify(o3.sorties));
-exiger('une carte ne se tire qu\'une fois', new Set(o1.R.cartes).size === o1.R.cartes.length, `${o1.R.cartes.length} cartes sur ${ids.length}`);
-exiger('chaque pack hausse le suivant', prixDuPack(o1.R, 'bronze') > PACKS.bronze.prix, `${PACKS.bronze.prix} → ${prixDuPack(o1.R, 'bronze')} jetons après 12 packs`);
-const pauvre = nouveauRogue(1);
-exiger('sans les jetons, pas de pack', ouvrirPack(null, pauvre, 'or') === null && !pauvre.achats.length, `${jetonsDe(null, pauvre)} jetons au départ`);
-
+/* Les jetons. */
 if (splits.length) {
   // Une ligue jouée avec ton cinq : les jetons se recomptent des résultats.
   const R = nouveauRogue(9);
-  R.achats.push({ quoi: 'don', prix: -100 });
+  R.achats.push({ quoi: 'marche', prix: 12 });
   const L = creerSplit([...ligues[0]], { graine: 9, rondes: 2, bo: 1 });
-  ouvrirPack(L, R, 'bronze');
-  basculer(R, R.cartes[0]);
-  engager(L, R, couleurDe(R.cartes[0]) || 'stratege');
   while (L.jour < L.journees.length) {
-    L.equipes[0] = { ...L.equipes[0], effets: effetsDeToi(R), pouvoirs: pouvoirsDeToi(R) };
+    L.equipes[0] = { ...L.equipes[0], effets: effetsDeToi(liensDe({}), null, [ADJOINTS.dragons.effet]) };
     jouerJournee(L);
     noterJoue(R, L.journees[L.jour - 1].find(s => s.a === 0 || s.b === 0).gagnant === 0);
   }
@@ -218,7 +190,7 @@ if (splits.length) {
   const primes = objectifsDe(L).filter(o => o.etat === 'atteint').length * OBJECTIF.jetons + (suite >= ELAN.suite ? ELAN.jetons : 0);
   const attendu = JETONS.depart + v * JETONS.victoire + (tes.length - v) * JETONS.defaite + rondes * JETONS.ronde + primes - R.achats.reduce((s, a) => s + a.prix, 0);
   exiger('les jetons se recomptent des résultats et des achats', jetonsDe(L, R) === attendu, `${jetonsDe(L, R)} jetons, ${v} séries gagnées sur ${tes.length}, ${primes} de primes`);
-  exiger('la confiance du coach suit les séries jouées à sa couleur', confiance(R).palier === (couleurDe(R.plan[0]) === R.coach.id ? 3 : 0), `${confiance(R).series} séries, palier ${confiance(R).palier}`);
+  exiger('chaque série jouée se note, et rien d\'autre', R.joue.length === L.journees.length && R.joue.every(x => Object.keys(x).join() === 'gagne'), `${R.joue.length} séries`);
 }
 
 verdict('Le rogue, en paires');

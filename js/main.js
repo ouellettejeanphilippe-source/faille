@@ -36,8 +36,8 @@ import { tempoDuSplit, equipeReelle, classement, jouerPartie } from './sim.js';
 import { titreSplit, tableauClassement, calendrier, tableauSeries, tableauMeneurs, serieDe, feuilleSerie, taDerniere } from './split.js';
 import { nouveauRepechage, bannir, choisir, ecranRepechage } from './tableau-repechage.js';
 import { attendRepechage, repechageDe } from './repechage.js';
-import { liensDe, LIENS, COACHS, PACKS, CARTES } from './rogue.js';
-import { vuePacksJoueurs, vuePlanDeJeu, carteDeJeu } from './boutique.js';
+import { liensDe, LIENS, COACHS } from './rogue.js';
+import { vuePacksJoueurs } from './boutique.js';
 import { RELANCES, tirer, tirerAdversaires, tirerBoucheTrous, tirerEtoiles, agentsLibres, libresDe, masseDe, plafondDe, signables, marcheOuvert, cleDe, tirerPackJoueurs, prochaineVersion, PACKS_JOUEURS } from './gestion.js';
 import { nouvellePartie, appliquer, contratDe, vestiaireDe, taSerie, enAttente, sauvegarde, rejouer, refsDuJournal, relancesMax, offreDe, VERSION, parCases, caseEnCours, attendPack, refDe, mandatDuSplit } from './partie.js';
 import { aTraiter, feuilleDuChoix, vueBoite, vueProprio, vueCoach, vueVestiaire, vueCinq, vueJoueurs, bandeChiffres, planAdverse, vueAgents, ecranBilan, ecranStrategie, chezToi, lignePlan } from './bureau.js';
@@ -78,7 +78,7 @@ const SOUS = {
   bureau: [['boite', 'Boîte'], ['proprio', 'Proprio'], ['coach', 'Coach'], ['vestiaire', 'Vestiaire']],
   joueurs: null,
   cinq: null,
-  marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['plan', 'Plan de jeu'], ['album', 'Album']],
+  marche: [['agents', 'Agents libres'], ['joueurs', 'Packs de joueurs'], ['album', 'Album']],
   ligue: [['classement', 'Classement'], ['calendrier', 'Calendrier'], ['meneurs', 'Meneurs'], ['series', 'Séries'], ['palmares', 'Palmarès']],
 };
 const SOUS_DIXHUIT = { bureau: [['boite', 'Boîte'], ['vestiaire', 'Vestiaire']], joueurs: null, cinq: null, ligue: SOUS.ligue };
@@ -397,8 +397,11 @@ async function reprendre(id) {
   G.pid = id;
   G.P = P;
   activer(id);
-  if (noter(G.meta, G.pid, G.P)) ecrireMeta(G.meta);
+  // Une vieille partie se rejoue avec les règles d'aujourd'hui (la Q10) : ce qu'elles ne connaissent plus s'ignore, et
+  // l'écran le dit une fois. Regardée tout de suite, la partie ne garde que les gestes qui jouent.
+  if (P.ignores) garder(); else if (noter(G.meta, G.pid, G.P)) ecrireMeta(G.meta);
   entrer();
+  if (P.ignores) avis(`Ta partie se rejoue avec les règles d'aujourd'hui : ${P.ignores} geste${P.ignores > 1 ? 's' : ''} d'avant ne joue${P.ignores > 1 ? 'nt' : ''} plus.`);
 }
 
 /*
@@ -431,13 +434,10 @@ function entrer() {
   for (const id of COUCHES) fermer(id);
   G.vue = 'jeu';
   G.section = 'bureau';
-  G.gardes = new Set();
   G.vieux = new Map();
   G.offre = null;
-  G.ouvertes = null;
   rendre();
   window.scrollTo(0, 0);
-  if (G.P.etape === 'gardes') vieillir();
   preparerCases();
 }
 
@@ -635,8 +635,7 @@ function rendreVue() {
     const k = G.sous.marche;
     if (k === 'agents') rendreAgents();
     else if (k === 'joueurs') $('#vue').innerHTML = vuePacksJoueurs(P, P.offrePack ? P.offrePack.refs.map(ref => contratDe(ctx(), ref)) : null);
-    else if (k === 'album') $('#vue').innerHTML = vueCollection();
-    else $('#vue').innerHTML = vuePlanDeJeu(P, G.ouvertes);
+    else $('#vue').innerHTML = vueCollection();
   } else {
     const k = G.sous.ligue === 'series' && !L.series ? 'classement' : G.sous.ligue;
     const autour = k === 'classement' ? autourDeLaLigue(L) : [];
@@ -670,7 +669,7 @@ function allerA(section) {
 function avancer(t) {
   const L = G.P.L;
   const s = taSerie(L);
-  if (s && G.P.mode !== 'dixhuit' && (G.P.v < 3 ? !s.repechage : attendRepechage(s))) {
+  if (s && G.P.mode !== 'dixhuit' && attendRepechage(s)) {
     G.repechage = { t, d: nouveauRepechage(L, s) };
     rendreRepechage();
     montrer('#repechage');
@@ -763,11 +762,11 @@ async function toucherVue(ev) {
     faire({ t: 'strategie', id: b.dataset.strategie || null });
     fermer('#strategie');
   } else if (b.dataset.choix) {
-    // Réglé, le choix se ferme ; un pack offert s'ouvre, puis attend au plan de jeu.
-    const r = faire({ t: 'evenement', choix: b.dataset.choix });
+    // Réglé, le choix se ferme ; le suivant, s'il y en a un, attend sa ligne dans la Boîte.
+    faire({ t: 'evenement', choix: b.dataset.choix });
     fermer('#choix');
-    if (r) { G.ouvertes = r; G.sous.marche = 'plan'; allerA('marche'); if (r.length) ouvrirPackDeCartes('Un pack offert', 'argent', r); }
-  } else if (b.dataset.geste) faire({ t: b.dataset.geste });
+  } else if (b.dataset.poster) faire({ t: 'poster', cle: b.dataset.poster });
+  else if (b.dataset.geste) faire({ t: b.dataset.geste });
   else if (b.dataset.entrRole) { G.entr = G.entr === b.dataset.entrRole ? null : b.dataset.entrRole; rendreVue(); }
   else if (b.dataset.entrChamp) { faire({ t: 'entrainer', r: G.entr, champion: b.dataset.entrChamp }); G.entr = null; }
   else if (b.dataset.agent) {
@@ -781,11 +780,7 @@ async function toucherVue(ev) {
   } else if (b.dataset.packSigner) {
     const ref = P.offrePack.refs.find(x => cleDe(x) === b.dataset.packSigner);
     faire({ t: 'signerPack', ref, place: b.dataset.place });
-  } else if (b.dataset.pack) {
-    const r = faire({ t: 'pack', id: b.dataset.pack });
-    if (r) { G.ouvertes = r; rendreVue(); if (r.length) ouvrirPackDeCartes(PACKS[b.dataset.pack].nom, b.dataset.pack, r); }
-  } else if (b.dataset.carte) faire({ t: 'plan', carte: b.dataset.carte });
-  else if (b.dataset.coach) faire({ t: 'coach', id: b.dataset.coach });
+  }
 }
 
 function ouvrirFeuille(cle) {
@@ -848,47 +843,17 @@ function ouvrirPackDeJoueurs({ titre, metal, marque }, refs) {
   ouvrirPaquet($('#ouverture'), { pack: { titre, metal, marque, n: `${refs.length} joueur${refs.length > 1 ? 's' : ''}`, sous: 'Pack de joueurs' }, cartes, walkout, fin: () => majTete() });
   majTete();
 }
-function ouvrirPackDeCartes(titre, metal, ids) {
-  const RANG = { commune: 0, peu: 0, rare: 1, legendaire: 2 };
-  const cartes = [...ids].sort((a, b) => RANG[CARTES[a][2]] - RANG[CARTES[b][2]]).map(id => ({ html: carteDeJeu(id), eclat: RANG[CARTES[id][2]] }));
-  const v = ids.length && cartes[cartes.length - 1].eclat === 2 ? ids.find(id => CARTES[id][2] === 'legendaire') : null;
-  ouvrirPaquet($('#ouverture'), { pack: { titre, metal, marque: metal, n: `${ids.length} carte${ids.length > 1 ? 's' : ''}`, sous: 'Pack de cartes' }, cartes, walkout: v ? ['Légendaire', CARTES[v][0], esc(CARTES[v][1])] : null, fin: () => majTete() });
-  majTete();
-}
 
 /* ---- LE BILAN ---- */
 function rendreBilan() {
-  $('#bilan').innerHTML = ecranBilan(G.P, G.gardes, G.vieux);
-}
-
-/* Qui vieillit : pour chacun, sa version du plus proche split plus récent, si elle existe. */
-async function vieillir() {
-  const P = G.P;
-  const run = P.run.n;
-  const vieux = new Map();
-  for (const c of [...Object.values(P.eff.cinq), P.eff.banc].filter(Boolean)) {
-    const ref = await prochaineVersion(G.index.splits, lireSplit, c);
-    if (ref) vieux.set(cleDe(c.ref), contratDe(ctx(), ref));
-  }
-  if (G.P !== P || P.run.n !== run || P.etape !== 'gardes') return;
-  G.vieux = vieux;
-  rendre();
+  $('#bilan').innerHTML = ecranBilan(G.P);
 }
 
 function toucherBilan(ev) {
   const b = ev.target.closest('button');
   if (!b || b.disabled) return;
-  if (b.dataset.garder) {
-    const k = b.dataset.garder;
-    if (G.gardes.has(k)) G.gardes.delete(k); else G.gardes.add(k);
-    rendreBilan();
-  } else if (b.id === 'bilan-suivant') {
-    if (parCases(G.P)) { if (faire({ t: 'suivant' }) !== undefined) window.scrollTo(0, 0); return; }
-    const vieux = Object.fromEntries([...G.gardes].filter(k => G.vieux.has(k)).map(k => [k, G.vieux.get(k).ref]));
-    if (faire({ t: 'garder', cles: [...G.gardes], vieux }) === undefined) return;
-    G.gardes = new Set();
-    G.vieux = new Map();
-    window.scrollTo(0, 0);
+  if (b.id === 'bilan-suivant') {
+    if (faire({ t: 'suivant' }) !== undefined) window.scrollTo(0, 0);
   } else if (b.id === 'bilan-nouvelle') ouvrir('depart');
   else if (b.id === 'bilan-titre') { G.vue = 'titre'; rendre(); }
 }
@@ -931,9 +896,7 @@ async function demarrer() {
   $('#series').addEventListener('click', () => { faire({ t: 'series' }); G.sous.ligue = 'series'; allerA('ligue'); });
   $('#ronde').addEventListener('click', () => avancer('ronde'));
   $('#bilan-ouvrir').addEventListener('click', () => {
-    if (faire({ t: 'bilan' }) === undefined) return;
-    window.scrollTo(0, 0);
-    if (G.P.etape === 'gardes') vieillir();
+    if (faire({ t: 'bilan' }) !== undefined) window.scrollTo(0, 0);
   });
   $('#decision').addEventListener('click', ouvrirChoix);
   $('#nav').addEventListener('click', ev => { const b = ev.target.closest('[data-section]'); if (b) allerA(b.dataset.section); });

@@ -1,6 +1,6 @@
 /*
  * LES EFFETS QUE L'ÉCRAN CHIFFRE (js/impact.js), un registre pour scripts/impact.mjs, check_impact et check_chiffres :
- * chaque carte du plan de jeu, chaque adjoint, chaque lien d'origine, chaque pouvoir du coach (seul, puis grandi d'un
+ * chaque style d'adjoint (posté), chaque lien d'origine, chaque pouvoir du coach (seul, puis grandi d'un
  * talent), chaque plan de match, et une classe de plus que la référence au repêchage (la composition se somme de là).
  * Pour chacun : sa clé dans js/impacts.js, ce que le banc de mesure lui donne (scripts/lib/paires.mjs) et sa
  * signature — une empreinte de sa définition, pour qu'un effet qu'on retouche sans remesurer se voie.
@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { graineDe } from '../../js/hasard.js';
-import { CARTES, COACHS, LIENS, ADJOINTS, effetDeLAdjoint, pouvoirsDuPersonnage } from '../../js/rogue.js';
+import { COACHS, LIENS, pouvoirsDuPersonnage } from '../../js/rogue.js';
+import { ADJOINTS } from '../../js/adjoints.js';
 import { PLANS, effetDuPlan, planJoue, anneeEntre } from '../../js/strategie.js';
 import { REFERENCE, effetsDeComposition } from '../../js/repechage.js';
 
@@ -37,8 +38,7 @@ export const planSurLeBanc = id => ({
 /** [{ cle, genre ('fixe', 'pouvoir'), sig, opts }] : opts, ce que `mesurer` reçoit. */
 export function effetsAChiffrer() {
   const out = [];
-  for (const [id, carte] of Object.entries(CARTES)) out.push({ cle: `carte:${id}`, genre: 'fixe', sig: empreinte(carte), opts: { effet: carte[3] } });
-  for (const [id, a] of Object.entries(ADJOINTS)) out.push({ cle: `adjoint:${id}`, genre: 'fixe', sig: empreinte(a), opts: { effet: effetDeLAdjoint(id) } });
+  for (const [id, a] of Object.entries(ADJOINTS)) out.push({ cle: `adjoint:${id}`, genre: 'fixe', sig: empreinte(a.effet), opts: { effet: a.effet } });
   for (const [id, lien] of Object.entries(LIENS)) out.push({ cle: `lien:${id}`, genre: 'fixe', sig: empreinte(lien), opts: { effet: lien[3] } });
   for (const [id, co] of Object.entries(COACHS)) {
     const grandis = pouvoirsDuPersonnage(id, 5, co.pouvoirs.map(p => p.id));

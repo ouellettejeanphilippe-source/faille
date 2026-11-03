@@ -44,13 +44,13 @@ Le jalon 7 de Faille, écrit les 29 et 30 octobre, est donc périmé par endroit
 - **le robot à trois politiques** (fait, P1) : il juge la courbe d'une run ;
 - **`essai_rogue`** (fait, P1) : il mesure chaque écran.
 
-**Les comptes.** L'index (§ 3) a 138 lignes ; 7 sont bloquantes : B4, C2, C3, D7, F9, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel ; le mandat de P3, F18 et E3 à jumeau ; le plan de match de P4, B6 à jumeau.
+**Les comptes.** L'index (§ 3) a 138 lignes ; 6 sont bloquantes : B4, C2, C3, F9, G1, H4. Les juges de P1 ont fait passer E5 et H22 à jumeau, H23 à partiel ; l'impact de P2, B1 à jumeau et E2 à partiel ; le mandat de P3, F18 et E3 à jumeau ; le plan de match de P4, B6 à jumeau ; la main d'adjoints et les vieilles parties de P5, D7, B7 et J4 à jumeau, D8 et D11 à partiel.
 
 | État | Lignes |
 |---|---|
-| = jumeau | 18 |
-| ≈ transposé d'une version périmée | 28 |
-| ◐ partiel | 37 |
+| = jumeau | 21 |
+| ≈ transposé d'une version périmée | 24 |
+| ◐ partiel | 38 |
 | ✗ absent | 49 |
 | ∅ sans objet | 4 |
 | — Faille en plus | 2 |
@@ -134,7 +134,7 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | B4 | **Un effet sur un joueur nommé, daté** | `pariDeDecision`, `lui`, effets datés en matchs | `confort` seul (borné à [−1, 0], js/canaux.js `BORNES`) ; les effets sont refaits à chaque journée (`jouerAvecToi`) | ✗ | un canal par joueur, signé, daté en parties, mesuré en paires | moteur, `check_rogue` | **Bloquant** |
 | B5 | Les situations du vestiaire | `SITUATIONS` ; `check_situations` | absent | ✗ | une paire, l'un porté, l'autre pesé, net nul | B4 | Bas |
 | B6 | Le plan du soir (V17), sans systèmes (V18) | `PLANS` : « un plan change la FORME du match, pas sa force » ; `check_plan_de_match` | `js/strategie.js` `PLANS` (6, par partie, sans fit ; le Nashor dans le tardif) ; `check_plan_de_match` (P4) ; la stratégie au fit gardée pour les parties d'avant la v8 | = | la borne d'une commune ramenée à un split (±0,22 V) ; le héraut seulement dans une partie qui en a un ; ce que le plan dit vient de la table mesurée, pas d'une lecture contre l'adversaire du soir (`planEnChiffres` de Cap 82-0, que seul le robot fait) | — | — |
-| B7 | La version du moteur | `VERSION_MOTEUR` : la saison en cours **se rejoue** ; `check_empreinte` | `js/partie.js` `VERSION` 6, `js/moteur-v1.js` **gelé** | ≈ | une politique contraire | Q10, tranché | Moyen |
+| B7 | La version du moteur | `VERSION_MOTEUR` : la saison en cours **se rejoue** ; `check_empreinte` | `js/partie.js` `rejouer` : une partie en cours se rejoue avec les règles d'aujourd'hui, un geste qu'elles ne connaissent plus s'ignore, compté, et l'écran le dit une fois ; seul le moteur reste celui de sa version (v5 et avant : `js/moteur-v1.js`) ; `check_sauvegardes` (P5) | = | une décision d'aujourd'hui que la vieille partie n'a pas connue se prend d'office (personne pour un adjoint) ; le méta ne se réécrit jamais | — | — |
 | B8 | Les parts des joueurs | `check_parts` | `check_feuilles` (des repères d'équipe seulement) | ◐ | la part de chacun (éliminations, aides, or) simulée contre la vraie | moteur | Moyen |
 | B9 | Les unités spéciales, la prolongation, le gardien, les blessures, les jambes, le ballottage | `speciales`, `fusillade`, js/ballottage.js… | — | ∅ | LIVRAISON.md, « Ce qui ne se transpose pas » ; une absence passe par une histoire | — | — |
 | B10 | Le commentateur | `js/commentaire.js` ; `check_commentaire` | `js/commentaire.js` `BANQUES` ; `check_commentaire` | = | — | — | — |
@@ -161,18 +161,18 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | D4 | L'entraîneur, une vraie carte | `js/coachs-reels.js` `carteDuCoach`, `MAITRISE` (×0,9 à ×1,3), `niveauDuCoach`, `lotoDesCoachs` (un loto de trois) ; `data/coachs.json` | absent ; le coach se prend au choix parmi quatre (js/menu.js) | ✗ | les vrais coachs d'un split (la source à Leaguepedia n'est pas vérifiée) ; sa philosophie lue des vraies parties de son équipe (`identiteDe` le fait presque) | données | Moyen |
 | D5 | Les philosophies | `js/coachs.js` `COACHS` (8), `VOIES` (le prestige les ouvre) | `js/rogue.js` `COACHS` (4), toutes ouvertes | ◐ | huit philosophies LoL, ouvertes par le prestige | Q11, tranché | Moyen |
 | D6 | La règle du coach (V23) | `REGLES_DU_COACH`, `primesDuCoach` : 2 ou 3 🪙 environ un soir sur quatre, `PRIME_COACH_MAX` 50 ; `check_banc` | absent ; `COMMANDITAIRES` (js/gestion.js) en est presque le jumeau | ✗ | une ligne de feuille par philosophie (l'agresseur et ses éliminations, le stratège et ses dragons…), réglée pour à peu près une partie sur quatre | D5 | Haut |
-| D7 | **Les adjoints : une main, un séjour, un style (V22)** | `js/adjoints.js` `MAIN_MAX` 4, `SEJOUR` 12, `SEJOUR_SYNERGIE` 16, `REPOS` 20, `poster`, `quiPartDeLaMain` | `js/rogue.js` `ADJOINTS` (8 échanges permanents), `ADJOINTS_MAX` 3 ; `js/partie.js` `JOURNEES_ADJOINTS` [6, 12], `quiPart` | ≈ | **le staff de la V21, que Cap 82-0 a retiré** ; transposé au prorata d'un split (Q7) | D5 | **Bloquant** |
-| D8 | Les cases en poste suivent le niveau | `CASES_PAR_NIVEAU` [1, 1, 2, 2, 3], `casesDuPerso` | trois cases fixes | ✗ | le même | D7 | Haut |
+| D7 | Les adjoints : une main, un séjour, un style (V22) | `js/adjoints.js` `MAIN_MAX` 4, `SEJOUR` 12, `SEJOUR_SYNERGIE` 16, `REPOS` 20, `poster`, `quiPartDeLaMain` | `js/adjoints.js` `MAIN_MAX` 4, `SEJOUR` 3, `SEJOUR_SYNERGIE` 4, `REPOS` 4, l'action `poster`, `quiPartDeLaMain` ; huit styles (P5) | = | au prorata d'un split (Q7) ; deux styles par coach (quatre coachs, D5) ; mesuré en paires : de 0 à +0,16 V à la part des parties qu'il peut jouer, sous ±0,33 | — | — |
+| D8 | Les cases en poste suivent le niveau | `CASES_PAR_NIVEAU` [1, 1, 2, 2, 3], `casesDuPerso` | `CASES_PAR_NIVEAU` [1, 1, 2, 2, 3] (P5) | ◐ | la case de plus d'un talent (`CASE_DE_PLUS`) vient avec `TALENT_CASE`, à P6 | D2 | Bas |
 | D9 | Les niveaux d'adjoint (V23) | `NOMS_NIV`, `FORCE_NIV` (×0,7 à ×1,3), `PRIX_NIV`, `BORNE_NIV`, `niveauOffert` ; `check_pouvoirs` | absent | ✗ | les niveaux de Faille ; `BORNE_NIV` ramenée à un split | D7 | Haut |
 | D10 | Le salaire des adjoints (V23) | `SALAIRE_NIV` [0, 0, 1, 2, 3], `salairesDesAdjoints` ; `check_banc` | absent | ✗ | au barème de Faille ; sans arbitre (pas de punitions) | D9 | Moyen |
-| D11 | Les offres d'adjoints, aux moments forts | `adjointsOfferts` aux `PALIERS_PACK` [10, 30, 50, 70], au butin, au verdict, dans une histoire | aux journées 6 et 12 | ≈ | la V21 ; au prorata : journées 2, 7, 11 et 15 (non mesuré) | D7, C4 | Haut |
+| D11 | Les offres d'adjoints, aux moments forts | `adjointsOfferts` aux `PALIERS_PACK` [10, 30, 50, 70], au butin, au verdict, dans une histoire | aux journées 2, 7, 11 et 15, au cadeau du proprio, dans une histoire (« Revoir le staff ») (P5) | ◐ | au prorata d'un split (Q7) ; le butin d'un gros match et le verdict viendront avec eux | C4 | Moyen |
 | D12 | Leur coach en séries (V23 F) | pas encore livré | — | ✗ | attendre que Cap 82-0 le livre | D3 | Bas |
 
 ### E. Le Rogue : les cartes, les bornes, la courbe
 
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
-| E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | `js/rogue.js` `CARTES` (15 cartes de partie), `PLAN` 3, des packs de cartes | ≈ | le modèle d'avant la V13-2 | Q1, tranché | Haut |
+| E1 | La banque de cartes rares (plus de cartes de match) | `js/banque.js` (les retouches, le stage, les soins, l'échange d'un doublon) ; `RARE_DU_PACK` 0,25 ; les cartes de match sont parties à la V13-2 ; `check_banque` | le plan de jeu de 15 cartes et ses packs sont partis (P5) ; pas encore de banque | ✗ | le stage du coach, l'échange d'un doublon, une fois sur quatre dans un pack de joueurs (Q1) | P11 | Moyen |
 | E2 | Les bornes par rareté | ±1, 1,5, 2,5, 4 V sur 82 ; chaque effet se voit, commune comprise ; `check_effets`, `check_cartes` | `MAX_V` 0,6, 1, 1,5, 2,5 sur 18 (jugé) ; celles de Cap 82-0 ramenées à 18 (0,22 à 0,88), dites par `check_rogue` (P2) ; ce qui se voit, dit par `check_impact` | ◐ | jugées à P5, avec les styles d'adjoint | B1 | Moyen |
 | E3 | Le mandat de la première run | `MANDAT_DE_LA_PREMIERE` : les 24 premiers sur 32, séries ou pas | `MANDAT_DE_LA_PREMIERE` : les huit premiers sur dix, séries ou pas ; `premiereRun` (aucune run de Rogue n'a joué un split), posé au départ (P3) | = | huit sur dix (Q9) | — | — |
 | E4 | La ligue qui monte, la deuxième run plus dure | `niveauDeLigue`, `habillerLaLigue`, `ETAPE_APRES_LA_PREMIERE` ; `check_profondeur` | absent ; `tirerAdversaires` tire au hasard ; l'édition ne joue pas | ✗ | des vestiaires plus forts, ou l'édition qui joue (Q8) | F35 | Haut |
@@ -283,9 +283,9 @@ Le marché qui vend des Piliers à 8 🪙 (F34), le pack légendes ouvert dès l
 | # | Système | Cap 82-0 | Faille | État | Transposition | Dépend de | Gravité |
 |---|---|---|---|---|---|---|---|
 | J1 | Le juge, le code mort, la coquille | `verdict.mjs`, `lib/mort.mjs`, `check_mort`, `check_coquille` | identiques (le diff est vide) | = | — | — | — |
-| J2 | `tout.mjs` | 36 scripts rapides | 15 scripts, `check_rogue` (32 s), `check_plan_de_match` (21 s), `check_robot`, `check_impact` et `check_chiffres` (26 s) compris | ≈ | — | — | Bas |
+| J2 | `tout.mjs` | 36 scripts rapides | 16 scripts, `check_rogue` (22 s), `check_plan_de_match` (23 s), `check_sauvegardes`, `check_robot`, `check_impact` et `check_chiffres` (21 s) compris | ≈ | — | — | Bas |
 | J3 | `verifier.yml` | 27 étapes | 3 étapes (`tout.mjs`, le smoke, `essai_rogue`) | ◐ | une étape par juge, à mesure qu'ils arrivent | — | Moyen |
-| J4 | Les vieilles parties, jugées en Node | `check_sauvegardes` | le smoke et `check_gestion` | ◐ | `check_sauvegardes` | — | Bas |
+| J4 | Les vieilles parties, jugées en Node | `check_sauvegardes` | `check_sauvegardes` : dix parties gelées par le code d'avant, des versions 5 à 8 (`scripts/lib/sauvegardes-v8.json`) (P5) | = | — | — | — |
 | J5 | La mise à jour, la version | `js/mise-a-jour.js`, `js/version.js` = `VERSION` de sw.js ; `check_maj` | `VERSION` de sw.js seul | ✗ | `version.js` et le rechargement au titre | — | Bas |
 | J6 | L'APK, l'exe | `mobile/` (Capacitor), `desktop/` (Electron), `publier.yml` | absent (7 G, « en dernier ») | ✗ | le recadrage en JS pour que l'appareil recadre lui-même | — | Bas |
 | J7 | La feuille de style, la lisibilité, la clarté | `check_css`, `check_lisibilite`, `check_clarte` | absent | ✗ | repris | — | Moyen |

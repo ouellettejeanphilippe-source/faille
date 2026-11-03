@@ -81,10 +81,11 @@ js/strategie.js       le plan de match : six plans par partie, qui changent la f
 js/split.js           la Ligue (classement, calendrier, meneurs, séries), hier soir, la feuille d'une série
 js/repechage.js       le repêchage des champions : bannissements, bassins, confort, composition (MOTEUR.md §7)
 js/tableau-repechage.js l'écran du repêchage
-js/rogue.js           les jetons, les packs, les cartes de plan de jeu, les coachs, les liens d'origine (MOTEUR.md §8, §9)
+js/rogue.js           les jetons, les coachs et leur expérience, les liens d'origine (MOTEUR.md §8, §9)
+js/adjoints.js        la main de ton coach (la V22 de Cap 82-0) : huit styles d'adjoint, deux par coach ; le séjour, le repos, les cases en poste, les offres
 js/impact.js          l'impact en chiffres de partie : ce qu'un effet change sur la feuille, au-dessus du bruit (`phraseDe`, `chiffresDe`) ; la composition d'un repêchage, sommée
 js/impacts.js         la table mesurée de chaque effet (écrite par scripts/impact.mjs, ne pas éditer à la main)
-js/boutique.js        le Marché : les packs de joueurs, le plan de jeu (cartes, coach, packs de cartes)
+js/boutique.js        le Marché : les packs de joueurs ; la carte du coach
 js/hasard.js          tout le hasard du jeu, à graine
 js/pile.js            le retour, un niveau à la fois (repris de Cap 82-0)
 js/glisser.js         les gestes du doigt (repris de Cap 82-0) : balayer d'un onglet à l'autre, tirer une couche vers le bas pour la fermer
@@ -103,7 +104,8 @@ scripts/lib/vestiaires.mjs les vraies équipes des shards, pour les scripts du m
 scripts/calibrer.mjs       cherche les réglages du moteur contre les repères (scripts/lib/reperes.mjs) ; ne juge rien
 scripts/impact.mjs         mesure chaque effet en paires et écrit js/impacts.js ; ne juge rien
 scripts/lib/paires.mjs     le banc de mesure en paires (check_rogue, impact.mjs, check_chiffres) ; scripts/lib/effets.mjs, le registre des effets chiffrés
-scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, méta, feuilles, commentaire, terrain, rogue, plan de match, robot, impact, chiffres)
+scripts/check_*.mjs        les vérifications (graine, coquille, code mort, cotes, plafond, gestion, sauvegardes, méta, feuilles, commentaire, terrain, rogue, plan de match, robot, impact, chiffres)
+scripts/lib/sauvegardes-v8.json des parties gelées par le code d'avant la version 9 (les versions 5 à 8), que check_sauvegardes recharge
 scripts/check_profondeur.mjs trois robots sur les mêmes dés : mener compte-t-il ? la première run est-elle dure ? (hors du CI : le juge de la courbe d'une run)
 scripts/smoke.mjs          le test de fumée à 390 px (Playwright) : le parcours entier, du titre à la reprise ; tout est atteignable, aucune cible sous 44 px
 scripts/essai_rogue.mjs    un robot joue le premier split à 390 × 844 : chaque écran mesuré en hauteurs d'écran, rien à moins de 8 px du bord
@@ -120,7 +122,6 @@ Le pourquoi de chacune est, pour l'instant, dans le `docs/decisions.md` de Cap 8
 | La règle | Ce qu'elle devient | Tranche |
 |---|---|---|
 | « aucune cote dans le DOM » | les cotes sur 20 | P15 |
-| le staff d'adjoints et le plan de jeu | les adjoints de la V22 | P5 |
 | les commanditaires | la règle du coach | P12 |
 | « une édition ou un galon ne change rien au jeu » | ils jouent | P16 |
 | « un événement joue sur la gestion » | un canal par joueur | P9 |
@@ -146,28 +147,29 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - La feuille de match se ferme par construction (les éliminations des joueurs font celles de l'équipe et les morts de l'autre…) — `check_feuilles`.
 
 **Le rogue (jalon 3)**
-- Tout ce qui change une partie (repêchage, carte, coach) passe par les canaux (`sommerEffets`, js/canaux.js), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
-- Mesuré en paires, ou pas mesuré : une carte reste dans la borne de sa rareté, une rare se voit sur la feuille — `check_rogue`.
-- Les jetons se recomptent des résultats et des achats, jamais gardés ; une carte ne sort qu'une fois ; la couleur d'une carte se lit sur ses canaux.
+- Tout ce qui change une partie (repêchage, plan de match, adjoint, lien, coach) passe par les canaux (`sommerEffets`, js/canaux.js), et par rien d'autre ; neutres, ils rejouent la partie calibrée — `check_graine`, `check_feuilles`.
+- Mesuré en paires, ou pas mesuré : un lien reste dans la borne de sa rareté — `check_rogue`.
+- Les jetons se recomptent des résultats et des achats, jamais gardés.
+- Un adjoint est une carte de la main de ton coach (js/adjoints.js, la V22 de Cap 82-0) : un style, un gain et un prix (jamais en héraut), une réplique sans chiffre, deux par coach ; posté, il joue un séjour de 3 journées (4 s'il rejoint le coach, une ronde de séries comptant pour une), puis se repose 4 ; à la part des parties qu'il peut jouer, il reste sous la borne d'une peu commune de Cap 82-0 ramenée à un split (±0,33 V), cadeau comme piège, et se voit sur sa signature — `check_rogue`. La main tient 4 cartes ; un parmi trois aux journées 2, 7, 11 et 15, au cadeau du proprio et dans une histoire ; une main pleine laisse partir la plus ancienne hors poste ; les cases en poste suivent le niveau du coach (1, 1, 2, 2, 3) — `check_gestion`.
 - Ce qu'un effet change se dit en vraies stats de partie — éliminations, morts, dragons, Nashor, hérauts, tours, minutes —, jamais en cote, en victoires ni en « % » : mesuré en paires (`scripts/impact.mjs` écrit `js/impacts.js`, `js/impact.js` le dit), une ligne sous le bruit ne se dit pas — `check_impact`, `check_chiffres`. Un effet ou un moteur qui change fait refaire la table (`node scripts/impact.mjs`, une minute et demie) : `check_impact` le demande.
-- Un plan de match change la forme d'une partie, pas sa force (Cap 82-0, la V17) : chaque plan paie ce qu'il donne, et joué à chaque partie, il reste sous la borne d'une commune ramenée à un split (±0,22 V) ; il se voit sur sa signature ; aucun ne domine (chacun est le meilleur contre au moins un adversaire, aucun contre tous) ; aucun prix ne se paie dans un canal qu'une époque ne connaît pas, et le héraut ne se joue que dans une partie qui en a un — `check_plan_de_match`. Une partie d'avant la version 8 garde sa stratégie au fit.
+- Un plan de match change la forme d'une partie, pas sa force (Cap 82-0, la V17) : chaque plan paie ce qu'il donne, et joué à chaque partie, il reste sous la borne d'une commune ramenée à un split (±0,22 V) ; il se voit sur sa signature ; aucun ne domine (chacun est le meilleur contre au moins un adversaire, aucun contre tous) ; aucun prix ne se paie dans un canal qu'une époque ne connaît pas, et le héraut ne se joue que dans une partie qui en a un — `check_plan_de_match`.
 
 **La gestion (jalon 4)**
 - Chaque geste du DG est une action de `js/partie.js` ; rejouer le journal redonne la même partie, et c'est la sauvegarde — `check_gestion`.
+- Une vieille partie se rejoue avec les règles d'aujourd'hui (la Q10, comme Cap 82-0) : un geste qu'elles ne connaissent plus s'ignore, compté, et l'écran le dit une fois ; une décision d'aujourd'hui qu'elle n'a pas connue se prend d'office (personne pour un adjoint) ; seul son moteur reste celui de sa version (la v5 et avant : js/moteur-v1.js) ; aucune nouvelle copie gelée — `check_sauvegardes`.
 - Le plafond tient après chaque action, le marché ferme à la date limite, les relances restent dans leur nombre — `check_gestion`.
-- Le mandat se lit au classement du split, jamais à une série (les séries, puis les trois, les deux premiers, premier) ; le premier split de la première run laisse bâtir (les huit premiers, séries ou pas) ; ta vedette prend la case du haut du classeur ; une partie d'avant la version 7 garde ses mandats aux séries — `check_gestion`, `check_meta`.
+- Le mandat se lit au classement du split, jamais à une série (les séries, puis les trois, les deux premiers, premier) ; le premier split de la première run laisse bâtir (les huit premiers, séries ou pas) ; ta vedette prend la case du haut du classeur — `check_gestion`, `check_meta`.
 - Deux modes (`MODES`, js/meta.js) : le 18-0 (la roulette, le split d'un coup, les séries partie par partie, aucune carte ni décision ni jeton ; la collection, pas les médailles) et le Rogue, qui part faible — ses cases au loto (la vedette, le classeur tiré de la collection, ceux qui restent ; jamais au choix), puis le pack de départ de bouche-trous ; la roulette et les gardés y sont refusés — `check_gestion`, `check_meta`, smoke.
-- Un lien d'origine passe par les canaux et se mesure en paires, comme une carte — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
+- Un lien d'origine passe par les canaux et se mesure en paires — `check_rogue` ; un champion entraîné ne se montre jamais en parties.
 - La boîte se déduit de l'état, jamais gardée ; un événement joue sur la gestion, pas sur le moteur, tant qu'il n'est pas mesuré en paires.
 
 **Le méta et le direct (jalon 6)**
-- Le méta ne compte rien : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et la même partie notée deux fois ne paie qu'une fois — `check_meta`.
+- Le méta ne compte rien : il garde le résumé de chaque partie et tes achats ; médailles, rang, collection et panthéon s'en recomptent, et la même partie notée deux fois ne paie qu'une fois — `check_meta`. Il ne se réécrit jamais : un split noté reste tel qu'il a été joué, une fin notée reste notée, une carte entrée à la collection y reste — `check_sauvegardes`.
 - Un déblocage, une exigence passent par une règle qui existe, posés au départ de la run et gardés dans sa sauvegarde ; jamais par le moteur. Le plafond d'une run est porté par son effectif (`plafondDe`). Une édition ou un galon ne change rien au jeu.
 - Un trophée, un galon, un record se lisent dans les feuilles, par une colonne, jamais par un vote ; les seuils des galons sont mesurés sur le moteur — `check_meta`.
 - Le direct rejoue la feuille, il ne décide rien ; le commentateur et la Faille tirent leur hasard de `hasard()`, et la même graine redit la même partie — `check_commentaire`, `check_terrain`.
 - Un pouvoir du coach lit ce qui est déjà joué au début d'une phase (lignes, milieu, fin) et frappe la phase par les canaux ; il ne tire aucun dé ; seul, il reste sous 1,5 victoire (grandi d'un talent, 2,5), joue dans 25 à 75 % des parties et se voit sur sa signature ; le personnage complet reste sous 4 — `check_rogue`, MOTEUR.md § 11.
-- Le coach est un personnage choisi au départ, qui fait la run : son expérience se recompte des résultats, jamais gardée ; son niveau ne descend pas ; un talent se règle dans la boîte — `check_gestion`. Une partie d'avant la version 4 garde son coach acheté et sa confiance.
-- Un adjoint est un échange sur les canaux : ni cadeau ni piège sur une équipe ordinaire (sous 1 victoire), visible sur sa signature — `check_rogue` ; un parmi trois aux journées 6 et 12, trois au plus — `check_gestion`.
+- Le coach est un personnage choisi au départ, qui fait la run : son expérience se recompte des résultats, jamais gardée ; son niveau ne descend pas ; un talent se règle dans la boîte — `check_gestion`.
 - Au direct, les dix joueurs et leur champion se placent d'après la feuille (la phase, qui vient de tuer, d'aider ou de tomber, un mort à sa fontaine) — `check_terrain`.
 - La Faille est lue de la feuille : un moment ne se nomme que si la feuille le porte (un gank, le jungler ; un combat, trois éliminations ; une poussée, personne ne meurt autour) ; seule la place est illustrative, et cohérente (une ligne tombe dans l'ordre, le nexus par une ligne ouverte) — `check_terrain`. La carte est un dessin à nous, jamais celle du jeu.
 
@@ -181,7 +183,7 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - Un seul retour, un niveau à la fois (js/pile.js) ; rien de sélectionnable.
 - Toute commande visible doit fonctionner — `scripts/smoke.mjs`.
 - Rien sous 44 × 44 de ce qu'un doigt touche, et tout s'atteint (rien sous le pli sans défilement, rien de coupé) — smoke ; rien à moins de 8 px des bords de l'écran — `essai_rogue`.
-- Le split en sections, les mêmes que Cap 82-0 (JP : *même séparation des pages*) : au Rogue, cinq portes dans la barre du bas — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq, Marché (agents, packs, plan de jeu, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché, le Bureau sans proprio ni coach. Une maison par sujet ; une décision se règle dans la boîte.
+- Le split en sections, les mêmes que Cap 82-0 (JP : *même séparation des pages*) : au Rogue, cinq portes dans la barre du bas — Bureau (Boîte, Proprio, Coach, Vestiaire), Joueurs, Cinq, Marché (agents, packs, Album), Ligue (classement, calendrier, meneurs, séries, Palmarès) ; au 18-0, quatre, sans le Marché, le Bureau sans proprio ni coach. Une maison par sujet ; une décision se règle dans la boîte.
 - Ce qu'un texte affirme d'une partie (une suite, une panne, la une) est arrivé dans les feuilles déjà jouées, et il dit les vrais chiffres.
 - Le noir est le décor.
 - Le système de Cap 82-0 : sept tailles, trois rayons, les couleurs en jetons de `:root`, la condensée pour les titres, chiffres et boutons ; une action principale par écran, en bas ; le retour dans le tableau indicateur.
@@ -214,11 +216,11 @@ D'ici leur tranche, elles disent le code d'aujourd'hui et se respectent. La tran
 - **boîte** : les messages du proprio, de l'entraîneur, du DG, du dépisteur ; un **événement** se tranche.
 - **commanditaire** : il paie les parties qui remplissent son objectif ; **lien d'origine** : des joueurs qui ont joué ensemble pour vrai ; **entraînement** : un champion qui entre au bassin, « entraîné ».
 - **plan de match** (la stratégie) : ce que ton cinq priorise, partie par partie ; **ta partie**, aucun plan ; ce qu'il **donne** et ce qu'il **coûte** ; l'**identité** d'une vraie équipe, ce qu'elle prenait de plus que son split. Le **fit** : la règle d'avant la version 8.
-- **plan de jeu** : les trois cartes actives au plus ; **jetons**, **pack** : comme dans Cap 82-0. Le **coach** : un personnage choisi au départ, son **expérience**, son **niveau** (1 à 5) ; un **pouvoir** s'ouvre à un niveau et joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient ; un **talent** fait grandir un pouvoir ; son **staff**, ses **adjoints** (chacun un échange). Le **palier** de confiance : la règle d'avant la version 4.
+- **jetons**, **pack** : comme dans Cap 82-0. Le **coach** : un personnage choisi au départ, son **expérience**, son **niveau** (1 à 5) ; un **pouvoir** s'ouvre à un niveau et joue une **phase** (la phase de lignes, le milieu de partie, la fin de partie) quand sa condition tient ; un **talent** fait grandir un pouvoir. Sa **main** : ses **adjoints**, chacun un **style** ; on en **poste** un sur une **case** pour un **séjour**, puis il se **repose** ; il **rejoint** le coach dont il partage la philosophie. Le **plan de jeu** (quinze cartes) et le **staff** : partis à la version 9.
 - **médailles** 🏅 : la monnaie du méta, gagnée par les runs ; elles achètent les **déblocages** et **ton club** (son nom, sa couleur) ; leur total à vie fait ton **rang**. Les **exigences** 🔺 : après un premier titre, les crans qu'une run monte au départ ; pas « difficulté » à l'écran.
 - **collection** : les joueurs passés chez toi ; une **carte** y a ses **copies** (une par run), qui font son **édition** ; un **album** par split.
 - **trophée** : décerné au bilan d'un split, par une colonne ; **galon** : ce qu'un de tes joueurs a fait chez toi, gravé à sa carte ; **record**, **panthéon** : le meilleur de tes runs.
-- **pack de joueurs** : trois vrais joueurs tirés par leur niveau ; un **pack de cartes** donne des cartes de plan de jeu.
+- **pack de joueurs** : trois vrais joueurs tirés par leur niveau.
 - **le direct** : une partie rejouée dans le temps ; **la Faille** : sa carte ; un **moment** : ce qui s'y passe, nommé — gank, plongée sous la tour, duel, escarmouche, combat d'équipe, bataille (du dragon, de l'âme, du Nashor), poussée de côté, assaut final. **Hier soir** : ta dernière série, au Bureau ; **ce soir** : la partie qui vient, son affiche et son face-à-face ; le **sommaire** : une partie jouée, en un écran ; **la une** : le fait le plus lourd d'hier soir, dit par une voix ; les **nouvelles** : qui est en feu, qui est en panne.
 
 ## Tester

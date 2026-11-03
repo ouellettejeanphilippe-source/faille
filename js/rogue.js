@@ -1,72 +1,31 @@
 /*
- * LE ROGUE (repris de Cap 82-0) : les jetons, la boutique, les packs, les
- * cartes de plan de jeu, le coach. Tout passe par les canaux du moteur
- * (js/sim.js) et chaque carte, chaque coach, est mesuré EN PAIRES
- * (check_rogue) : la même ligue jouée deux fois sous la même graine, la carte
- * donnée à la moitié des équipes puis à l'autre.
+ * LE ROGUE (repris de Cap 82-0) : les jetons, les coachs, les liens d'origine.
+ * Tout passe par les canaux du moteur (js/sim.js) et chaque coach, chaque
+ * lien, est mesuré EN PAIRES (check_rogue) : la même ligue jouée deux fois
+ * sous la même graine, l'effet donné à la moitié des équipes puis à l'autre.
  *
  *   les jetons   jamais gardés : recomptés des résultats, des primes et des
  *                achats (jetonsDe), sur toute la run (les splits finis dans
  *                `reports`, comptés de leurs résultats par gainsDe) ;
- *   les packs    tirés du dé de la ligue et du numéro de l'achat : une même
- *                partie ouvre les mêmes packs ; une carte ne se tire qu'une fois ;
- *   le plan      trois cartes actives au plus, changées entre deux journées ;
  *   le coach     un personnage (Cap 82-0, V21), choisi au départ de la run, qui
  *                la fait au complet : son EXPÉRIENCE se recompte des résultats
- *                (comme les jetons), et une série gagnée avec une carte de sa
- *                couleur au plan en vaut une de plus (la couleur d'une carte se
- *                lit sur ses canaux, couleurDe) ; son NIVEAU (1 à 5) ouvre ses
- *                trois POUVOIRS aux niveaux 1, 3 et 5, et un TALENT aux
- *                niveaux 2 et 4 fait grandir celui que tu choisis. Un pouvoir lit
- *                la partie au début d'une phase (lignes, milieu, fin) et la
- *                frappe le temps de la phase, quand sa condition tient (js/sim.js).
- *                Une partie d'avant la version 4 garde l'ancienne règle : un
- *                coach acheté, ses paliers de confiance.
+ *                (comme les jetons) ; son NIVEAU (1 à 5) ouvre ses trois
+ *                POUVOIRS aux niveaux 1, 3 et 5, et un TALENT aux niveaux 2 et 4
+ *                fait grandir celui que tu choisis. Un pouvoir lit la partie au
+ *                début d'une phase (lignes, milieu, fin) et la frappe le temps
+ *                de la phase, quand sa condition tient (js/sim.js). Sa main
+ *                d'adjoints : js/adjoints.js.
  *
- * Une carte change la FORME de la partie (la durée, les éliminations, les
- * tours) plus que sa force : check_rogue borne ce qu'elle rapporte en
- * victoires selon sa rareté, et une rare doit se voir sur la feuille.
+ * Le plan de jeu de quinze cartes et ses packs sont partis à la version 9
+ * (Cap 82-0, la V13-2 ; docs/parite-cap82.md, la Q1) : ses meilleures idées
+ * sont des styles d'adjoint.
  */
-import { hasard, graineDe } from './hasard.js';
 import { sommerEffets } from './canaux.js';
 import { gainsDe, OBJECTIF, ELAN } from './gestion.js';
 
 export const JETONS = { depart: 20, victoire: 4, defaite: 1, ronde: 20 };
-export const PLAN = 3;
-const HAUSSE = 0.1;            // chaque pack acheté hausse le suivant de 10 %
-export const PRIX_COACH = 12;
-const SEUILS = [3, 6, 9];      // (avant la version 4) les séries jouées avec sa couleur : confiance I, II, III
-export const RARETES = { commune: 'Commune', peu: 'Peu commune', rare: 'Rare', legendaire: 'Légendaire' };
-
-/* LES CARTES : [icône, nom, rareté, effets sur les canaux]. */
-export const CARTES = {
-  invasion: ['🐺', 'Invasion au niveau 1', 'commune', { rythme: 1.1, ligne: 0.04 }],
-  pousser: ['🌊', 'Pousser les lignes', 'commune', { siege: 1.12 }],
-  vision: ['👁️', 'Contrôle de la vision', 'commune', { objectifs: 0.1, rythme: 0.95 }],
-  patience: ['⏳', 'Jouer pour le tardif', 'commune', { tardif: 0.2, fin: 0.92 }],
-  echange: ['🔁', 'Échange de lignes', 'commune', { siege: 1.1, ligne: -0.03, fin: 1.04 }],
-  ame: ['🐉', 'Âme de dragon', 'peu', { objectifs: 0.16, rythme: 0.93 }],
-  plongee: ['🗡️', 'Plongée sous la tour', 'peu', { rythme: 1.18, ligne: 0.06, combat: -0.04 }],
-  cotes: ['⚔️', 'Le 1-3-1', 'peu', { siege: 1.22, fin: 1.08, combat: -0.04 }],
-  cinq: ['💥', 'Combats à cinq', 'peu', { rythme: 1.15, combat: 0.04, ligne: -0.06 }],
-  protege: ['💎', 'Protéger le tireur', 'peu', { tardif: 0.32, fin: 0.88, ligne: -0.05 }],
-  heraut: ['🦀', 'Le héraut au milieu', 'rare', { objectifs: 0.15, siege: 1.35, fin: 1.12 }],
-  nashor: ['🟣', 'Le coup de Nashor', 'rare', { objectifs: 0.3, rythme: 0.78, fin: 1.2 }],
-  escarmouche: ['⚡', 'Escarmouches au niveau 3', 'rare', { rythme: 1.3, ligne: 0.1, fin: 1.08 }],
-  meta: ['🏆', 'La méta du tournoi', 'legendaire', { ligne: 0.15, combat: 0.1, objectifs: 0.15, rythme: 1.2 }],
-  quatreun: ['🌀', 'Le 4-1', 'legendaire', { siege: 1.32, fin: 1.2, combat: 0.05 }],
-};
-
-/* LES PACKS : prix, cartes, chances de chaque rareté (sur 100). */
-export const PACKS = {
-  bronze: { nom: 'Pack bronze', prix: 10, n: 2, cotes: { commune: 80, peu: 18, rare: 2, legendaire: 0 } },
-  argent: { nom: 'Pack argent', prix: 18, n: 3, cotes: { commune: 60, peu: 30, rare: 9, legendaire: 1 } },
-  or: { nom: 'Pack or', prix: 30, n: 3, cotes: { commune: 35, peu: 40, rare: 20, legendaire: 5 } },
-};
-
 /*
- * LES COACHS : leur signature sur les canaux (d'où la couleur des cartes) et
- * leurs trois pouvoirs, un par palier de confiance (I, II, III). Un pouvoir :
+ * LES COACHS : leurs trois pouvoirs, ouverts aux niveaux NIVEAU_DES_POUVOIRS. Un pouvoir :
  * [id, nom, phase ('lignes', 'milieu', 'tardif'), sa condition en mots,
  * quand(etat), effet]. `etat` : ce qui est déjà joué, vu de ton camp — bleu,
  * avance (l'or), tours, dragons, k (les éliminations). Chacun joue à peu près
@@ -74,22 +33,22 @@ export const PACKS = {
  */
 const pouvoir = (id, nom, phase, condition, quand, effet) => ({ id, nom, phase, condition, quand, effet });
 export const COACHS = {
-  agresseur: { ico: '🐺', nom: 'L\'agresseur', signe: { rythme: 1, ligne: 0.5 }, pouvoirs: [
+  agresseur: { ico: '🐺', nom: 'L\'agresseur', pouvoirs: [
     pouvoir('traque', 'La traque', 'lignes', 'en phase de lignes, du côté rouge', e => !e.bleu, { ligne: 0.18, rythme: 1.25 }),
     pouvoir('curee', 'La curée', 'milieu', 'au milieu de partie, en avance à l\'or', e => e.avance > 0, { combat: 0.15, rythme: 1.3, fin: 1.4 }),
     pouvoir('carnage', 'Le carnage', 'tardif', 'en fin de partie, en retard à l\'or', e => e.avance < 0, { combat: 0.22, rythme: 1.4 }),
   ] },
-  stratege: { ico: '🐉', nom: 'Le stratège', signe: { objectifs: 1 }, pouvoirs: [
+  stratege: { ico: '🐉', nom: 'Le stratège', pouvoirs: [
     pouvoir('controle', 'Le contrôle du fleuve', 'milieu', 'au milieu de partie, pas en avance aux dragons', e => e.dragons <= 0, { dragons: 2.2, objectifs: 0.12 }),
     pouvoir('vision', 'La vision du héraut', 'lignes', 'en phase de lignes, du côté bleu', e => e.bleu, { heraut: 2.5, objectifs: 0.3 }),
     pouvoir('baron', 'L\'appel du Nashor', 'tardif', 'en fin de partie, à 4 000 d\'or ou moins d\'écart', e => Math.abs(e.avance) <= 4000, { nashor: 2.2, objectifs: 0.25 }),
   ] },
-  patient: { ico: '⏳', nom: 'Le patient', signe: { tardif: 1, fin: -0.5 }, pouvoirs: [
+  patient: { ico: '⏳', nom: 'Le patient', pouvoirs: [
     pouvoir('ferme', 'La ferme', 'lignes', 'en phase de lignes, du côté rouge', e => !e.bleu, { ligne: 0.14, rythme: 0.8 }),
     pouvoir('endurance', 'L\'endurance', 'tardif', 'en fin de partie, en retard à l\'or', e => e.avance < 0, { fin: 0.7, tardif: 0.3 }),
     pouvoir('dernierMot', 'Le dernier mot', 'tardif', 'en fin de partie, à 4 000 d\'or ou moins d\'écart', e => Math.abs(e.avance) <= 4000, { combat: 0.2, tardif: 0.3, rythme: 1.3 }),
   ] },
-  assiegeant: { ico: '🏰', nom: 'L\'assiégeant', signe: { siege: 1, fin: 0.5 }, pouvoirs: [
+  assiegeant: { ico: '🏰', nom: 'L\'assiégeant', pouvoirs: [
     pouvoir('siege', 'Le siège', 'milieu', 'au milieu de partie, autant de tours ou plus', e => e.tours >= 0, { siege: 1.35, split: 1.6 }),
     pouvoir('beton', 'Le héraut au front', 'lignes', 'en phase de lignes, du côté bleu', e => e.bleu, { heraut: 2.2, siege: 1.2 }),
     pouvoir('percee', 'La percée', 'tardif', 'en fin de partie, en avance à l\'or', e => e.avance > 0, { fin: 1.4, siege: 1.3, combat: 0.1 }),
@@ -98,26 +57,13 @@ export const COACHS = {
 /** Un pouvoir par son id : [coach, pouvoir]. */
 export const pouvoirDe = id => Object.entries(COACHS).map(([c, co]) => [c, co.pouvoirs.find(x => x.id === id)]).find(([, x]) => x) || [null, null];
 
-/* L'ampleur d'un canal : ce qui compte pour « un » dans la couleur d'une carte. Les multiplicatifs se lisent en logarithme. */
-const AMPLEUR = { ligne: 0.1, combat: 0.06, objectifs: 0.1, dragons: 0.2, heraut: 0.2, nashor: 0.2, split: 0.2, tardif: 0.2, rythme: 0.1, siege: 0.1, fin: 0.1 };
 const MULTIPLIE = new Set(['rythme', 'siege', 'fin']);
-const lu = (c, v) => (MULTIPLIE.has(c) ? Math.log(v) : v) / AMPLEUR[c];
-
-/** Le coach d'une carte, lu sur ses canaux ; null si elle est neutre (rien ne domine assez). */
-export function couleurDe(id) {
-  const eff = CARTES[id][3];
-  const scores = Object.entries(COACHS).map(([k, co]) => {
-    const n = Math.sqrt(Object.values(co.signe).reduce((s, p) => s + p * p, 0));
-    return [k, Object.entries(co.signe).reduce((s, [c, p]) => s + p * (c in eff ? lu(c, eff[c]) : 0), 0) / n];
-  }).sort((a, b) => b[1] - a[1]);
-  return scores[0][1] >= 0.7 && scores[1][1] < 0.8 * scores[0][1] ? scores[0][0] : null;
-}
 
 /*
- * L'ÉTAT D'UNE PARTIE DE ROGUE : des décisions, rien de compté. `joue` garde,
- * pour chacune de tes séries, le plan et le coach qui l'ont jouée.
+ * L'ÉTAT D'UNE PARTIE DE ROGUE : des décisions, rien de compté. `joue` garde
+ * chacune de tes séries jouées dans la run (le séjour d'un adjoint s'y compte).
  */
-export const nouveauRogue = graine => ({ graine, achats: [], cartes: [], plan: [], coach: null, joue: [], reports: [], primes: [] });
+export const nouveauRogue = graine => ({ graine, achats: [], coach: null, joue: [], reports: [], primes: [] });
 
 /** Ce que valent en jetons les gains d'un split (gainsDe). */
 export const valeurDesGains = g => g.v * JETONS.victoire + g.d * JETONS.defaite + g.rondes * JETONS.ronde + g.objectifs * OBJECTIF.jetons + g.elan * ELAN.jetons + g.commandite;
@@ -126,62 +72,6 @@ export const valeurDesGains = g => g.v * JETONS.victoire + g.d * JETONS.defaite 
 export function jetonsDe(L, R) {
   const gagnes = [...R.reports, ...(L ? [gainsDe(L)] : [])].reduce((s, g) => s + valeurDesGains(g), 0);
   return JETONS.depart + gagnes + R.primes.reduce((s, p) => s + p.jetons, 0) - R.achats.reduce((s, a) => s + a.prix, 0);
-}
-
-const packsOuverts = R => R.achats.filter(a => a.quoi === 'pack').length;
-/** Le prix d'un pack, haussé par ceux déjà achetés (un pack offert ne hausse rien) et par la cherté des exigences (`R.cherte`). */
-export const prixDuPack = (R, id) => Math.round(PACKS[id].prix * (1 + HAUSSE * R.achats.filter(a => a.quoi === 'pack' && a.prix).length) * (1 + (R.cherte || 0)));
-
-/** « 1 pack sur N » pour chaque rareté qu'un pack peut donner, au moins une fois. */
-export function chances(id) {
-  const P = PACKS[id];
-  return Object.entries(P.cotes).filter(([, p]) => p > 0).map(([r, p]) => [r, Math.max(1, Math.round(1 / (1 - (1 - p / 100) ** P.n)))]);
-}
-
-/** Achète (ou reçoit, `gratuit`) et ouvre un pack : les cartes tirées (jamais une carte déjà à toi), ou null s'il manque des jetons. */
-export function ouvrirPack(L, R, id, { gratuit = false } = {}) {
-  const prix = gratuit ? 0 : prixDuPack(R, id);
-  if (jetonsDe(L, R) < prix) return null;
-  const de = hasard(graineDe(R.graine, `pack-${packsOuverts(R)}`));
-  R.achats.push({ quoi: 'pack', id, prix });
-  const ordre = Object.keys(RARETES);
-  const tirees = [];
-  for (let i = 0; i < PACKS[id].n; i++) {
-    let x = de() * 100;
-    let r = ordre.find(k => (x -= PACKS[id].cotes[k]) < 0) || 'commune';
-    // Une rareté épuisée descend d'un cran, puis remonte s'il le faut.
-    const libres = k => Object.keys(CARTES).filter(c => CARTES[c][2] === k && !R.cartes.includes(c) && !tirees.includes(c));
-    const essais = [...ordre.slice(0, ordre.indexOf(r) + 1).reverse(), ...ordre.slice(ordre.indexOf(r) + 1)];
-    r = essais.find(k => libres(k).length);
-    if (!r) break;
-    const l = libres(r);
-    tirees.push(l[Math.floor(de() * l.length)]);
-  }
-  R.cartes.push(...tirees);
-  return tirees;
-}
-
-/** Met une carte au plan ou l'en retire ; faux si le plan est plein. */
-export function basculer(R, id) {
-  if (R.plan.includes(id)) { R.plan = R.plan.filter(c => c !== id); return true; }
-  if (R.plan.length >= PLAN || !R.cartes.includes(id)) return false;
-  R.plan.push(id);
-  return true;
-}
-
-/** Engage un coach (un seul en poste : le nouveau repart de zéro), à `prix` jetons. Faux s'il manque des jetons. */
-export function engager(L, R, id, prix = PRIX_COACH) {
-  if ((R.coach && R.coach.id === id) || jetonsDe(L, R) < prix) return false;
-  R.achats.push({ quoi: 'coach', id, prix });
-  R.coach = { id, depuis: R.joue.length };
-  return true;
-}
-
-/** La confiance du coach : les séries jouées depuis son arrivée avec une carte de sa couleur au plan. Et son palier (0 à 3). */
-export function confiance(R) {
-  if (!R.coach) return { series: 0, palier: 0 };
-  const series = R.joue.slice(R.coach.depuis).filter(x => x.plan.some(c => couleurDe(c) === R.coach.id)).length;
-  return { series, palier: SEUILS.filter(s => series >= s).length, prochain: SEUILS.find(s => series < s) || null };
 }
 
 /*
@@ -204,59 +94,29 @@ export const LIENS = {
 /** Les liens actifs d'un cinq ({ rôle : contrat }). */
 export const liensDe = cinq => Object.keys(LIENS).filter(id => LIENS[id][4](cinq));
 
-/*
- * LE STAFF : les adjoints du coach (Cap 82-0, V21). Un adjoint est un
- * ÉCHANGE, un système de jeu : ce que ton cinq gagne et ce qu'il donne, sur
- * les canaux, à chaque partie. Il change la forme de la partie, pas sa force :
- * sur une équipe ordinaire, ni cadeau ni piège (check_rogue) ; il paie quand
- * il s'emboîte avec ta stratégie, tes cartes, ton coach.
- *   [icône, nom, ce qu'il donne, ce qu'il coûte]
- * Trois au plus (ADJOINTS_MAX) ; un parmi trois, gratuit, aux journées
- * JOURNEES_ADJOINTS de chaque split (js/partie.js).
- */
-export const ADJOINTS = {
-  fermier: ['🌾', 'Le maître de la ferme', { ligne: 0.08 }, { combat: -0.05 }],
-  escarmoucheur: ['🗡️', 'L\'entraîneur des escarmouches', { combat: 0.05, rythme: 1.1 }, { ligne: -0.08 }],
-  dragons: ['🐉', 'Le maître des dragons', { dragons: 1.2 }, { heraut: -1.2, nashor: -0.5 }],
-  nashor: ['🟣', 'L\'analyste du Nashor', { nashor: 1.2 }, { dragons: -0.9 }],
-  ingenieur: ['🏰', 'L\'ingénieur de siège', { siege: 1.18, split: 0.8 }, { combat: -0.04 }],
-  tardif: ['⏳', 'Le gardien du tardif', { tardif: 0.3, fin: 0.9 }, { ligne: -0.06 }],
-  debut: ['⚡', 'Le préparateur du début', { ligne: 0.06, fin: 1.15 }, { tardif: -0.25 }],
-  vision: ['👁️', 'Le coach de vision', { objectifs: 0.12, rythme: 0.88 }, { ligne: -0.05 }],
-};
-export const ADJOINTS_MAX = 3;
-
-/** Ce qu'un adjoint fait sur les canaux : son gain et son prix, ensemble. */
-export const effetDeLAdjoint = id => sommerEffets([ADJOINTS[id][2], ADJOINTS[id][3]]);
-
-/** Les effets de ton cinq : ton plan de match (js/strategie.js), les cartes du plan, les liens d'origine et ton staff, sommés par le moteur. */
-export function effetsDeToi(R, liens = [], strategie = null, staff = []) {
-  return sommerEffets([strategie, ...R.plan.map(c => CARTES[c][3]), ...liens.map(id => LIENS[id][3]), ...staff.flatMap(id => [ADJOINTS[id][2], ADJOINTS[id][3]])]);
+/** Les effets de ton cinq : ses liens d'origine, ton plan de match (js/strategie.js) et les styles de tes adjoints en poste (js/adjoints.js), sommés par le moteur. */
+export function effetsDeToi(liens = [], plan = null, styles = []) {
+  return sommerEffets([plan, ...liens.map(id => LIENS[id][3]), ...styles]);
 }
-
-/** (Avant la version 4) les pouvoirs de ton coach que sa confiance a ouverts : un par palier. */
-export const pouvoirsDeToi = R => (R.coach ? COACHS[R.coach.id].pouvoirs.slice(0, confiance(R).palier) : []);
 
 /*
  * LE COACH, UN PERSONNAGE (version 4). Son expérience : ce que rapportent tes
- * résultats (XP), recompté des splits finis et de celui en cours, plus une par
- * série gagnée avec une carte de sa couleur au plan ; `depart` : ce qu'un
- * déblocage lui donne. Ses niveaux (SEUILS_NIVEAU), ses pouvoirs aux niveaux
+ * résultats (XP), recompté des splits finis et de celui en cours (la couleur
+ * des cartes du plan est partie avec lui, à la version 9) ; `depart` : ce
+ * qu'un déblocage lui donne. Ses niveaux (SEUILS_NIVEAU), ses pouvoirs aux niveaux
  * NIVEAU_DES_POUVOIRS, ses talents aux niveaux NIVEAU_DES_TALENTS : un talent
  * fait grandir un pouvoir de TALENT (moitié), ouvert ou pas encore.
  */
-export const XP = { serie: 1, ronde: 2, titre: 3, couleur: 1 };
+export const XP = { serie: 1, ronde: 2, titre: 3 };
 export const SEUILS_NIVEAU = [0, 8, 20, 36, 56];
 export const NIVEAU_DES_POUVOIRS = [1, 3, 5];
 export const NIVEAU_DES_TALENTS = [2, 4];
 export const TALENT = 0.5;
 
-/** L'expérience de ton coach : le départ, les résultats de la run (les splits finis, celui en cours), ses séries gagnées à sa couleur. */
+/** L'expérience de ton coach : le départ, les résultats de la run (les splits finis, celui en cours). */
 export function xpDe(L, R, depart = 0) {
   if (!R.coach) return 0;
-  const gains = [...R.reports, ...(L ? [gainsDe(L)] : [])].reduce((s, g) => s + g.v * XP.serie + g.rondes * XP.ronde + (g.titre || 0) * XP.titre, 0);
-  const couleur = R.joue.filter(x => x.gagne && x.plan.some(c => couleurDe(c) === R.coach.id)).length * XP.couleur;
-  return depart + gains + couleur;
+  return depart + [...R.reports, ...(L ? [gainsDe(L)] : [])].reduce((s, g) => s + g.v * XP.serie + g.rondes * XP.ronde + (g.titre || 0) * XP.titre, 0);
 }
 
 /** Le niveau (1 à 5) que vaut une expérience, et ce qui manque pour le suivant. */
@@ -274,8 +134,8 @@ export function pouvoirsDuPersonnage(id, niveau, talents = []) {
     .map(x => (talents.includes(x.id) ? { ...x, effet: grandir(x.effet) } : x));
 }
 
-/** Note la série que ton cinq vient de jouer, avec le plan qui l'a jouée et si elle est gagnée. */
+/** Note la série que ton cinq vient de jouer, et si elle est gagnée. */
 export function noterJoue(R, gagne) {
-  R.joue.push({ plan: [...R.plan], gagne });
+  R.joue.push({ gagne });
 }
 

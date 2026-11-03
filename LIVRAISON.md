@@ -298,15 +298,24 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
     - `check_rogue` perd ses stratégies au fit. `check_gestion` refuse le Nashor en version 8.
     - Le robot attentif lit le moteur contre chaque adversaire, comme celui de Cap 82-0 (40 parties par plan : une lecture bruitée).
     - `check_profondeur` reste rouge, mais la force de la stratégie au fit est partie (contre P3, mêmes dés). L'écart attentif − distrait passe de +2,8 à +2,1 V par split, l'écart attentif − défaut de +2,3 à +1,4. Après son premier titre, l'attentif le regagne dans 73 % de ses runs, contre 93 %. Il gagne toujours au premier split de sa première run : restent le marché (F34) et les packs (F10), à P11. Le juge prend maintenant 44 s, à cause de la lecture du robot.
-- [ ] **P5 · Les adjoints de la V22, et le plan de jeu qui part** (D7, D8, D11, E1 ; Q1, Q7, Q10)
-  - La main tient quatre cartes ; on poste une carte sur une case libre.
-  - Un séjour dure 3 journées, 4 si le style rejoint le coach ; le repos, 4.
-  - Les cases suivent le niveau du coach.
-  - Un parmi trois est offert aux journées 2, 7, 11 et 15.
-  - Le staff de la V21 part. Le plan de jeu de 15 cartes et ses packs partent aussi ; leurs meilleures idées deviennent des styles.
-  - La sauvegarde passe à la version 9 : une partie en cours se rejoue avec les nouvelles règles, et ce que le jeu ne connaît plus s'ignore. Les règles gardées pour les v6 à v8 (les mandats aux séries de P3, la stratégie au fit de P4) partent alors, sauf pour les v5 et avant.
-  - Les bornes de Cap 82-0 ramenées à un split se jugent (dites depuis P2), et chaque style se voit sur la feuille, au-dessus du bruit de la table d'impact (`check_impact`).
-  - Les fichiers : `js/adjoints.js` (neuf), js/rogue.js, js/partie.js, js/bureau.js ; `check_gestion` (le séjour rejoué), `check_rogue` (chaque style sous sa borne, visible), `check_sauvegardes` (neuf : une run v6 se recharge).
+- [x] **P5 · Les adjoints de la V22, et le plan de jeu qui part** (D7, D8, D11, E1 ; Q1, Q7, Q10)
+  - **La main de ton coach** (`js/adjoints.js`, la V22 de Cap 82-0) : huit adjoints, deux par coach, chacun un style, ce qu'il donne et ce qu'il coûte, jamais en héraut, et une réplique sans chiffre.
+    - La main tient 4 cartes ; on en poste une prête sur une case libre (Bureau › Coach), et les cases suivent le niveau du coach (1, 1, 2, 2, 3).
+    - Un séjour dure 3 journées, 4 si le style rejoint le coach, une ronde de séries comptant pour une ; puis la carte se repose 4 journées.
+    - Un parmi trois s'offre aux journées 2, 7, 11 et 15, au cadeau du proprio (le déblocage donne maintenant un adjoint) et dans une histoire (« Revoir le staff », à trois défaites de suite) ; une main pleine laisse partir la plus ancienne hors poste, et l'offre le dit.
+    - Chaque carte garde ses séjours et ce que ton cinq y a fait.
+  - **Le staff de la V21 et le plan de jeu de 15 cartes sont partis**, avec leurs packs de cartes, la couleur des cartes dans l'expérience du coach et l'onglet du Marché. Les meilleures idées du plan de jeu sont des styles (la plongée, les escarmouches, la ferme…). La banque de cartes rares de Cap 82-0 viendra avec P11.
+  - **La sauvegarde passe à la version 9, et une vieille partie se rejoue avec les règles d'aujourd'hui** (la Q10).
+    - Un geste qu'elles ne connaissent plus s'ignore, compté, et l'écran le dit une fois.
+    - Une décision d'aujourd'hui que la partie n'a pas connue se prend d'office, personne pour un adjoint. Sans ça, une offre neuve arrêtait tout le reste du journal : 453 gestes ignorés sur dix parties gelées, contre 141.
+    - Seul le moteur reste celui de sa version : avant la version 6, `js/moteur-v1.js`. Les autres règles gardées par version sont parties du code : la roulette du Rogue, les gardés, le coach acheté, les séries d'un bloc, les mandats aux séries (P3), la stratégie au fit (P4).
+    - Le méta ne se réécrit jamais (`noter`) : un split noté reste tel qu'il a été joué, une fin notée reste notée, une carte reste à la collection.
+  - **Les juges.**
+    - `check_sauvegardes` (neuf, dans `tout.mjs`) recharge dix parties gelées par le code d'avant (`scripts/lib/sauvegardes-v8.json`, des versions 5 à 8, finies et coupées en cours de split) : chacune se recharge, ses gestes d'avant s'ignorent, son moteur reste le sien, elle se rejoue pareil, rechargée encore rien ne s'ignore plus, elle se joue encore ; et le méta ne se réécrit pas.
+    - `check_rogue` : chaque style sous ±0,33 V à sa part des parties (de 0 à +0,16), visible sur sa signature ; les cartes et le staff sont partis.
+    - `check_gestion` : les offres rejouent, qui part d'une main pleine, un séjour de 3 ou 4 journées puis 4 de repos, une pose refusée en poste, au repos ou sans case libre, les gestes d'avant refusés. Les runs des vieilles versions sont parties : `check_sauvegardes` en répond.
+    - Le smoke : une offre à la deuxième journée, un adjoint posté au Coach.
+    - `check_profondeur` reste rouge, mais deux de ses juges passent au vert. Le distrait ne gagne plus de titre : 0 en 24 runs, contre 1. Après son premier titre, l'attentif le regagne dans 52 % de ses runs, contre 73 %, dans la borne de 25 à 67 %. Son premier titre tombe à la run 1 et à la run 2 (médiane 1,5, contre 1). Mener vaut +1,8 V par split, contre +2,1 : les cartes que l'attentif mettait toutes au plan lui donnaient de la force.
 - [ ] **P6 · Le coach juste** (D1, D2, D3)
   - L'expérience vient de la victoire, de la partie clé et des séries, sans la couleur.
   - Un talent se prend sur un pouvoir ouvert, ou en case d'adjoint de plus (`TALENT_CASE`).
@@ -440,3 +449,7 @@ Les tranches suivent les couches de `/map-systems` : les juges d'abord (sans eux
   - `check_plan_de_match` (neuf) le prouve. Le robot attentif lit le moteur contre chaque adversaire.
   - `check_profondeur` : mener vaut moins (+2,1 V contre +2,8), et l'attentif gagne moins souvent après son premier titre (73 % contre 93 %), mais toujours dès la run 1.
   - sw.js 0.17.0.
+- 2026-11-03 — **Les adjoints de la V22, et le plan de jeu qui part (jalon 8, P5)**. Ton coach a une main : huit styles d'adjoint, deux par coach, qu'on poste pour un séjour, puis qui se reposent ; ils s'offrent un parmi trois aux journées 2, 7, 11 et 15. Le staff et le plan de jeu de quinze cartes sont partis. La sauvegarde passe à la version 9 : une vieille partie se rejoue avec les règles d'aujourd'hui, seul son moteur reste le sien, et le méta ne se réécrit jamais.
+  - `check_sauvegardes` (neuf) le prouve sur dix parties gelées par le code d'avant ; `check_rogue` juge chaque style sous sa borne.
+  - `check_profondeur` : le distrait ne gagne plus, et l'attentif regagne une run sur deux après son premier titre, mais toujours dès la run 1 ou 2.
+  - sw.js 0.18.0.

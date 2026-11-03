@@ -10,7 +10,7 @@
  *      champions (un bannissement, un champion choisi), hier soir ;
  *   4. le direct : la Faille dessinée, un moment nommé, « La fin », fermer ;
  *   5. les sections de Cap 82-0 : les Joueurs, le Cinq (la carte d'un joueur), le
- *      Marché (agents, packs de joueurs, plan de jeu, album), la Ligue (classement,
+ *      Marché (agents, packs de joueurs, album), la Ligue (classement,
  *      calendrier, meneurs, palmarès) ;
  *   6. jusqu'aux séries, les séries, le bilan, ceux qui restent ;
  *   7. le menu : déblocages, collection (un album, une carte), palmarès,
@@ -224,11 +224,27 @@ etape('le sommaire : trois étoiles, le pointage, la Faille de la partie', await
 await sansDebordement('le sommaire');
 await page.keyboard.press('Escape');
 await pause(150);
+// La deuxième journée : un adjoint s'offre, un parmi trois ; il entre dans la main de ton coach.
+await page.click('#journee');
+await pause(400);
+if (await visible('#repechage')) { await page.click('#repe-jouer'); await pause(500); }
+etape('à la deuxième journée, un adjoint s\'offre : une ligne d\'À faire', !!(await page.$('#vue [data-afaire]')));
+await page.click('#vue [data-afaire]');
+await pause(250);
+etape('l\'offre : trois adjoints, ou personne', (await page.$$('#choix .option[data-choix]')).length === 4 && !!(await page.$('#choix .option[data-choix="aucun"]')));
+await sansDebordement('l\'offre d\'un adjoint');
+await page.click('#choix .option[data-choix]:not([data-choix="aucun"])');
+await pause(250);
 for (const k of ['proprio', 'coach', 'vestiaire']) {
   await page.click(`.soustab[data-sous="${k}"]`);
   await pause(150);
   await sansDebordement(`le Bureau, ${k}`);
-  if (k === 'coach') etape('ton coach au Bureau : son niveau, ses pouvoirs', !!(await page.$('#vue .coach-carte .coach-niveau')) && (await page.$$('#vue .coach-pouvoirs li')).length === 3);
+  if (k === 'coach') {
+    etape('ton coach au Bureau : son niveau, ses pouvoirs, sa main', !!(await page.$('#vue .coach-carte .coach-niveau')) && (await page.$$('#vue .coach-pouvoirs li')).length === 3 && !!(await page.$('#vue [data-poster]')));
+    await page.click('#vue [data-poster]');
+    await pause(200);
+    etape('un adjoint se poste : il est en poste, et la case est prise', /En poste/.test(await page.$eval('#vue', e => e.textContent)) && !(await page.$('#vue [data-poster]')));
+  }
 }
 await page.click('.soustab[data-sous="boite"]');
 await pause(150);
@@ -280,9 +296,6 @@ if (pj) {
   await passerOuverture(3, 'un pack de joueurs');
   etape('ses trois joueurs attendent leur signature', (await page.$$('#vue .joueur.agent')).length === 3);
 }
-await page.click('.soustab[data-sous="plan"]');
-await pause(200);
-etape('le plan de jeu', !!(await page.$('#vue [data-pack]')));
 await page.click('.soustab[data-sous="album"]');
 await pause(300);
 etape('l\'Album du Marché : ta collection', (await page.$$('#vue .album-ligne')).length >= 1);

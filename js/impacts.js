@@ -4,34 +4,19 @@
  * Par partie, à l'équipe qui porte l'effet : ses éliminations (elim), ses morts, ses dragons, ses Nashor, ses hérauts,
  * ses tours, la durée en minutes ; chaque chiffre [moyenne, erreur type]. Un pouvoir se lit les parties où il joue
  * (joue : leur part) ; un plan de match, les parties où il se joue.
- * 40 ligues d'essai, 100466 parties mesurées. js/impact.js le dit à l'écran ; check_impact juge que la table
+ * 40 ligues d'essai, 70466 parties mesurées. js/impact.js le dit à l'écran ; check_impact juge que la table
  * est à jour (MOTEUR_MESURE, les signatures), check_chiffres qu'elle égale ce que le moteur joue.
  */
-export const MOTEUR_MESURE = 302349083;
+export const MOTEUR_MESURE = 1776950056;
 export const IMPACTS = {
-  "carte:invasion": {"sig":1416189910,"n":2000,"d":{"elim":[1.075,0.1],"morts":[0.858,0.114],"dragons":[-0.035,0.02],"nashor":[-0.003,0.017],"herauts":[-0.001,0.008],"tours":[0.015,0.054],"duree":[-0.689,0.118]}},
-  "carte:pousser": {"sig":1733645025,"n":2000,"d":{"elim":[-0.255,0.078],"morts":[-0.399,0.102],"dragons":[-0.046,0.019],"nashor":[-0.012,0.014],"herauts":[0.002,0.008],"tours":[0.072,0.045],"duree":[-0.698,0.088]}},
-  "carte:vision": {"sig":1480434205,"n":2000,"d":{"elim":[-0.446,0.08],"morts":[-0.529,0.092],"dragons":[0.058,0.017],"nashor":[0.037,0.013],"herauts":[0.014,0.008],"tours":[0.046,0.047],"duree":[0.313,0.124]}},
-  "carte:patience": {"sig":4250833718,"n":2000,"d":{"elim":[0.189,0.065],"morts":[0.249,0.053],"dragons":[0.03,0.015],"nashor":[0.026,0.011],"herauts":[-0.011,0.004],"tours":[0.003,0.035],"duree":[0.511,0.09]}},
-  "carte:echange": {"sig":2734082270,"n":2000,"d":{"elim":[-0.435,0.079],"morts":[-0.387,0.089],"dragons":[-0.081,0.02],"nashor":[-0.038,0.013],"herauts":[-0.005,0.007],"tours":[-0.033,0.044],"duree":[-0.883,0.099]}},
-  "carte:ame": {"sig":1091528253,"n":2000,"d":{"elim":[-0.528,0.084],"morts":[-0.781,0.091],"dragons":[0.097,0.023],"nashor":[0.051,0.015],"herauts":[0.012,0.007],"tours":[0.109,0.055],"duree":[0.484,0.139]}},
-  "carte:plongee": {"sig":1879890797,"n":2000,"d":{"elim":[1.778,0.106],"morts":[1.561,0.114],"dragons":[-0.085,0.022],"nashor":[-0.022,0.017],"herauts":[-0.004,0.012],"tours":[0.035,0.05],"duree":[-1.277,0.129]}},
-  "carte:cotes": {"sig":826925601,"n":2000,"d":{"elim":[-0.895,0.099],"morts":[-0.765,0.132],"dragons":[-0.147,0.021],"nashor":[-0.081,0.015],"herauts":[-0.002,0.011],"tours":[-0.04,0.061],"duree":[-1.809,0.133]}},
-  "carte:cinq": {"sig":627925620,"n":2000,"d":{"elim":[1.533,0.131],"morts":[1.513,0.121],"dragons":[-0.089,0.023],"nashor":[-0.003,0.016],"herauts":[-0.009,0.01],"tours":[-0.065,0.055],"duree":[-0.934,0.129]}},
-  "carte:protege": {"sig":1562938421,"n":2000,"d":{"elim":[0.244,0.083],"morts":[0.575,0.086],"dragons":[0.016,0.02],"nashor":[0.041,0.012],"herauts":[-0.018,0.006],"tours":[-0.091,0.048],"duree":[0.953,0.116]}},
-  "carte:heraut": {"sig":1932624750,"n":2000,"d":{"elim":[-0.923,0.102],"morts":[-1.185,0.118],"dragons":[-0.155,0.025],"nashor":[-0.073,0.019],"herauts":[-0.005,0.012],"tours":[0.154,0.065],"duree":[-2.348,0.135]}},
-  "carte:nashor": {"sig":3216557202,"n":2000,"d":{"elim":[-2.562,0.144],"morts":[-2.926,0.143],"dragons":[0.094,0.029],"nashor":[0.053,0.02],"herauts":[0.018,0.011],"tours":[0.067,0.075],"duree":[-0.105,0.159]}},
-  "carte:escarmouche": {"sig":206833372,"n":2000,"d":{"elim":[2.993,0.139],"morts":[2.41,0.152],"dragons":[-0.152,0.019],"nashor":[-0.04,0.017],"herauts":[0.016,0.011],"tours":[0.122,0.066],"duree":[-2.375,0.113]}},
-  "carte:meta": {"sig":86856899,"n":2000,"d":{"elim":[2.575,0.12],"morts":[1.083,0.106],"dragons":[0.007,0.024],"nashor":[0.032,0.016],"herauts":[0.025,0.012],"tours":[0.401,0.054],"duree":[-1.472,0.139]}},
-  "carte:quatreun": {"sig":2597329940,"n":2000,"d":{"elim":[-1.171,0.106],"morts":[-1.377,0.121],"dragons":[-0.203,0.026],"nashor":[-0.089,0.018],"herauts":[-0.007,0.011],"tours":[0.053,0.067],"duree":[-2.728,0.138]}},
-  "adjoint:fermier": {"sig":541914727,"n":2000,"d":{"elim":[0.108,0.057],"morts":[-0.127,0.064],"dragons":[0.038,0.015],"nashor":[0.02,0.009],"herauts":[0.007,0.005],"tours":[0.126,0.034],"duree":[0.018,0.074]}},
-  "adjoint:escarmoucheur": {"sig":1942035248,"n":2000,"d":{"elim":[1.046,0.11],"morts":[1.044,0.126],"dragons":[-0.052,0.02],"nashor":[0.001,0.015],"herauts":[-0.009,0.008],"tours":[-0.106,0.056],"duree":[-0.591,0.131]}},
-  "adjoint:dragons": {"sig":3091150885,"n":2000,"d":{"elim":[0.029,0.049],"morts":[-0.088,0.053],"dragons":[0.22,0.017],"nashor":[-0.03,0.011],"herauts":[-0.086,0.006],"tours":[-0.085,0.031],"duree":[-0.109,0.063]}},
-  "adjoint:nashor": {"sig":3963565592,"n":2000,"d":{"elim":[-0.038,0.03],"morts":[0.012,0.043],"dragons":[-0.157,0.01],"nashor":[0.053,0.008],"herauts":[-0.003,0.001],"tours":[0.029,0.022],"duree":[-0.043,0.048]}},
-  "adjoint:ingenieur": {"sig":56029083,"n":2000,"d":{"elim":[-0.435,0.104],"morts":[-0.624,0.12],"dragons":[-0.066,0.02],"nashor":[-0.06,0.017],"herauts":[-0.002,0.009],"tours":[0.407,0.06],"duree":[-1.298,0.153]}},
-  "adjoint:tardif": {"sig":2830923629,"n":2000,"d":{"elim":[0.14,0.081],"morts":[0.526,0.075],"dragons":[0.007,0.021],"nashor":[0.03,0.013],"herauts":[-0.017,0.006],"tours":[-0.118,0.047],"duree":[0.744,0.113]}},
-  "adjoint:debut": {"sig":2631580368,"n":2000,"d":{"elim":[-0.079,0.077],"morts":[-0.775,0.08],"dragons":[-0.001,0.016],"nashor":[-0.003,0.012],"herauts":[0.021,0.006],"tours":[0.155,0.045],"duree":[-0.933,0.089]}},
-  "adjoint:vision": {"sig":160631241,"n":2000,"d":{"elim":[-1.109,0.092],"morts":[-1.278,0.118],"dragons":[0.087,0.022],"nashor":[0.086,0.014],"herauts":[-0.007,0.007],"tours":[0.068,0.049],"duree":[0.739,0.129]}},
+  "adjoint:plongee": {"sig":2137398933,"n":2000,"d":{"elim":[1.741,0.136],"morts":[1.189,0.126],"dragons":[-0.05,0.026],"nashor":[0.012,0.015],"herauts":[0.008,0.012],"tours":[0.203,0.061],"duree":[-1.035,0.115]}},
+  "adjoint:escarmouches": {"sig":2810806181,"n":2000,"d":{"elim":[1.176,0.107],"morts":[0.826,0.117],"dragons":[-0.046,0.019],"nashor":[0.01,0.015],"herauts":[-0.008,0.008],"tours":[-0.006,0.054],"duree":[-0.653,0.139]}},
+  "adjoint:dragons": {"sig":2037280291,"n":2000,"d":{"elim":[0.173,0.042],"morts":[-0.167,0.04],"dragons":[0.239,0.016],"nashor":[-0.006,0.006],"herauts":[0.007,0.002],"tours":[0.065,0.023],"duree":[-0.008,0.051]}},
+  "adjoint:vision": {"sig":924083422,"n":2000,"d":{"elim":[-0.631,0.085],"morts":[-0.95,0.109],"dragons":[0.103,0.021],"nashor":[0.052,0.015],"herauts":[0.004,0.007],"tours":[0.086,0.051],"duree":[0.503,0.124]}},
+  "adjoint:tardif": {"sig":431419928,"n":2000,"d":{"elim":[0.335,0.083],"morts":[0.364,0.058],"dragons":[0.053,0.022],"nashor":[0.1,0.011],"herauts":[-0.005,0.005],"tours":[0.052,0.041],"duree":[0.861,0.113]}},
+  "adjoint:ferme": {"sig":1621222075,"n":2000,"d":{"elim":[-0.832,0.097],"morts":[-1.15,0.106],"dragons":[0.124,0.024],"nashor":[0.072,0.016],"herauts":[0.005,0.01],"tours":[0.212,0.047],"duree":[0.658,0.131]}},
+  "adjoint:ingenieur": {"sig":4278354277,"n":2000,"d":{"elim":[-0.738,0.101],"morts":[-0.327,0.103],"dragons":[-0.107,0.019],"nashor":[-0.048,0.016],"herauts":[-0.014,0.009],"tours":[0.326,0.061],"duree":[-1.284,0.118]}},
+  "adjoint:finisseur": {"sig":1761392179,"n":2000,"d":{"elim":[-0.062,0.052],"morts":[-0.4,0.049],"dragons":[-0.048,0.016],"nashor":[-0.013,0.011],"herauts":[0,0.003],"tours":[0.064,0.031],"duree":[-0.632,0.077]}},
   "lien:duoBas": {"sig":2808183675,"n":2000,"d":{"elim":[0.158,0.049],"morts":[-0.099,0.049],"dragons":[0.036,0.011],"nashor":[0.016,0.008],"herauts":[0.008,0.004],"tours":[0.113,0.029],"duree":[0.068,0.059]}},
   "lien:duoCentre": {"sig":1236250347,"n":2000,"d":{"elim":[0.673,0.103],"morts":[0.51,0.088],"dragons":[-0.021,0.019],"nashor":[0.001,0.015],"herauts":[0.004,0.006],"tours":[0.029,0.049],"duree":[-0.409,0.106]}},
   "lien:vestiaire": {"sig":2655522752,"n":2000,"d":{"elim":[0.101,0.028],"morts":[-0.042,0.023],"dragons":[0.011,0.004],"nashor":[0.012,0.004],"herauts":[0.001,0.001],"tours":[0.047,0.014],"duree":[0.072,0.034]}},

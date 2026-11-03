@@ -1,32 +1,18 @@
 /*
- * LA BOUTIQUE : tes jetons, les packs de joueurs, ton plan de jeu, ton coach,
- * les packs de cartes. Rien que du HTML tiré de l'état du rogue (js/rogue.js)
- * et de la gestion (js/gestion.js) ; ce qu'une carte change se dit en vraies
- * stats de partie mesurées (js/impact.js), et les chances d'un pack en « 1 pack sur N ».
+ * LA BOUTIQUE : tes jetons, les packs de joueurs ; la carte de ton coach. Rien
+ * que du HTML tiré de l'état du rogue (js/rogue.js) et de la gestion
+ * (js/gestion.js) ; ce qu'un pouvoir change se dit en vraies stats de partie
+ * mesurées (js/impact.js). Le plan de jeu et ses packs de cartes sont partis à
+ * la version 9 (js/adjoints.js en a repris les meilleures idées).
  */
 import { esc } from './util.js';
-import { JETONS, CARTES, PACKS, COACHS, RARETES, PLAN, NIVEAU_DES_POUVOIRS, couleurDe, chances, prixDuPack, confiance, jetonsDe } from './rogue.js';
+import { JETONS, COACHS, NIVEAU_DES_POUVOIRS, jetonsDe } from './rogue.js';
 import { phraseDe } from './impact.js';
-import { prixDuCoach } from './partie.js';
 import { PACKS_JOUEURS, prixPackJoueurs, chancesJoueurs, marcheOuvert, placements, cleDe } from './gestion.js';
 import { ROLES, vignette, coutHtml } from './fiche.js';
 import { paquetHtml } from './ouverture.js';
 
-const PALIERS = ['', 'I', 'II', 'III'];
 const GAINS = `${JETONS.victoire} par victoire, ${JETONS.defaite} par défaite, ${JETONS.ronde} par ronde de séries gagnée`;
-
-/**
- * UNE CARTE DE PLAN DE JEU, au format d'une carte (Cap 82-0 : *une carte de jeu a le format d'une carte de
- * hockey*) : un carton 5:7 aux couleurs de sa rareté, son icône en grand, son nom, la couleur de son coach, ce
- * qu'elle change sur la feuille, en vraies stats de partie mesurées (js/impact.js), jamais en cote.
- */
-export function carteDeJeu(id) {
-  const [ico, nom, rarete] = CARTES[id];
-  const co = couleurDe(id);
-  return `<span class="cj cj-${rarete}"><span class="cj-rarete">${RARETES[rarete]}</span>${co ? `<span class="cj-coach" title="${esc(COACHS[co].nom)}">${COACHS[co].ico}</span>` : ''}
-    <span class="cj-ico">${ico}</span><span class="cj-nom">${esc(nom)}</span><span class="cj-texte">${esc(phraseDe(`carte:${id}`))}</span><span class="cj-pied">Faille · plan de jeu</span></span>`;
-}
-
 
 /*
  * LES PACKS DE JOUEURS : leurs chances par niveau ; ouvert, ses trois joueurs
@@ -76,44 +62,3 @@ export function carteDuCoach(id, { niveau = 0, talents = [], xp = null, prochain
 
 /** Le marché des joueurs en packs : tes jetons, les packs, le dernier ouvert. `joueurs` : ses contrats. */
 export const vuePacksJoueurs = (P, joueurs) => `<p class="etat">🪙 ${jetonsDe(P.L, P.R)} jetons — ${GAINS}</p>${packsDeJoueurs(P, joueurs)}`;
-
-/** LE PLAN DE JEU : tes cartes, les packs de cartes (et le coach à acheter, avant la version 4). `ouvertes` : les cartes du dernier pack ouvert. */
-export function vuePlanDeJeu(P, ouvertes) {
-  const L = P.L, R = P.R;
-  const jetons = jetonsDe(L, R);
-  const prixCoach = prixDuCoach(P);
-  const conf = confiance(R);
-  // Avant la version 4, le coach s'achète ici ; depuis, il fait la run (sa carte est à l'Effectif).
-  const ancienne = P.v < 4;
-  const plan = R.cartes.length
-    ? `<ul class="main-cartes">${R.cartes.map(id => `<li><button class="cj-bouton${R.plan.includes(id) ? ' au-plan' : ''}" data-carte="${id}">${carteDeJeu(id)}</button></li>`).join('')}</ul>`
-    : '<p class="sous">Aucune carte encore : ouvre un pack.</p>';
-  const coachs = Object.entries(COACHS).map(([id, co]) => {
-    const enPoste = R.coach && R.coach.id === id;
-    const etat = enPoste
-      ? `En poste · confiance ${PALIERS[conf.palier] || 'en rodage'} · ${conf.series} série${conf.series > 1 ? 's' : ''} à sa couleur${conf.prochain ? `, prochain palier à ${conf.prochain}` : ''}`
-      : 'Ses pouvoirs s\'ouvrent un par palier de confiance.';
-    // Ses trois pouvoirs : le palier qui l'ouvre, sa phase et sa condition, ce qu'il fait.
-    const pouvoirs = co.pouvoirs.map((x, k) => `<small class="pouvoir${enPoste && conf.palier > k ? ' ouvert' : ''}">${PALIERS[k + 1]} · <b>${esc(x.nom)}</b> — ${esc(x.condition)} : ${esc(phraseDe(`pouvoir:${x.id}`, { quand: true }))}</small>`).join('');
-    return `<li><button class="coach${enPoste ? ' active' : ''}" data-coach="${id}"${enPoste || jetons < prixCoach ? ' disabled' : ''}>
-      <span class="jeu-ico">${co.ico}</span><span class="jeu-id"><b>${esc(co.nom)}</b><small>${etat}</small>${pouvoirs}</span>
-      <span class="prix">${enPoste ? '' : prixCoach ? `${prixCoach} 🪙` : 'Gratuit'}</span></button></li>`;
-  }).join('');
-  const packs = Object.entries(PACKS).map(([id, p]) => {
-    const prix = prixDuPack(R, id);
-    const [r, n] = chances(id).filter(([x]) => x !== 'commune').pop();
-    return `<li><button class="tuile-pack" data-pack="${id}"${jetons < prix ? ' disabled' : ''}>
-      <span class="tuile-paquet">${paquetHtml(id, id, `${p.n} cartes`)}</span><span class="prix">${prix} 🪙</span><small>${RARETES[r]} : 1 sur ${n}</small></button></li>`;
-  }).join('');
-  return `<p class="etat">🪙 ${jetons} jetons — ${GAINS}</p>
-    ${ouvertes && !ouvertes.length ? '<p class="sous">Tu as déjà toutes les cartes.</p>' : ''}
-    <h3>Ton plan de jeu · ${R.plan.length}/${PLAN}</h3>
-    ${plan}
-    ${R.cartes.length ? '<p class="sous">Touche une carte : elle entre au plan, ou en sort ; il joue toutes tes séries.</p>' : ''}
-    ${ancienne ? `<h3>Le coach</h3>
-    <p class="sous">Un seul en poste. Sa confiance monte à chaque série jouée avec une carte de sa couleur au plan : palier I à 3, II à 6, III à 9 ; chaque palier ouvre un pouvoir, qui lit la partie au début de sa phase et la frappe quand sa condition tient.</p>
-    <ul class="cartes-jeu">${coachs}</ul>` : ''}
-    <h3>Les packs de cartes</h3>
-    <ul class="paquets">${packs}</ul>
-    <p class="sous">Chaque pack hausse le prix du suivant ; une carte ne sort qu'une fois.</p>`;
-}
